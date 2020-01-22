@@ -1,11 +1,11 @@
 # weewx-weatherboard
-WeatherBoard(TM) is a skin for WeeWX inspired by the RainWise LED Weather Oracle display
+WeatherBoard&trade; is a skin for WeeWX inspired by the RainWise LED Weather Oracle display
 
 ## Description
 
 Copyright (C)2020 by John A Kline (john@johnkline.com)
 
-The WeatherBoard(TM) sking provides a simple one page skin that shows:
+The WeatherBoard&trade; sking provides a simple one page skin that shows:
 * Current Outside Temperature
 * Current Dew Point
 * Current Wind Speed and Direction
@@ -16,6 +16,8 @@ The WeatherBoard(TM) sking provides a simple one page skin that shows:
 * Air Quality Indicator (If [weewx-purple](https://github.com/chaunceygardiner/weewx-purple) is installed.)
 
 The inspiration for this skin is the RainWise LED Weather Oracle display.
+
+Following is a screen shot of the WeatherBoard&trade; skin.
 
 ![WeatherBoard screen shot](WeatherBoard.png)
 
