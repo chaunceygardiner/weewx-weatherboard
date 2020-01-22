@@ -39,7 +39,7 @@ Following is a screen shot of the WeatherBoard&trade; skin.
 1. Edit weewx.conf, in the `[[LoopData]]` section:
    1. Set the `target_report` to `WeatherBoardReport`
 
-   `target_report = WeatherBoardReport`
+      `target_report = WeatherBoardReport`
 
    1. In the  LoopData section, add the following fields if they
    are not already listed (these are the fields needed for the WeatherBoard skin):
