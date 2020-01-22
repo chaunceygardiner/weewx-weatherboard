@@ -60,7 +60,10 @@ Note: The above command assumes a WeeWX installation of `/home/weewx` and
       that this sking was downloaded to `~/software/weewx-weatherboard`.
       Adjust the command as necessary.
 
-6. Restart WeeWx
+6. Edit `/home/weewx/skins/WeatherBoard/skin.conf`, read the description of each field
+   in the `Extras` section and fill in the values for your installation.
+
+7. Restart WeeWx
 
 
 ##Licensing
