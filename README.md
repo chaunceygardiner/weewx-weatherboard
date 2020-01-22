@@ -36,36 +36,42 @@ Following is a screen shot of the WeatherBoard&trade; skin.
 
 1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata).
 
-2. Edit weewx.conf.  In the  LoopData section, add the following fields if they
+1. Edit weewx.conf, in the `[[LoopData]]` section:
+   1. Set the `target_report` to `WeatherBoardReport`
+
+   `target_report = WeatherBoardReport`
+
+   1. In the  LoopData section, add the following fields if they
    are not already listed (these are the fields needed for the WeatherBoard skin):
-   * `COMPASS_windDir`
-   * `FMT_day_rain_total`
-   * `FMT_dewpoint`
-   * `FMT_outTemp`
-   * `FMT_rainRate`
-   * `FMT_windSpeed`
-   * `FMT_HI_windGust`
-   * `FMT_10mMaxGust`
-   * `windSpeed`
 
-3. If the installation has a PurpleAir sensor, install [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
+       * `COMPASS_windDir`
+       * `FMT_day_rain_total`
+       * `FMT_dewpoint`
+       * `FMT_outTemp`
+       * `FMT_rainRate`
+       * `FMT_windSpeed`
+       * `FMT_HI_windGust`
+       * `FMT_10mMaxGust`
+       * `windSpeed`
 
-4. If the installation has a PurpleAir sensor, to display AQI Averages over the report
+1. If the installation has a PurpleAir sensor, install [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
+
+1. If the installation has a PurpleAir sensor, to display AQI Averages over the report
    interval and to catchup on AQI Readings when WeeWX starts, optionally install
    [purple-proxy](https://github.com/chaunceygardiner/purple-proxy).
 
-5. Install this skin:
+1. Install this skin:
 
-`sudo /home/weewx/bin/wee_extension --install ~/software/weewx-weatherboard`
+   `sudo /home/weewx/bin/wee_extension --install ~/software/weewx-weatherboard`
 
-Note: The above command assumes a WeeWX installation of `/home/weewx` and
+   Note: The above command assumes a WeeWX installation of `/home/weewx` and
       that this sking was downloaded to `~/software/weewx-weatherboard`.
       Adjust the command as necessary.
 
-6. Edit `/home/weewx/skins/WeatherBoard/skin.conf`, read the description of each field
+1. Edit `/home/weewx/skins/WeatherBoard/skin.conf`, read the description of each field
    in the `Extras` section and fill in the values for your installation.
 
-7. Restart WeeWx
+1. Restart WeeWx
 
 
 ## Licensing
