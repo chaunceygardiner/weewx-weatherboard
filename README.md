@@ -20,9 +20,9 @@ The inspiration for this skin is the RainWise LED Weather Oracle display.
 ![WeatherBoard screen shot](WeatherBoard.png)
 
 ## Additional Requirements
-* WeeWX 4.x
+* [WeeWX 4.x](https://github.com/weewx/weewx) (Currently in beta.)
 * [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
-* Python 3 (because weewx-loopdata requires Python 3.
+* Python 3 (because weewx-loopdata requires Python 3).
 
 ## Additional Requirements for Air Quality Indictator (AQI) Readings on the Report
 * [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
