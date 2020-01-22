@@ -1,0 +1,25 @@
+## Copyright (C)2020 by John A Kline (john@johnkline.com)
+## Distributed under the terms of the GNU Public License (GPLv3)
+## See LICENSE for your rights.
+#errorCatcher Echo
+#encoding UTF-8
+{
+  "dateTime":"$current.dateTime",
+#if $Extras.has_key('show_purple') and ($Extras.show_purple == 'Outdoor' or $Extras.show_purple == 'Indoor')
+  #if $Extras.show_purple == 'Outdoor'
+    #set $aqi   = $latest('purple_binding').pm2_5_aqi_avg.raw
+    #set $color = $latest('purple_binding').p25aqic_avg.raw
+  #else
+    #set $aqi   = $latest('purple_binding').pm2_5_aqi.raw
+    #set $color = $latest('purple_binding').p25aqic.raw
+  #end if
+  "aqi":"$aqi",
+#set $blue  =  $color & 255
+#set $green = ($color >> 8) & 255
+#set $red   = ($color >> 16) & 255
+  "aqic":"rgb($red,$green,$blue)"
+#else
+  "aqi":"N/A",
+  "aqic":"rgb(0,0,0)"
+#end if
+}
