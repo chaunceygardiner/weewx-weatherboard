@@ -70,4 +70,4 @@ Note: The above command assumes a WeeWX installation of `/home/weewx` and
 
 ## Licensing
 
-WeeWX is licensed under the GNU Public License v3.
+weewx-loopdata is licensed under the GNU Public License v3.
