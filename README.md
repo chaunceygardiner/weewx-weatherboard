@@ -68,6 +68,6 @@ Note: The above command assumes a WeeWX installation of `/home/weewx` and
 7. Restart WeeWx
 
 
-##Licensing
+## Licensing
 
 WeeWX is licensed under the GNU Public License v3.
