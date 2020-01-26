@@ -44,6 +44,7 @@ Following is a screen shot of the WeatherBoard&trade; skin.
    1. In the  LoopData section, add the following fields if they
    are not already listed (these are the fields needed for the WeatherBoard skin):
 
+       * `dateTime`
        * `COMPASS_windDir`
        * `FMT_day_rain_total`
        * `FMT_dewpoint`

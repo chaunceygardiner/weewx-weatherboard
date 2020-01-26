@@ -6,27 +6,6 @@
 <script>
   #include "common_updater.inc"
 
-  var zeroes = "00"
-  function zeroPadTo2(val) {
-    var str = "" + val;
-    return zeroes.substring(0, zeroes.length - str.length) + str;
-  }
-
-  function spacePadTo2(val) {
-    var str = "" + val;
-    if (str.length == 1) {
-      str = "&nbsp;" + str;
-    }
-    return str;
-  }
-
-  function formatHours(val) {
-    if (val > 12) {
-      val = val  - 12;
-    }
-    return spacePadTo2(val);
-  }
-
   function updateCurrent() {
     if (pageTimedOut) {
         setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
