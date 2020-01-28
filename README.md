@@ -41,7 +41,7 @@ Following is a screen shot of the WeatherBoard&trade; skin.
 
       `target_report = WeatherBoardReport`
 
-   1. In the  LoopData section, add the following fields if they
+   1. In the  LoopData section of weewx.conf, add the following fields if they
    are not already listed (these are the fields needed for the WeatherBoard skin):
 
        * `dateTime`
@@ -63,14 +63,43 @@ Following is a screen shot of the WeatherBoard&trade; skin.
 
 1. Install this skin:
 
-   `sudo /home/weewx/bin/wee_extension --install ~/software/weewx-weatherboard`
+   1. cd to the directory where this extension was downloaded.
+      `cd ~/software/weewx-weatherboard
 
-   Note: The above command assumes a WeeWX installation of `/home/weewx` and
-      that this sking was downloaded to `~/software/weewx-weatherboard`.
-      Adjust the command as necessary.
+   1. Execute the following command:
+       `sudo /home/weewx/bin/wee_extension --install .`
+       (Assumes WeeWX is installed at /home/weewx.  Adjust accordingly.)
 
-1. Edit `/home/weewx/skins/WeatherBoard/skin.conf`, read the description of each field
-   in the `Extras` section and fill in the values for your installation.
+1. The install creates the following section in `weewx.conf`.
+
+```
+    [[WeatherBoardReport]]
+        HTML_ROOT = public_html/weatherboard
+        enable = true
+        skin = WeatherBoard
+        [[[Extras]]]
+            loop_data_file = ../loop-data.txt
+            contact_email = john@doe.com
+            page_update_pwd = foo
+            show_purple = None
+        [[[Units]]]
+            [[[[StringFormats]]]]
+                mile_per_hour = %.1f
+                degree_C = %.1f
+                km_per_hour = %.1f
+                degree_F = %.1f
+```
+
+1. Edit the `Extras` section of the `WeatherBoard` section of `weewx.conf`.
+   Update the `loop_data_file`, `contact_email` and `page_udpate_pwd` as to
+   appropriate values.  (Note: the `page_update_pwd` is used on the URL in order
+   to keep WeatherBoard from timing out.
+
+1. If a PurpleAir air quality sensor is installed and the
+   [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
+   extensiion is installed, change `show_purple` in the `Extras`
+   section to `Indoor` for a PurpleAir indoor sensor or `Outdoor` for
+   a PurpleAir outdoor sensor.
 
 1. Restart WeeWx
 

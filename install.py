@@ -18,9 +18,15 @@ class WeatherBoardInstaller(ExtensionInstaller):
             config = {
                 'StdReport': {
                     'WeatherBoardReport': {
-                        'HTML_ROOT':'weatherboard',
+                        'HTML_ROOT':'public_html/weatherboard',
                         'enable': 'true',
                         'skin':'WeatherBoard',
+                        'Extras': {
+                            'loop_data_file' : '../loop-data.txt',
+                            'contact_email'  : 'john@doe.com',
+                            'page_update_pwd': 'foo',
+                            'show_purple'    : 'None',
+                        },
                         'Units' : {
                             'StringFormats': {
                                 'mile_per_hour': '%.1f',
