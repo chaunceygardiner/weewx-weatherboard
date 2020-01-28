@@ -106,27 +106,29 @@
           // rain fall
           document.getElementById("FMT_day_rain_total").innerHTML = result["FMT_day_rain_total"];
         }
-        // set a timer to call updateCurrent (the 2 second timer) 2s from now.
-        setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
-        // Check to see if it's time to call expirePage.
-        if (Date.now() >= timeOfNextPageExpiration) {
-          expirePage();
-        }
-        if (Date.now() >= timeOfNextArchiveInterval) {
-          updateAtArchiveInterval();
-        }
       }
     };
-    xhttp.open("GET", "$Extras.loop_data_file", "loop-data.txt");
-    xhttp.send();
+    try {
+      xhttp.open("GET", "$Extras.loop_data_file", true);
+      xhttp.send();
+    } finally {
+      // set a timer to call updateCurrent (the 2 second timer) 2s from now.
+      setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
+      // Check to see if it's time to call expirePage.
+      if (Date.now() >= timeOfNextPageExpiration) {
+        expirePage();
+      }
+      if (Date.now() >= timeOfNextArchiveInterval) {
+        updateAtArchiveInterval();
+      }
+    }
   }
   function updateAtArchiveInterval() {
     if (pageTimedOut) {
         return false;
     }
-    timeOfNextArchiveInterval = getTimeOfNextArchiveInterval();
-
     var updateHttp = new XMLHttpRequest();
+
     updateHttp.onreadystatechange = function() {
       if (this.readyState == 4) {
         if (this.status == 200) {
@@ -140,7 +142,11 @@
         }
       }
     };
-    updateHttp.open("GET", "updater.txt", true);
-    updateHttp.send();
+    try {
+      updateHttp.open("GET", "updater.txt", true);
+      updateHttp.send();
+    } finally {
+      timeOfNextArchiveInterval = getTimeOfNextArchiveInterval();
+    }
   }
 </script>
