@@ -97,7 +97,7 @@ Following is a screen shot of the WeatherBoard&trade; skin.
 
 1. If a PurpleAir air quality sensor is installed and the
    [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
-   extensiion is installed, change `show_purple` in the `Extras`
+   extension is installed, change `show_purple` in the `Extras`
    section to `Indoor` for a PurpleAir indoor sensor or `Outdoor` for
    a PurpleAir outdoor sensor.
 
