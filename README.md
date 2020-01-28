@@ -17,9 +17,13 @@ The WeatherBoard&trade; sking provides a simple one page skin that shows:
 
 The inspiration for this skin is the RainWise LED Weather Oracle display.
 
-Following is a screen shot of the WeatherBoard&trade; skin.
+Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor is configured.
 
 ![WeatherBoard screen shot](WeatherBoard.png)
+
+Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor is *NOT* configured.
+
+![WeatherBoard (no AQI) screen shot](WeatherBoard_no_aqi.png)
 
 ## Additional Requirements
 * [WeeWX 4.x](https://github.com/weewx/weewx) (Currently in beta.)
@@ -42,7 +46,7 @@ Following is a screen shot of the WeatherBoard&trade; skin.
       `target_report = WeatherBoardReport`
 
    1. In the  LoopData section of weewx.conf, add the following fields if they
-   are not already listed (these are the fields needed for the WeatherBoard skin):
+   are not already listed (these are the fields needed for the WeatherBoard&trade; skin):
 
        * `dateTime`
        * `COMPASS_windDir`
