@@ -101,7 +101,7 @@ Following is a screen shot of the WeatherBoard&trade; skin.
    to keep WeatherBoard from timing out.
 
 1. If you with to wire up Google Analytics, fill in `googleAnalyticsId` and, optionally,
-   `analyticsHost`.
+   `analytics_host`.
 
 1. If a PurpleAir air quality sensor is installed and the
    [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
