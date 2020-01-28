@@ -68,10 +68,12 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 1. Install this skin:
 
    1. cd to the directory where this extension was downloaded.
-      `cd ~/software/weewx-weatherboard
+
+      `cd ~/software/weewx-weatherboard`
 
    1. Execute the following command:
        `sudo /home/weewx/bin/wee_extension --install .`
+
        (Assumes WeeWX is installed at /home/weewx.  Adjust accordingly.)
 
 1. The install creates the following section in `weewx.conf`.
