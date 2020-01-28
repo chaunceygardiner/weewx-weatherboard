@@ -15,11 +15,12 @@
                 Temperature - Dew Point<br/>
                 Wind Speed &amp; Direction<br/>
                 10m Gust - Today's High Gust<br/>
-                Rain Fall Today - Rain Rate<br/>
 #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'Outdoor' or $Extras.show_purple == 'Indoor')
+                Rain Fall Today - Rain Rate<br/>
                 <span style="border-top:1px solid;">Legend - Air Quality Index - Time</span><br/>
 #else
-                <span style="border-top:1px solid;">Legend - Time</span><br/>
+                <span style="border-bottom:1px solid;">Rain Fall Today - Rain Rate</span><br/>
+                Legend - Time<br/>
 #end if
                 #include "contact.inc"
               </td>
