@@ -22,10 +22,15 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'enable': 'true',
                         'skin':'WeatherBoard',
                         'Extras': {
-                            'loop_data_file' : '../loop-data.txt',
-                            'contact_email'  : 'john@doe.com',
-                            'page_update_pwd': 'foo',
-                            'show_purple'    : 'None',
+                            'loop_data_file'   : '../loop-data.txt',
+                            'contact_email'    : 'john@doe.com',
+                            'expiration_time'  : 4,
+                            'page_update_pwd'  : 'foo',
+                            'googleAnalyticsId': '',
+                            'analytics_host'   : '',
+                            'show_purple'      : 'None',
+                            'archive_interval' : 300,
+                            'delay'            : 20,
                         },
                         'Units' : {
                             'StringFormats': {

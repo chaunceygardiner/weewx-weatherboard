@@ -81,7 +81,12 @@ Following is a screen shot of the WeatherBoard&trade; skin.
             loop_data_file = ../loop-data.txt
             contact_email = john@doe.com
             page_update_pwd = foo
+            googleAnalyticsId = ""
+            analytics_host = ""
             show_purple = None
+            expiration_time = 4
+            archive_interval = 300
+            delay = 20
         [[[Units]]]
             [[[[StringFormats]]]]
                 mile_per_hour = %.1f
@@ -95,11 +100,16 @@ Following is a screen shot of the WeatherBoard&trade; skin.
    appropriate values.  (Note: the `page_update_pwd` is used on the URL in order
    to keep WeatherBoard from timing out.
 
+1. If you with to wire up Google Analytics, fill in `googleAnalyticsId` and, optionally,
+   `analyticsHost`.
+
 1. If a PurpleAir air quality sensor is installed and the
    [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
    extension is installed, change `show_purple` in the `Extras`
    section to `Indoor` for a PurpleAir indoor sensor or `Outdoor` for
-   a PurpleAir outdoor sensor.
+   a PurpleAir outdoor sensor.  Also, fill in `archive_interval` to
+   match WeeWX's archive interval.  The default for the `delay` field
+   should be fine.
 
 1. Restart WeeWx
 
