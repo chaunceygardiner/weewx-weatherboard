@@ -111,6 +111,7 @@
     try {
       xhttp.open("GET", "$Extras.loop_data_file", true);
       xhttp.send();
+    } catch (e) {
     } finally {
       // set a timer to call updateCurrent (the 2 second timer) 2s from now.
       setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
@@ -145,6 +146,7 @@
     try {
       updateHttp.open("GET", "updater.txt", true);
       updateHttp.send();
+    } catch (e) {
     } finally {
       timeOfNextArchiveInterval = getTimeOfNextArchiveInterval();
     }
