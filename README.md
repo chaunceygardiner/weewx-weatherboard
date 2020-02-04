@@ -58,6 +58,8 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
        * `FMT_HI_windGust`
        * `FMT_10mMaxGust`
        * `windSpeed`
+       * `pm2_5_aqi`  <- If PurpleAir sensor and weewx-purple-proxy installed.
+       * `pm2_5_aqic` <- If PurpleAir sensor and weewx-purple-proxy installed.
 
 1. If the installation has a PurpleAir sensor, install [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
 

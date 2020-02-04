@@ -105,6 +105,12 @@
 
           // rain fall
           document.getElementById("FMT_day_rain_total").innerHTML = result["FMT_day_rain_total"];
+
+          // aqi
+          #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'Outdoor' or $Extras.show_purple == 'Indoor')
+            document.getElementById("aqi").innerHTML = result["pm2_5_aqi"];
+            document.getElementById("aqi").style.color = decode_rgb(result["pm2_5_aqic"]);
+          #end if
         }
       }
     };
@@ -119,36 +125,12 @@
       if (Date.now() >= timeOfNextPageExpiration) {
         expirePage();
       }
-      if (Date.now() >= timeOfNextArchiveInterval) {
-        updateAtArchiveInterval();
-      }
     }
   }
-  function updateAtArchiveInterval() {
-    if (pageTimedOut) {
-        return false;
-    }
-    var updateHttp = new XMLHttpRequest();
-
-    updateHttp.onreadystatechange = function() {
-      if (this.readyState == 4) {
-        if (this.status == 200) {
-          var result = JSON.parse(this.responseText.replace(/\n/g, " "));
-
-          #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'Outdoor' or $Extras.show_purple == 'Indoor')
-            // aqi
-            document.getElementById("aqi").innerHTML = result["aqi"];
-            document.getElementById("aqi").style.color = result["aqic"];
-          #end if
-        }
-      }
-    };
-    try {
-      updateHttp.open("GET", "updater.txt", true);
-      updateHttp.send();
-    } catch (e) {
-    } finally {
-      timeOfNextArchiveInterval = getTimeOfNextArchiveInterval();
-    }
+  function decode_rgb(i) {
+    var red   = i >> 16;
+    var green = (i & 0xFF00) >> 8;
+    var blue  = i & 0xFF;
+    return `rgb(${red},${green},${blue})`
   }
 </script>
