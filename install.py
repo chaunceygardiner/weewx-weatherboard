@@ -29,8 +29,6 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             'googleAnalyticsId': '',
                             'analytics_host'   : '',
                             'show_purple'      : 'None',
-                            'archive_interval' : 300,
-                            'delay'            : 20,
                         },
                         'Units' : {
                             'StringFormats': {
@@ -45,13 +43,11 @@ class WeatherBoardInstaller(ExtensionInstaller):
             },
             files = [('skins/WeatherBoard', [
                 'skins/WeatherBoard/analytics.inc',
-                'skins/WeatherBoard/common_updater.inc',
                 'skins/WeatherBoard/contact.inc',
                 'skins/WeatherBoard/footer.inc',
                 'skins/WeatherBoard/index.html.tmpl',
                 'skins/WeatherBoard/realtime_updater.inc',
                 'skins/WeatherBoard/skin.conf',
-                'skins/WeatherBoard/updater.txt.tmpl',
                 'skins/WeatherBoard/weatherboard.css',
             ])]
         )
