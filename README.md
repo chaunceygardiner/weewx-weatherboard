@@ -88,11 +88,11 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
         [[[Extras]]]
             loop_data_file = ../loop-data.txt
             contact_email = john@doe.com
-            page_update_pwd = foo
+            page_update_pwd = foobar
             googleAnalyticsId = ""
             analytics_host = ""
             expiration_time = 4
-            show_purple = None
+            show_purple = False
         [[[Units]]]
             [[[[StringFormats]]]]
                 mile_per_hour = %.1f
@@ -112,8 +112,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 1. If a PurpleAir air quality sensor is installed and the
    [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
    extension is installed, change `show_purple` in the `Extras`
-   section to `Indoor` for a PurpleAir indoor sensor or `Outdoor` for
-   a PurpleAir outdoor sensor.
+   section to `True`.
 
 1. Restart WeeWx
 

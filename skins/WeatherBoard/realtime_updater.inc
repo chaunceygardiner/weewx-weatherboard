@@ -186,7 +186,7 @@
           document.getElementById("FMT_day_rain_total").innerHTML = result["FMT_day_rain_total"];
 
           // aqi
-          #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'Outdoor' or $Extras.show_purple == 'Indoor')
+          #if $Extras.has_key('show_purple') and $Extras.show_purple)
             document.getElementById("aqi").innerHTML = result["pm2_5_aqi"];
             document.getElementById("aqi").style.color = decode_rgb(result["pm2_5_aqic"]);
           #end if
