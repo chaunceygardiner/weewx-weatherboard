@@ -41,7 +41,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata).
 
 1. Edit weewx.conf, in the `[[LoopData]]` section:
-   1. Set the `target_report` to `WeatherBoardReport`
+   1. In the LoopData section of weewx.conf, set the `target_report` to `WeatherBoardReport`
 
       `target_report = WeatherBoardReport`
 
@@ -86,12 +86,14 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
         enable = true
         skin = WeatherBoard
         [[[Extras]]]
+            title = WeatherBoard&mdash;my-weather-website.com
+            subtitle = Updated continuously
             loop_data_file = ../loop-data.txt
-            contact_email = john@doe.com
+            contact_email = weatherguy@my-weather-website.com
+            expiration_time = 4
             page_update_pwd = foobar
             googleAnalyticsId = ""
             analytics_host = ""
-            expiration_time = 4
             show_purple = False
         [[[Units]]]
             [[[[StringFormats]]]]
@@ -102,9 +104,9 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 ```
 
 1. Edit the `Extras` section of the `WeatherBoard` section of `weewx.conf`.
-   Update the `loop_data_file`, `contact_email` and `page_udpate_pwd` as to
-   appropriate values.  (Note: the `page_update_pwd` is used on the URL in order
-   to keep WeatherBoard from timing out.
+   Update the `title`, `subtitle`, `loop_data_file`, `contact_email` and
+   `page_udpate_pwd` as to appropriate values.  (Note: the `page_update_pwd` is
+   used on the URL in order to keep WeatherBoard from timing out.)
 
 1. If you with to wire up Google Analytics, fill in `googleAnalyticsId` and, optionally,
    `analytics_host`.
