@@ -12,7 +12,7 @@
     <link rel="stylesheet" type="text/css" href="weatherboard.css"/>
       <title>$station.location Weather&mdash;$Extras.title</title>
     #else
-      <title>$station.location Weather&mdash;Weatherboard (Weather Dashboard)&mdash;PaloAltoWeather.com</title>
+      <title>$station.location Weather&mdash;WeatherBoard&mdash;Current Weather</title>
     #end if
     <style>
       #centered {
@@ -34,7 +34,7 @@
         #if $Extras.has_key('subtitle')
           <p class="lastupdate" style="font-style:italic;">&quot;$Extras.subtitle&quot;</p>
         #else
-          <p class="lastupdate" style="font-style:italic;">&quot;Fill in a subtitle in skin.conf.&quot;</p>
+          <p class="lastupdate" style="font-style:italic;">&quot;Updated continuously.&quot;</p>
         #end if
       </div>
     </div>

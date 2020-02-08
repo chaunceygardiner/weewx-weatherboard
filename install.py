@@ -22,8 +22,10 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'enable': 'true',
                         'skin':'WeatherBoard',
                         'Extras': {
+                            'title'            : 'WeatherBoard&mdash;my-weather-website.com',
+                            'subtitle'         : 'Updated continuously.',
                             'loop_data_file'   : '../loop-data.txt',
-                            'contact_email'    : 'john@doe.com',
+                            'contact_email'    : 'weatherguy@my-weather-website.com',
                             'expiration_time'  : 4,
                             'page_update_pwd'  : 'foobar',
                             'googleAnalyticsId': '',
