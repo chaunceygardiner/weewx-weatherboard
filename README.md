@@ -86,7 +86,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
         enable = true
         skin = WeatherBoard
         [[[Extras]]]
-            title = WeatherBoard&mdash;my-weather-website.com
+            title = my-weather-website.com WeatherBoard&trade;
             subtitle = Updated continuously
             loop_data_file = ../loop-data.txt
             contact_email = weatherguy@my-weather-website.com

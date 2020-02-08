@@ -10,9 +10,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     #if $Extras.has_key('title')
     <link rel="stylesheet" type="text/css" href="weatherboard.css"/>
-      <title>$station.location Weather&mdash;$Extras.title</title>
+      <title>$Extras.title&mdash;$station.location</title>
     #else
-      <title>$station.location Weather&mdash;WeatherBoard&mdash;Current Weather</title>
+      <title>WeatherBoard&trade;&mdash;$station.location</title>
     #end if
     <style>
       #centered {
@@ -27,9 +27,9 @@
     <div id="title_bar" style="background-color:gray;color:white;border:none;">
       <div id="title">
         #if $Extras.has_key('title')
-          <h1 class="page_title">$station.location &mdash; $Extras.title</h1>
+          <h1 class="page_title">$Extras.title&mdash;$station.location</h1>
         #else
-          <h1 class="page_title">$station.location &mdash; Fill in a title in skin.conf.</h1>
+          <h1 class="page_title">WeatherBoard&trade;&mdash;$station.location</h1>
         #end if
         #if $Extras.has_key('subtitle')
           <p class="lastupdate" style="font-style:italic;">&quot;$Extras.subtitle&quot;</p>
