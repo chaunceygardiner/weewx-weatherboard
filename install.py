@@ -28,7 +28,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             'page_update_pwd'  : 'foobar',
                             'googleAnalyticsId': '',
                             'analytics_host'   : '',
-                            'show_purple'      : 'True',
+                            'show_purple'      : False,
                         },
                         'Units' : {
                             'StringFormats': {
