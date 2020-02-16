@@ -88,6 +88,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
         [[[Extras]]]
             title = my-weather-website.com WeatherBoard&trade;
             subtitle = Updated continuously
+            logo = ""
             loop_data_file = ../loop-data.txt
             contact_email = weatherguy@my-weather-website.com
             expiration_time = 4
@@ -107,6 +108,8 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    Update the `title`, `subtitle`, `loop_data_file`, `contact_email` and
    `page_udpate_pwd` as to appropriate values.  (Note: the `page_update_pwd` is
    used on the URL in order to keep WeatherBoard from timing out.)
+
+1. If your site has a logo (image file), update `logo` with the path to the image.
 
 1. If you with to wire up Google Analytics, fill in `googleAnalyticsId` and, optionally,
    `analytics_host`.

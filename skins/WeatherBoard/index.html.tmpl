@@ -26,16 +26,27 @@
     #include "realtime_updater.inc"
     <div id="title_bar" style="background-color:gray;color:white;border:none;">
       <div id="title">
-        #if $Extras.has_key('title')
-          <h1 class="page_title">$Extras.title&mdash;$station.location</h1>
-        #else
-          <h1 class="page_title">WeatherBoard&trade;&mdash;$station.location</h1>
-        #end if
-        #if $Extras.has_key('subtitle')
-          <p class="lastupdate" style="font-style:italic;">$Extras.subtitle</p>
-        #else
-          <p class="lastupdate" style="font-style:italic;">Updated continuously.</p>
-        #end if
+        <table>
+          <tr>
+            #if $Extras.has_key('logo') and $Extras.logo != ''
+              <td>
+                <img src='$Extras.logo' alt='' height="50"/>
+              </td>
+            #end if
+            <td>
+              #if $Extras.has_key('title')
+                <h1 class="page_title">$Extras.title&mdash;$station.location</h1>
+              #else
+                <h1 class="page_title">WeatherBoard&trade;&mdash;$station.location</h1>
+              #end if
+              #if $Extras.has_key('subtitle')
+                <p class="lastupdate" style="font-style:italic;">$Extras.subtitle</p>
+              #else
+                <p class="lastupdate" style="font-style:italic;">Updated continuously.</p>
+              #end if
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
 

@@ -24,6 +24,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'Extras': {
                             'title'            : 'my-weather-website.com WeatherBoard&trade;',
                             'subtitle'         : 'Updated continuously.',
+                            'logo'             : '',
                             'loop_data_file'   : '../loop-data.txt',
                             'contact_email'    : 'weatherguy@my-weather-website.com',
                             'expiration_time'  : 4,
