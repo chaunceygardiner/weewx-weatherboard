@@ -102,7 +102,7 @@
           var age = Math.round(Math.abs(new Date() - lastUpdate) / 1000);
           var element = document.getElementById("live-label");
           element.style.fontWeight = "bolder";
-          element.style.color = "#1be5dd";
+          element.style.color = "#e51b23";
           if (age <= 6) {
             element.innerHTML = "&nbsp;LIVE&nbsp;";
           } else {
