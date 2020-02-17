@@ -8,8 +8,8 @@
   <head>
     #include "analytics.inc"
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    #if $Extras.has_key('title')
     <link rel="stylesheet" type="text/css" href="weatherboard.css"/>
+    #if $Extras.has_key('title')
       <title>$Extras.title&mdash;$station.location</title>
     #else
       <title>WeatherBoard&trade;&mdash;$station.location</title>
@@ -24,26 +24,31 @@
 
   <body style="background-color:black;">
     #include "realtime_updater.inc"
-    <div id="title_bar" style="background-color:gray;color:white;border:none;">
-      <div id="title">
-        <table>
+    <div style="background-color:black;color:white;border-bottom:1px;">
+      <div>
+        <table id="centered">
           <tr>
             #if $Extras.has_key('logo') and $Extras.logo != ''
-              <td>
-                <img src='$Extras.logo' alt='' height="50"/>
+              <td style="text-align:left;">
+                <img src='$Extras.logo' alt='' width="150"/>
               </td>
             #end if
-            <td>
-              #if $Extras.has_key('title')
-                <h1 class="page_title">$Extras.title&mdash;$station.location</h1>
-              #else
-                <h1 class="page_title">WeatherBoard&trade;&mdash;$station.location</h1>
-              #end if
+            <td style="text-align:center;">
+              <h1 class="page_title">
+                #if $Extras.has_key('title')
+                  $Extras.title&mdash;$station.location
+                #else
+                  WeatherBoard&trade;&mdash;$station.location
+                #end if
+              </h1>
               #if $Extras.has_key('subtitle')
-                <p class="lastupdate" style="font-style:italic;">$Extras.subtitle</p>
+                <span class="lastupdate">$Extras.subtitle</span>
               #else
-                <p class="lastupdate" style="font-style:italic;">Updated continuously.</p>
+                <span class="lastupdate">Updated continuously.</span>
               #end if
+            </td>
+            <td style="text-align:right;width:150px;">
+              <span id="live-label"></span>
             </td>
           </tr>
         </table>
@@ -51,8 +56,6 @@
     </div>
 
     <div>
-      <p style="margin-left:20px;" id="live-label"></p>
-
       <div>
         <div>
           <div>
