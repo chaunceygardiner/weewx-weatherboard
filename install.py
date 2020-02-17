@@ -47,6 +47,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
             files = [('skins/WeatherBoard', [
                 'skins/WeatherBoard/analytics.inc',
                 'skins/WeatherBoard/contact.inc',
+                'skins/WeatherBoard/favicon.ico',
                 'skins/WeatherBoard/footer.inc',
                 'skins/WeatherBoard/index.html.tmpl',
                 'skins/WeatherBoard/realtime_updater.inc',
