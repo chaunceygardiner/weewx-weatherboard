@@ -25,30 +25,32 @@
 
   <body style="background-color:black;">
     #include "realtime_updater.inc"
-    <div style="background-color:black;color:#e51b23;border-bottom:1px;">
+    <div style="background-color:black;color:#e51b23;">
       <div>
         <table id="centered">
           <tr>
             #if $Extras.has_key('logo') and $Extras.logo != ''
               <td style="text-align:left;">
-                <img src='$Extras.logo' alt='' width="150"/>
+                <img src='$Extras.logo' alt='' width="200"/>
               </td>
             #end if
             <td style="text-align:center;">
-              <h1 class="page_title">
+              <h1 class="page_title" style="font-size:28px;">
                 #if $Extras.has_key('title')
                   $Extras.title&mdash;$station.location
                 #else
                   WeatherBoard&trade;&mdash;$station.location
                 #end if
               </h1>
-              #if $Extras.has_key('subtitle')
-                <span class="lastupdate">$Extras.subtitle</span>
-              #else
-                <span class="lastupdate">Updated continuously.</span>
-              #end if
+              <span class="lastupdate" style="font-size:18px;">
+                #if $Extras.has_key('subtitle')
+                  $Extras.subtitle
+                #else
+                  Updated continuously.
+                #end if
+              </span>
             </td>
-            <td style="text-align:right;width:150px;">
+            <td style="text-align:right;width:200px;">
               <span id="live-label"></span><br/>&nbsp;
             </td>
           </tr>
