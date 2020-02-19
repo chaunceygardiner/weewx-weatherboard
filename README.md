@@ -7,10 +7,10 @@ WeatherBoard displays a small set of critical weather information that is easy t
 accross the room.
 
 * Wind sound ferocious?
-  ** Check the WeatherBoard to see how fast it is gusting.
+  * Check the WeatherBoard to see how fast it is gusting.
 
 * Rain coming down hard?
-  ** Check the the current rate of rainfall (and today's total).
+  * Check the WeatherBoard for the current rate of rainfall and today's total rain.
 
 ## Description
 
