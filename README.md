@@ -6,12 +6,11 @@ It's perfect to display continuously on a low-cost tablet mounted on the wall.
 WeatherBoard displays a small set of critical weather information that is easy to read from
 accross the room.
 
-* Hear the wind?
-  Check the realtime display to say how it is gusting?
+* Wind sound ferocious?
+  ** Check the WeatherBoard to see how fast it is gusting.
 
 * Rain coming down hard?
-  Check the rainfall today and the current rate of rainfall.
-
+  ** Check the the current rate of rainfall (and today's total).
 
 ## Description
 
