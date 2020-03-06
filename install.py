@@ -22,6 +22,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'enable': 'true',
                         'skin':'WeatherBoard',
                         'Extras': {
+                            'meta_title'       : 'my-weather-website.com Weather at a Glance WeatherBoard&trade;',
                             'title'            : 'my-weather-website.com WeatherBoard&trade;',
                             'subtitle'         : 'Updated continuously.',
                             'logo'             : '',
