@@ -1,5 +1,16 @@
 # weewx-weatherboard
-WeatherBoard&trade; is a skin for WeeWX inspired by the RainWise LED Weather Oracle display
+WeatherBoard&trade; is a skin for WeeWX inspired by the RainWise LED Weather Oracle display.
+
+It's perfect to display continuously on a low-cost tablet mounted on the wall.
+
+WeatherBoard displays a small set of critical weather information that is easy to read from
+accross the room.
+
+* Wind sound ferocious?
+  * Check the WeatherBoard to see how fast it is gusting.
+
+* Rain coming down hard?
+  * Check the WeatherBoard for the current rate of rainfall and today's total rain.
 
 ## Description
 
