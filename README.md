@@ -37,7 +37,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 ![WeatherBoard (no AQI) screen shot](WeatherBoard_no_aqi.png)
 
 ## Additional Requirements
-* [WeeWX 4.x](https://github.com/weewx/weewx) (Currently in beta.)
+* [WeeWX 4.x](https://github.com/weewx/weewx)
 * [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
 * Python 3 (because weewx-loopdata requires Python 3).
 
