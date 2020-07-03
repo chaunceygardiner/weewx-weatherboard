@@ -61,7 +61,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
        * `dateTime`
        * `COMPASS_windDir`
-       * `FMT_day_rain_total`
+       * `FMT_SUM_rain
        * `FMT_dewpoint`
        * `FMT_outTemp`
        * `FMT_rainRate`

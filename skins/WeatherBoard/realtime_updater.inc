@@ -179,7 +179,7 @@
           document.getElementById("FMT_rainRate").innerHTML = result["FMT_rainRate"];
 
           // rain fall
-          document.getElementById("FMT_day_rain_total").innerHTML = result["FMT_day_rain_total"];
+          document.getElementById("FMT_SUM_rain").innerHTML = result["FMT_SUM_rain"];
 
           // aqi
           #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')

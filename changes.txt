@@ -1,0 +1,10 @@
+weatherboard change history
+---------------------------
+
+1.1 07/02/2020
+
+Use SUM_rain rather than rain_day_total as many drivers don't emit day_rain_total.
+
+1.0 01/21/2020
+
+Initial release of weatherboard.
