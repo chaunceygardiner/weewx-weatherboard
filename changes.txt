@@ -1,6 +1,11 @@
 weatherboard change history
 ---------------------------
 
+1.2 07/07/2020
+
+Use default labels where possible so that translation are used in then legend.
+Add generic labels in skin.conf so custom strings can be overridden in weewx.conf with translations.
+
 1.1 07/02/2020
 
 Use SUM_rain rather than rain_day_total as many drivers don't emit day_rain_total.

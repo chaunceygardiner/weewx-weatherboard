@@ -12,16 +12,16 @@
           <table style="width:95%;">
             <tr>
               <td id="debug_info" style="width:26%;text-align:left;">
-                Temperature - Dew Point<br/>
-                Wind Speed &amp; Direction<br/>
-                10m Gust - Today's High Gust<br/>
+                $obs.label.outTemp - $obs.label.dewpoint<br/>
+                $obs.label.windSpeed &amp; $obs.label.windDir<br/>
+                $obs.label.ten_min_max_gust - $obs.label.high_gust_today<br/>
 ## FIXME: Convert show_purple to boolean.
 #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'True' or $Extras.show_purple == 'true')
-                Rain Fall Today - Rain Rate<br/>
-                <span style="border-top:1px solid;">Legend - Air Quality Index - Time</span><br/>
+                $obs.label.rain_today - $obs.label.rainRate<br/>
+                <span style="border-top:1px solid;">$obs.label.legend - $obs.label.air_quality_index - $obs.label.time_of_day</span><br/>
 #else
-                <span style="border-bottom:1px solid;">Rain Fall Today - Rain Rate</span><br/>
-                Legend - Time<br/>
+                <span style="border-bottom:1px solid;">$obs.label.rain_today - $obs.label.rainRate</span><br/>
+                $obs.label.legend - $obs.label.time_of_day<br/>
 #end if
                 #include "contact.inc"
               </td>

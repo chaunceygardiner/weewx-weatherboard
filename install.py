@@ -10,7 +10,7 @@ def loader():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "1.1",
+            version = "1.2",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
