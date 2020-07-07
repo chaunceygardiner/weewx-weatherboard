@@ -10,7 +10,7 @@ def loader():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "1.2",
+            version = "1.3",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -33,6 +33,17 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             'googleAnalyticsId': '',
                             'analytics_host'   : '',
                             'show_purple'      : False,
+                        },
+                        'Labels': {
+                            'Generic': {
+                                'air_quality_index': 'Air Quality Index',
+                                'contact'          : 'Contact',
+                                'legend'           : 'Legend',
+                                'rain_today'       : 'Rain Today',
+                                'ten_min_max_gust' : '10m Gust',
+                                'time_of_day'      : 'Time',
+                                'high_gust_today'  : "Today's High Gust",
+                            },
                         },
                         'Units' : {
                             'StringFormats': {
