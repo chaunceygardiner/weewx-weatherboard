@@ -2,4 +2,4 @@
 ## Distributed under the terms of the GNU Public License (GPLv3)
 ## See LICENSE for your rights.
 
-      Contact: <a href="mailto:$Extras.contact_email" style="color:red;">$Extras.contact_email</a>
+      $obs.label.contact: <a href="mailto:$Extras.contact_email" style="color:red;">$Extras.contact_email</a>
