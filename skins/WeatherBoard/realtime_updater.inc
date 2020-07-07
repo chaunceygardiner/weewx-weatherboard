@@ -123,13 +123,13 @@
           document.getElementById("FMT_outTemp").innerHTML = temp;
 
           // dew point
-          var dew = result["FMT_dewpoint"];
+          var dew = result["FMT_appTemp"];
           if (dew.length == 5) {
             dew = "&nbsp;&nbsp;" + dew;
           } else if (dew.length == 6) {
             dew = "&nbsp;" + dew;
           }
-          document.getElementById("FMT_dewpoint").innerHTML = dew;
+          document.getElementById("FMT_appTemp").innerHTML = dew;
 
           // wind speed and bearing
           var windSpeed = result["FMT_windSpeed"];

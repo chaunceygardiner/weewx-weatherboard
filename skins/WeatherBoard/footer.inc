@@ -12,7 +12,7 @@
           <table style="width:95%;">
             <tr>
               <td id="debug_info" style="width:26%;text-align:left;">
-                Temperature - Dew Point<br/>
+                Temperature - App Temp<br/>
                 Wind Speed &amp; Direction<br/>
                 10m Gust - Today's High Gust<br/>
 ## FIXME: Convert show_purple to boolean.
