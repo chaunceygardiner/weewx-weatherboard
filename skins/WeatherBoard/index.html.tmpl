@@ -71,22 +71,22 @@
           <div style="color:red;">
             <table id="centered">
               <tr>
-		<td style="text-align:center;font-family:monospace;font-size:105px">
-                	<span id="FMT_outTemp">$current.outTemp</span><span>&nbsp;</span><span id="FMT_dewpoint">$current.dewpoint</span>
-		</td>
+                <td style="text-align:center;font-family:monospace;font-size:105px">
+                  <span id="current.outTemp">$current.outTemp</span><span>&nbsp;</span><span id="current.dewpoint">$current.dewpoint</span>
+              </td>
               </tr>
               <tr>
                 <td id="windSpeedAndBearing" style="font-family:monospace;font-size:105px;text-align:center;">$current.windSpeed $current.windDir.ordinal_compass</td>
               </tr>
               <tr>
                 <td style="font-family:monospace;font-size:105px;text-align:center;">
-                	<span id="FMT_10mMaxGust"></span><span>/</span><span id="FMT_HI_windGust"></span>
+                  <span id="10m.windGust.max"></span><span>/</span><span id="day.windGust.max"></span>
                 </td>
               </tr>
               <tr>
-		<td style="text-align:center;font-family:monospace;font-size:85px;">
-                        <span id="FMT_SUM_rain">$day.rain.sum</span><span>&nbsp;</span><span id="FMT_rainRate">$current.rainRate</span>
-		</td>
+                <td style="text-align:center;font-family:monospace;font-size:85px;">
+                        <span id="day.rain.sum">$day.rain.sum</span><span>&nbsp;</span><span id="current.rainRate">$current.rainRate</span>
+                </td>
               </tr>
             </table>
           </div>

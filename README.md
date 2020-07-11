@@ -39,7 +39,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 ## Additional Requirements
 * [WeeWX 4.x](https://github.com/weewx/weewx)
 * [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
-* Python 3 (because weewx-loopdata requires Python 3).
+* Python 3.7 (because weewx-loopdata requires Python 3.7).
 
 ## Additional Requirements for Air Quality Indictator (AQI) Readings on the Report
 * [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
@@ -59,18 +59,18 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    1. In the  LoopData section of weewx.conf, add the following fields if they
    are not already listed (these are the fields needed for the WeatherBoard&trade; skin):
 
-       * `dateTime`
-       * `COMPASS_windDir`
-       * `FMT_SUM_rain
-       * `FMT_dewpoint`
-       * `FMT_outTemp`
-       * `FMT_rainRate`
-       * `FMT_windSpeed`
-       * `FMT_HI_windGust`
-       * `FMT_10mMaxGust`
-       * `windSpeed`
-       * `pm2_5_aqi`  <- If PurpleAir sensor and weewx-purple-proxy installed.
-       * `pm2_5_aqic` <- If PurpleAir sensor and weewx-purple-proxy installed.
+       * `$current.dateTime.raw`
+       * `$current.windDir.ordinal_compass`
+       * `$day.rain.sum
+       * `$current.dewpoint`
+       * `$current.outTemp`
+       * `$current.rainRate`
+       * `$current.windSpeed`
+       * `$current.windSpeed.formatted`
+       * `$10m.windGust.max
+       * `$day.windGust.max`
+       * `$current.pm2_5_aqi`  <- If PurpleAir sensor and weewx-purple-proxy installed.
+       * `$current.pm2_5_aqic` <- If PurpleAir sensor and weewx-purple-proxy installed.
 
 1. If the installation has a PurpleAir sensor, install [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
 
