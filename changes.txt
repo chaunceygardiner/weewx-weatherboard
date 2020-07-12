@@ -1,7 +1,10 @@
 weatherboard change history
 ---------------------------
 
-2.0.b1 07/11/2020
+2.0.b3 07/11/2020
+1. More of handling missing observations in loop-data.txt.
+
+2.0.b2 07/11/2020
 1. Better handling of missing observations in loop-data.txt.
 2. Note: required loop-data.txt fields have changed.
    Now need current.windSpeed.raw (not current.windSpeed.formatted).

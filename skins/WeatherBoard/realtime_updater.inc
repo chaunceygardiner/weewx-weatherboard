@@ -114,7 +114,7 @@
           activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
 
           // temp
-          try {
+          if (result.hasOwnProperty("current.outTemp")) {
             var temp = result["current.outTemp"];
             if (temp.length == 5) {
               temp = "&nbsp;&nbsp;" + temp;
@@ -122,11 +122,11 @@
               temp = "&nbsp;" + temp;
             }
             document.getElementById("current.outTemp").innerHTML = temp;
-          } catch (e) {
+          } else {
             document.getElementById("current.outTemp").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          try {
+          if (result.hasOwnProperty("current.dewpoint")) {
             // dew point
             var dew = result["current.dewpoint"];
             if (dew.length == 5) {
@@ -135,11 +135,11 @@
               dew = "&nbsp;" + dew;
             }
             document.getElementById("current.dewpoint").innerHTML = dew;
-          } catch (e) {
+          } else {
             document.getElementById("current.dewpoint").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          try {
+          if (result.hasOwnProperty("current.windSpeed")) {
             // wind speed and bearing
             var windSpeed = result["current.windSpeed"];
             if (windSpeed.length == 7) {
@@ -147,9 +147,11 @@
             } else if (windSpeed.length == 8) {
               windSpeed = "&nbsp;" + windSpeed;
             }
-            windBearing = "";
+            var windBearing = "";
             if (result["current.windSpeed.raw"] != 0.0) {
-              var windBearing = result["current.windDir.ordinal_compass"];
+              if (result.hasOwnProperty("current.windDir.ordinal_compass")) {
+                windBearing = result["current.windDir.ordinal_compass"];
+              }
             }
             if (windBearing.length == 0) {
               windBearing = "&nbsp;&nbsp;&nbsp;";
@@ -159,11 +161,11 @@
               windBearing = windBearing + "&nbsp;";
             }
             document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
-          } catch (e) {
+          } else {
             document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          try {
+          if (result.hasOwnProperty("10m.windGust.max")) {
             // wind gust (10m gust)
             var windGust10m = result["10m.windGust.max"];
             // This yeilds 9.9 mph.   We need to lose the " mph".
@@ -176,11 +178,11 @@
               windGust10m = "&nbsp;" + windGust10m;
             }
             document.getElementById("10m.windGust.max").innerHTML = windGust10m;
-          } catch (e) {
+          } else {
             document.getElementById("10m.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          try {
+          if (result.hasOwnProperty("day.windGust.max")) {
             // wind gust (today)
             var windGustTM = result["day.windGust.max"];
             if (windGustTM.length == 5) {
@@ -191,31 +193,31 @@
               windGustTM = "&nbsp;" + windGustTM;
             }
             document.getElementById("day.windGust.max").innerHTML = windGustTM;
-          } catch (e) {
+          } else {
             document.getElementById("day.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          try {
+          if (result.hasOwnProperty("current.rainRate")) {
             // rain rate
             document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
-          } catch (e) {
+          } else {
             document.getElementById("current.rainRate").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          try {
+          if (result.hasOwnProperty("day.rain.sum")) {
             // rain fall
             document.getElementById("day.rain.sum").innerHTML = result["day.rain.sum"];
-          } catch (e) {
+          } else {
             document.getElementById("day.rain.sum").innerHTML = '';
           }
 
           // aqi
           #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-            try {
+            if (result.hasOwnProperty("current.pm2_5_aqi.raw")) {
               document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.raw"];
+            }
+            if (result.hasOwnProperty("current.pm2_5_aqic.raw")) {
               document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqic.raw"]);
-            } catch (e) {
-              document.getElementById("aqi").innerHTML = '&nbsp;&nbsp;';
             }
           #end if
         }
