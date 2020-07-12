@@ -59,18 +59,18 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    1. In the  LoopData section of weewx.conf, add the following fields if they
    are not already listed (these are the fields needed for the WeatherBoard&trade; skin):
 
-       * `$current.dateTime.raw`
-       * `$current.windDir.ordinal_compass`
-       * `$day.rain.sum
-       * `$current.dewpoint`
-       * `$current.outTemp`
-       * `$current.rainRate`
-       * `$current.windSpeed`
-       * `$current.windSpeed.formatted`
-       * `$10m.windGust.max
-       * `$day.windGust.max`
-       * `$current.pm2_5_aqi`  <- If PurpleAir sensor and weewx-purple-proxy installed.
-       * `$current.pm2_5_aqic` <- If PurpleAir sensor and weewx-purple-proxy installed.
+       * `current.dateTime.raw`
+       * `current.windDir.ordinal_compass`
+       * `day.rain.sum
+       * `current.dewpoint`
+       * `current.outTemp`
+       * `current.rainRate`
+       * `current.windSpeed`
+       * `current.windSpeed.raw`
+       * `10m.windGust.max
+       * `day.windGust.max`
+       * `current.pm2_5_aqi.raw`  <- If PurpleAir sensor and weewx-purple-proxy installed.
+       * `current.pm2_5_aqic.raw` <- If PurpleAir sensor and weewx-purple-proxy installed.
 
 1. If the installation has a PurpleAir sensor, install [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
 

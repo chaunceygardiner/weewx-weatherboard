@@ -114,77 +114,109 @@
           activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
 
           // temp
-          var temp = result["current.outTemp"];
-          if (temp.length == 5) {
-            temp = "&nbsp;&nbsp;" + temp;
-          } else if (temp.length == 6) {
-            temp = "&nbsp;" + temp;
+          try {
+            var temp = result["current.outTemp"];
+            if (temp.length == 5) {
+              temp = "&nbsp;&nbsp;" + temp;
+            } else if (temp.length == 6) {
+              temp = "&nbsp;" + temp;
+            }
+            document.getElementById("current.outTemp").innerHTML = temp;
+          } catch (e) {
+            document.getElementById("current.outTemp").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
-          document.getElementById("current.outTemp").innerHTML = temp;
 
-          // dew point
-          var dew = result["current.dewpoint"];
-          if (dew.length == 5) {
-            dew = "&nbsp;&nbsp;" + dew;
-          } else if (dew.length == 6) {
-            dew = "&nbsp;" + dew;
+          try {
+            // dew point
+            var dew = result["current.dewpoint"];
+            if (dew.length == 5) {
+              dew = "&nbsp;&nbsp;" + dew;
+            } else if (dew.length == 6) {
+              dew = "&nbsp;" + dew;
+            }
+            document.getElementById("current.dewpoint").innerHTML = dew;
+          } catch (e) {
+            document.getElementById("current.dewpoint").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
-          document.getElementById("current.dewpoint").innerHTML = dew;
 
-          // wind speed and bearing
-          var windSpeed = result["current.windSpeed"];
-          if (windSpeed.length == 7) {
-            windSpeed = "&nbsp;&nbsp;" + windSpeed;
-          } else if (windSpeed.length == 8) {
-            windSpeed = "&nbsp;" + windSpeed;
-          }
-          var windBearing = result["current.windDir.ordinal_compass"];
-          if (result["current.windSpeed.formatted"] == 0.0) {
+          try {
+            // wind speed and bearing
+            var windSpeed = result["current.windSpeed"];
+            if (windSpeed.length == 7) {
+              windSpeed = "&nbsp;&nbsp;" + windSpeed;
+            } else if (windSpeed.length == 8) {
+              windSpeed = "&nbsp;" + windSpeed;
+            }
             windBearing = "";
+            if (result["current.windSpeed.raw"] != 0.0) {
+              var windBearing = result["current.windDir.ordinal_compass"];
+            }
+            if (windBearing.length == 0) {
+              windBearing = "&nbsp;&nbsp;&nbsp;";
+            } else if (windBearing.length == 1) {
+              windBearing = windBearing + "&nbsp;&nbsp;";
+            } else if (windBearing.length == 2) {
+              windBearing = windBearing + "&nbsp;";
+            }
+            document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
+          } catch (e) {
+            document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
-          if (windBearing.length == 0) {
-            windBearing = "&nbsp;&nbsp;&nbsp;";
-          } else if (windBearing.length == 1) {
-            windBearing = windBearing + "&nbsp;&nbsp;";
-          } else if (windBearing.length == 2) {
-            windBearing = windBearing + "&nbsp;";
+
+          try {
+            // wind gust (10m gust)
+            var windGust10m = result["10m.windGust.max"];
+            // This yeilds 9.9 mph.   We need to lose the " mph".
+            windGust10m = windGust10m.split(" ")[0]
+            if (windGust10m.length == 1) {
+              windGust10m = "&nbsp;&nbsp;&nbsp;" + windGust10m;
+            } else if (windGust10m.length == 2) {
+              windGust10m = "&nbsp;&nbsp;" + windGust10m;
+            } else if (windGust10m.length == 3) {
+              windGust10m = "&nbsp;" + windGust10m;
+            }
+            document.getElementById("10m.windGust.max").innerHTML = windGust10m;
+          } catch (e) {
+            document.getElementById("10m.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;';
           }
-          document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
 
-          // wind gust (10m gust)
-          var windGust10m = result["10m.windGust.max"];
-          // This yeilds 9.9 mph.   We need to lose the " mph".
-          windGust10m = windGust10m.split(" ")[0]
-          if (windGust10m.length == 1) {
-            windGust10m = "&nbsp;&nbsp;&nbsp;" + windGust10m;
-          } else if (windGust10m.length == 2) {
-            windGust10m = "&nbsp;&nbsp;" + windGust10m;
-          } else if (windGust10m.length == 3) {
-            windGust10m = "&nbsp;" + windGust10m;
+          try {
+            // wind gust (today)
+            var windGustTM = result["day.windGust.max"];
+            if (windGustTM.length == 5) {
+              windGustTM = "&nbsp;&nbsp;&nbsp;" + windGustTM;
+            } else if (windGustTM.length == 6) {
+              windGustTM = "&nbsp;&nbsp;" + windGustTM;
+            } else if (windGustTM.length == 7) {
+              windGustTM = "&nbsp;" + windGustTM;
+            }
+            document.getElementById("day.windGust.max").innerHTML = windGustTM;
+          } catch (e) {
+            document.getElementById("day.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
-          document.getElementById("10m.windGust.max").innerHTML = windGust10m;
 
-          // wind gust (today)
-          var windGustTM = result["day.windGust.max"];
-          if (windGustTM.length == 5) {
-            windGustTM = "&nbsp;&nbsp;&nbsp;" + windGustTM;
-          } else if (windGustTM.length == 6) {
-            windGustTM = "&nbsp;&nbsp;" + windGustTM;
-          } else if (windGustTM.length == 7) {
-            windGustTM = "&nbsp;" + windGustTM;
+          try {
+            // rain rate
+            document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
+          } catch (e) {
+            document.getElementById("current.rainRate").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;';
           }
-          document.getElementById("day.windGust.max").innerHTML = windGustTM;
 
-          // rain rate
-          document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
-
-          // rain fall
-          document.getElementById("day.rain.sum").innerHTML = result["day.rain.sum"];
+          try {
+            // rain fall
+            document.getElementById("day.rain.sum").innerHTML = result["day.rain.sum"];
+          } catch (e) {
+            document.getElementById("day.rain.sum").innerHTML = '';
+          }
 
           // aqi
           #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-            document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.raw"];
-            document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqic.raw"]);
+            try {
+              document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.raw"];
+              document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqic.raw"]);
+            } catch (e) {
+              document.getElementById("aqi").innerHTML = '&nbsp;&nbsp;';
+            }
           #end if
         }
       }
