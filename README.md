@@ -6,15 +6,17 @@ It's perfect to display continuously on a low-cost tablet mounted on the wall.
 WeatherBoard displays a small set of critical weather information that is easy to read from
 accross the room.
 
-* Wind sound ferocious?
+* Does the wind sound ferocious?
   * Check the WeatherBoard to see how fast it is gusting.
 
-* Rain coming down hard?
+* Is the rain coming down hard?
   * Check the WeatherBoard for the current rate of rainfall and today's total rain.
 
 ## Description
 
 Copyright (C)2020 by John A Kline (john@johnkline.com)
+
+**WeatherBoard 2.x requires LoopData 2.x.  It will not work with LoopData 1.x.**
 
 The WeatherBoard&trade; sking provides a simple one page skin that shows:
 * Current Outside Temperature
@@ -50,6 +52,8 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 # Installation Instructions
 
 1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata).
+   If you are upgrading to LoopData 2.x/WeatherBoard 2.x, it is important that
+   you follow the upgrade instructions in LoopData 2.x.
 
 1. Edit weewx.conf, in the `[[LoopData]]` section:
    1. In the LoopData section of weewx.conf, set the `target_report` to `WeatherBoardReport`
