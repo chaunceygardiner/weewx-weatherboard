@@ -6,15 +6,17 @@ It's perfect to display continuously on a low-cost tablet mounted on the wall.
 WeatherBoard displays a small set of critical weather information that is easy to read from
 accross the room.
 
-* Wind sound ferocious?
+* Does the wind sound ferocious?
   * Check the WeatherBoard to see how fast it is gusting.
 
-* Rain coming down hard?
+* Is the rain coming down hard?
   * Check the WeatherBoard for the current rate of rainfall and today's total rain.
 
 ## Description
 
 Copyright (C)2020 by John A Kline (john@johnkline.com)
+
+**WeatherBoard 2.x requires LoopData 2.x.  It will not work with LoopData 1.x.**
 
 The WeatherBoard&trade; sking provides a simple one page skin that shows:
 * Current Outside Temperature
@@ -39,7 +41,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 ## Additional Requirements
 * [WeeWX 4.x](https://github.com/weewx/weewx)
 * [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
-* Python 3 (because weewx-loopdata requires Python 3).
+* Python 3.7 (because weewx-loopdata requires Python 3.7).
 
 ## Additional Requirements for Air Quality Indictator (AQI) Readings on the Report
 * [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
@@ -50,6 +52,8 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 # Installation Instructions
 
 1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata).
+   If you are upgrading to LoopData 2.x/WeatherBoard 2.x, it is important that
+   you follow the upgrade instructions in LoopData 2.x.
 
 1. Edit weewx.conf, in the `[[LoopData]]` section:
    1. In the LoopData section of weewx.conf, set the `target_report` to `WeatherBoardReport`
@@ -59,18 +63,18 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    1. In the  LoopData section of weewx.conf, add the following fields if they
    are not already listed (these are the fields needed for the WeatherBoard&trade; skin):
 
-       * `dateTime`
-       * `COMPASS_windDir`
-       * `FMT_SUM_rain
-       * `FMT_dewpoint`
-       * `FMT_outTemp`
-       * `FMT_rainRate`
-       * `FMT_windSpeed`
-       * `FMT_HI_windGust`
-       * `FMT_10mMaxGust`
-       * `windSpeed`
-       * `pm2_5_aqi`  <- If PurpleAir sensor and weewx-purple-proxy installed.
-       * `pm2_5_aqic` <- If PurpleAir sensor and weewx-purple-proxy installed.
+       * `current.dateTime.raw`
+       * `current.windDir.ordinal_compass`
+       * `day.rain.sum
+       * `current.dewpoint`
+       * `current.outTemp`
+       * `current.rainRate`
+       * `current.windSpeed`
+       * `current.windSpeed.raw`
+       * `10m.windGust.max
+       * `day.windGust.max`
+       * `current.pm2_5_aqi.raw`  <- If PurpleAir sensor and weewx-purple-proxy installed.
+       * `current.pm2_5_aqic.raw` <- If PurpleAir sensor and weewx-purple-proxy installed.
 
 1. If the installation has a PurpleAir sensor, install [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
 
