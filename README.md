@@ -65,13 +65,13 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
        * `current.dateTime.raw`
        * `current.windDir.ordinal_compass`
-       * `day.rain.sum
+       * `day.rain.sum`
        * `current.dewpoint`
        * `current.outTemp`
        * `current.rainRate`
        * `current.windSpeed`
        * `current.windSpeed.raw`
-       * `10m.windGust.max
+       * `10m.windGust.max`
        * `day.windGust.max`
        * `current.pm2_5_aqi.raw`  <- If PurpleAir sensor and weewx-purple-proxy installed.
        * `current.pm2_5_aqic.raw` <- If PurpleAir sensor and weewx-purple-proxy installed.
