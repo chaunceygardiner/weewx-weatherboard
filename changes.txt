@@ -1,6 +1,10 @@
 weatherboard change history
 ---------------------------
 
+2.0.b4 07/21/2020
+1. Fixed incorrect HTML_ROOT default on install.
+2. Default for location of loopdata file is not the WeatherBoard directory.
+
 2.0.b3 07/11/2020
 1. More of handling missing observations in loop-data.txt.
 

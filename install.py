@@ -10,7 +10,7 @@ def loader():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "2.0.b3",
+            version = "2.0.b4",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -18,7 +18,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
             config = {
                 'StdReport': {
                     'WeatherBoardReport': {
-                        'HTML_ROOT':'public_html/weatherboard',
+                        'HTML_ROOT':'weatherboard',
                         'enable': 'true',
                         'skin':'WeatherBoard',
                         'Extras': {
@@ -26,7 +26,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             'title'            : 'my-weather-website.com WeatherBoard&trade;',
                             'subtitle'         : 'Updated continuously.',
                             'logo'             : '',
-                            'loop_data_file'   : '../loop-data.txt',
+                            'loop_data_file'   : 'loop-data.txt',
                             'contact_email'    : 'weatherguy@my-weather-website.com',
                             'expiration_time'  : 4,
                             'page_update_pwd'  : 'foobar',
