@@ -51,47 +51,26 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
 # Installation Instructions
 
-1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata).
-   If you are upgrading to LoopData 2.x/WeatherBoard 2.x, it is important that
-   you follow the upgrade instructions in LoopData 2.x.
+1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
+   per the installagtion instructions in the weewx-loopdata README.
 
-1. Edit weewx.conf, in the `[[LoopData]]` section:
-   1. In the LoopData section of weewx.conf, set the `target_report` to `WeatherBoardReport`
+1. Conveniently, the loopdata install defaults to `WeatherBoardReport` in
+   the `weewx.conf` `[[LoopData]]` section and add the fields needed for
+   WeatherBoard report.  As such you probably won't need to make the following
+   changes:
+      `[[LoopData]]`
+          `target_report = WeatherBoardReport`
+          `fields = current.dateTime.raw, current.windDir.ordinal_compass, day.rain.sum, current.dewpoint, current.outTemp, current.rainRate, current.windSpeed, current.windSpeed.raw, 10m.windGust.max, day.windGust.max`
 
-      `target_report = WeatherBoardReport`
+1. Download the lastest release, weewx-weatherboard-2.0.zip, from the
+   [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard).
 
-   1. In the  LoopData section of weewx.conf, add the following fields if they
-   are not already listed (these are the fields needed for the WeatherBoard&trade; skin):
+1. Run the following command.
 
-       * `current.dateTime.raw`
-       * `current.windDir.ordinal_compass`
-       * `day.rain.sum`
-       * `current.dewpoint`
-       * `current.outTemp`
-       * `current.rainRate`
-       * `current.windSpeed`
-       * `current.windSpeed.raw`
-       * `10m.windGust.max`
-       * `day.windGust.max`
-       * `current.pm2_5_aqi.raw`  <- If PurpleAir sensor and weewx-purple-proxy installed.
-       * `current.pm2_5_aqic.raw` <- If PurpleAir sensor and weewx-purple-proxy installed.
+   `sudo /home/weewx/bin/wee_extension --install weewx-weatherboard-2.0.zip`
 
-1. If the installation has a PurpleAir sensor, install [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
-
-1. If the installation has a PurpleAir sensor, to display AQI Averages over the report
-   interval and to catchup on AQI Readings when WeeWX starts, optionally install
-   [purple-proxy](https://github.com/chaunceygardiner/purple-proxy).
-
-1. Install this skin:
-
-   1. cd to the directory where this extension was downloaded.
-
-      `cd ~/software/weewx-weatherboard`
-
-   1. Execute the following command:
-       `sudo /home/weewx/bin/wee_extension --install .`
-
-       (Assumes WeeWX is installed at /home/weewx.  Adjust accordingly.)
+   Note: this command assumes weewx is installed in /home/weewx.  If it's installed
+   elsewhere, adjust the path of wee_extension accordingly.
 
 1. The install creates the following section in `weewx.conf`.
 
@@ -128,11 +107,6 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
 1. If you with to wire up Google Analytics, fill in `googleAnalyticsId` and, optionally,
    `analytics_host`.
-
-1. If a PurpleAir air quality sensor is installed and the
-   [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
-   extension is installed, change `show_purple` in the `Extras`
-   section to `True`.
 
 1. Restart WeeWx
 
