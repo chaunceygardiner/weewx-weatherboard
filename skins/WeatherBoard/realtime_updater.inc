@@ -213,8 +213,8 @@
 
           // aqi
           #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-            if (result.hasOwnProperty("current.pm2_5_aqi.raw")) {
-              document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.raw"];
+            if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+              document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"];
             }
             if (result.hasOwnProperty("current.pm2_5_aqic.raw")) {
               document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqic.raw"]);
