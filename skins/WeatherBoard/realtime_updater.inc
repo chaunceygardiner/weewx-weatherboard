@@ -216,8 +216,8 @@
             if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
               document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"];
             }
-            if (result.hasOwnProperty("current.pm2_5_aqic.raw")) {
-              document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqic.raw"]);
+            if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+              document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
             }
           #end if
         }
