@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU Public License (GPLv3)
 # See LICENSE for your rights.
 
+import sys
+import weewx
 from setup import ExtensionInstaller
 
 def loader():
