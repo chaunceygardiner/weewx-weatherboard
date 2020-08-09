@@ -63,7 +63,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
           `target_report = WeatherBoardReport`
           `fields = current.dateTime.raw, current.windDir.ordinal_compass, day.rain.sum, current.dewpoint, current.outTemp, current.rainRate, current.windSpeed, current.windSpeed.raw, 10m.windGust.max, day.windGust.max`
 
-1. Download the lastest release, weewx-weatherboard-2.0.zip, from the
+1. Download the lastest release, weewx-weatherboard-2.0.1.zip, from the
    [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard).
 
 1. Run the following command.
