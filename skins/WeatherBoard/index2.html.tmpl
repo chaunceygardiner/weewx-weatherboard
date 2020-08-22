@@ -1,0 +1,98 @@
+## Copyright (C)2020 by John A Kline (john@johnkline.com)
+## Distributed under the terms of the GNU Public License (GPLv3)
+## See LICENSE for your rights.
+#errorCatcher Echo
+#encoding UTF-8
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="icon" type="image/png" href="favicon.ico" />
+    <link rel="stylesheet" type="text/css" href="weatherboard.css"/>
+    #if $Extras.has_key('meta_title')
+      <title>$Extras.meta_title</title>
+    #else
+      <title>WeatherBoard&trade;&mdash;$station.location</title>
+    #end if
+    <meta name="description" content="Tablet formatted display of current temperature, dew point, wind speed, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
+    <style>
+      #centered {
+        width:100%;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body style="background-color:black;">
+    #include "analytics.inc"
+    #include "realtime_updater2.inc"
+    <div style="background-color:black;color:#e51b23;">
+      <div>
+        <table id="centered">
+          <tr>
+            #if $Extras.has_key('logo') and $Extras.logo != ''
+              <td style="text-align:left;">
+                <img src='$Extras.logo' alt='' width="200"/>
+              </td>
+            #else
+              <td style="text-align:left;width:200px;">
+              </td>
+            #end if
+            <td style="text-align:center;">
+              <h1 class="page_title" style="font-size:28px;">
+                #if $Extras.has_key('title')
+                  $Extras.title
+                #else
+                  WeatherBoard&trade;
+                #end if
+              </h1>
+              <span class="lastupdate" style="font-size:18px;">
+                #if $Extras.has_key('subtitle')
+                  $Extras.subtitle
+                #else
+                  Updated continuously.
+                #end if
+              </span>
+            </td>
+            <td style="text-align:right;width:200px;">
+              <span id="live-label"></span><br/>&nbsp;
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div>
+        <div>
+          <div>
+            <table>
+            </table>
+          </div>
+          <div style="color:red;">
+            <table id="centered">
+              <tr>
+                <td style="text-align:center;font-family:monospace;font-size:105px">
+                  <span id="current.outTemp">$current.outTemp</span><span>&nbsp;</span><span id="current.dewpoint">$current.dewpoint</span>
+              </td>
+              </tr>
+              <tr>
+                <td id="windSpeedAndBearing" style="font-family:monospace;font-size:105px;text-align:center;">$current.windSpeed $current.windDir.ordinal_compass</td>
+              </tr>
+              <tr>
+                <td style="font-family:monospace;font-size:105px;text-align:center;">
+                  <span id="10m.windGust.max"></span><span>/</span><span id="day.windGust.max"></span>
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align:center;font-family:monospace;font-size:85px;">
+                        <span id="day.rain.sum">$day.rain.sum</span><span>&nbsp;</span><span id="current.rainRate">$current.rainRate</span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    #include "footer2.inc"
+  </body>
+</html>
