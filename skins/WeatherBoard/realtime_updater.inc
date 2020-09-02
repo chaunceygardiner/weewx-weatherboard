@@ -12,7 +12,7 @@
   #if $Extras.has_key('refresh_rate')
     refresh_rate = $Extras.refresh_rate;
   #else
-    refresh_rate = 2;
+    refresh_rate = 2.5;
   #end if
   #if $Extras.has_key('expiration_time')
     expiration_time = $Extras.expiration_time;
