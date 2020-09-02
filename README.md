@@ -54,15 +54,16 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
    per the installagtion instructions in the weewx-loopdata README.
 
-1. Conveniently, the loopdata install defaults to `WeatherBoardReport` in
-   the `weewx.conf` `[[LoopData]]` section and add the fields needed for
+1. The loopdata install defaults to a target report of `LoopDataReport`.
+   Coveniently, `WeatherBoardReport` is similar to `LoopDataReport`.
+   The loopdata install also adds all of the fields needed for
    WeatherBoard report.  As such you probably won't need to make the following
    changes:
       `[[LoopData]]`
           `target_report = WeatherBoardReport`
           `fields = current.dateTime.raw, current.windDir.ordinal_compass, day.rain.sum, current.dewpoint, current.outTemp, current.rainRate, current.windSpeed, current.windSpeed.raw, 10m.windGust.max, day.windGust.max`
 
-1. Download the lastest release, weewx-weatherboard-2.0.zip, from the
+1. Download the lastest release, weewx-weatherboard-2.0.1.zip, from the
    [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard).
 
 1. Run the following command.
@@ -83,7 +84,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
             title = my-weather-website.com WeatherBoard&trade;
             subtitle = Updated continuously
             logo = ""
-            loop_data_file = ../loop-data.txt
+            loop_data_file = ../loopdata/loop-data.txt
             contact_email = weatherguy@my-weather-website.com
             expiration_time = 4
             page_update_pwd = foobar

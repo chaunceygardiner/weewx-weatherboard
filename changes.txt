@@ -1,6 +1,12 @@
 weatherboard change history
 ---------------------------
 
+2.0.1 9 Aug 2020
+----------------
+2.0.1 Install now specifies a default `loop_data_file` of
+      `../loopdata/loop-data.txt`.  This matches the
+      lastest loopdata extension's default location.
+
 2.0 07/23/2020
 --------------
 2.0 Release (Same as 2.0.b4 with updated README.)
