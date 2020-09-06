@@ -186,7 +186,7 @@
           }
 
           if (result.hasOwnProperty("current.UV")) {
-            uv = result["current.UV"] + " UV";
+            uv = result["current.UV"];
             if (uv.lengh == 3) {
               uv = "&nbsp;" + uv;
             }
@@ -195,19 +195,12 @@
           }
           document.getElementById("current.UV").innerHTML = uv;
 
-          if (result.hasOwnProperty("current.radiation")) {
-            radiation = result["current.radiation"];
-            if (radiation.lengh == 6) {
-              radiation = "&nbsp;&nbsp;&nbsp;" + radiation;
-            } else if (radiation.lengh == 7) {
-              radiation = "&nbsp;&nbsp;" + radiation;
-            } else if (radiation.lengh == 8) {
-              radiation = "&nbsp;" + radiation;
-            }
+          if (result.hasOwnProperty("current.barometer")) {
+            barometer = result["current.barometer"];
           } else {
-            radiation = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nsbp;"
+            barometer = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nsbp;"
           }
-          document.getElementById("current.radiation").innerHTML = radiation;
+          document.getElementById("current.barometer").innerHTML = barometer;
 
           if (result.hasOwnProperty("current.rainRate")) {
             // rain rate

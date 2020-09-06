@@ -14,7 +14,7 @@
     #else
       <title>WeatherBoard&trade;&mdash;$station.location</title>
     #end if
-    <meta name="description" content="Tablet formatted display of current temperature, dew point, wind speed, UV Index, radiation, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
+    <meta name="description" content="Tablet formatted display of current temperature, dew point, wind speed, UV Index, barometer, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
     <style>
       #centered {
         width:100%;
@@ -85,9 +85,9 @@
               </tr>
               <tr>
                 <td style="text-align:center;font-family:monospace;font-size:105px">
-                  <span id="current.UV">$current.UV UV</span>
+                  <span id="current.UV">$current.UV</span>
                   <span>/</span>
-                  <span id="current.radiation">$current.radiation</span>
+                  <span id="current.barometer">$current.barometer</span>
               </td>
               <tr>
                 <td style="text-align:center;font-family:monospace;font-size:85px;">
