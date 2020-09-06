@@ -191,7 +191,7 @@
               uv = "&nbsp;" + uv;
             }
           } else {
-            uv = "&nbsp;&nbsp;&nbsp;&nbsp;";
+            uv = "&nbsp;N/A";
           }
           document.getElementById("current.UV").innerHTML = uv;
 
