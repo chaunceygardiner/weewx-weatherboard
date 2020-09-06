@@ -139,13 +139,11 @@
             document.getElementById("current.dewpoint").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          if (result.hasOwnProperty("current.windSpeed")) {
+          if (result.hasOwnProperty("current.windSpeed.formatted")) {
             // wind speed and bearing
-            var windSpeed = result["current.windSpeed"];
-            if (windSpeed.length == 7) {
-              windSpeed = "&nbsp;&nbsp;" + windSpeed;
-            } else if (windSpeed.length == 8) {
-              windSpeed = "&nbsp;" + windSpeed;
+            var windSpeed = result["current.windSpeed.formatted"];
+            if (windSpeed.length == 1) {
+              windSpeed = '&nbsp;' + windSpeed;
             }
             var windBearing = "";
             if (result["current.windSpeed.raw"] != 0.0) {
@@ -154,48 +152,62 @@
               }
             }
             if (windBearing.length == 0) {
-              windBearing = "&nbsp;&nbsp;&nbsp;";
+              windBearing = windBearing + '&nbsp;&nbsp;&nbsp;';
             } else if (windBearing.length == 1) {
-              windBearing = windBearing + "&nbsp;&nbsp;";
+              windBearing = windBearing + '&nbsp;&nbsp;';
             } else if (windBearing.length == 2) {
-              windBearing = windBearing + "&nbsp;";
+              windBearing = windBearing + '&nbsp;';
             }
             document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
           } else {
-            document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          if (result.hasOwnProperty("10m.windGust.max")) {
+          if (result.hasOwnProperty("10m.windGust.max.formatted")) {
             // wind gust (10m gust)
-            var windGust10m = result["10m.windGust.max"];
-            // This yeilds 9.9 mph.   We need to lose the " mph".
-            windGust10m = windGust10m.split(" ")[0]
+            var windGust10m = result["10m.windGust.max.formatted"];
             if (windGust10m.length == 1) {
-              windGust10m = "&nbsp;&nbsp;&nbsp;" + windGust10m;
-            } else if (windGust10m.length == 2) {
-              windGust10m = "&nbsp;&nbsp;" + windGust10m;
-            } else if (windGust10m.length == 3) {
               windGust10m = "&nbsp;" + windGust10m;
             }
-            document.getElementById("10m.windGust.max").innerHTML = windGust10m;
+            document.getElementById("10m.windGust.max.formatted").innerHTML = windGust10m;
           } else {
-            document.getElementById("10m.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;&nbsp;';
           }
 
           if (result.hasOwnProperty("day.windGust.max")) {
             // wind gust (today)
             var windGustTM = result["day.windGust.max"];
             if (windGustTM.length == 5) {
-              windGustTM = "&nbsp;&nbsp;&nbsp;" + windGustTM;
-            } else if (windGustTM.length == 6) {
-              windGustTM = "&nbsp;&nbsp;" + windGustTM;
-            } else if (windGustTM.length == 7) {
               windGustTM = "&nbsp;" + windGustTM;
             }
             document.getElementById("day.windGust.max").innerHTML = windGustTM;
           } else {
             document.getElementById("day.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
+
+          if (result.hasOwnProperty("current.UV")) {
+            uv = result["current.UV"] + " UV";
+            if (uv.lengh == 3) {
+              uv = "&nbsp;" + uv;
+            }
+          } else {
+            uv = "&nbsp;&nbsp;&nbsp;&nbsp;";
+          }
+          document.getElementById("current.UV").innerHTML = uv;
+
+          if (result.hasOwnProperty("current.radiation")) {
+            radiation = result["current.radiation"];
+            if (radiation.lengh == 6) {
+              radiation = "&nbsp;&nbsp;&nbsp;" + radiation;
+            } else if (radiation.lengh == 7) {
+              radiation = "&nbsp;&nbsp;" + radiation;
+            } else if (radiation.lengh == 8) {
+              radiation = "&nbsp;" + radiation;
+            }
+          } else {
+            radiation = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nsbp;"
+          }
+          document.getElementById("current.radiation").innerHTML = radiation;
 
           if (result.hasOwnProperty("current.rainRate")) {
             // rain rate

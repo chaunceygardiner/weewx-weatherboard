@@ -10,11 +10,11 @@
     <link rel="icon" type="image/png" href="favicon.ico" />
     <link rel="stylesheet" type="text/css" href="weatherboard.css"/>
     #if $Extras.has_key('meta_title')
-      <title>$Extras.meta_title</title>
+      <title>$Extras.meta_title (Internal)</title>
     #else
-      <title>WeatherBoard&trade;&mdash;$station.location</title>
+      <title>WeatherBoard&trade;&mdash;$station.location (Internal)</title>
     #end if
-    <meta name="description" content="Tablet formatted display of current temperature, dew point, wind speed, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
+    <meta name="description" content="(Internal) Tablet formatted display of current temperature, dew point, wind speed, UV Index, radiation, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
     <style>
       #centered {
         width:100%;
@@ -76,13 +76,19 @@
               </td>
               </tr>
               <tr>
-                <td id="windSpeedAndBearing" style="font-family:monospace;font-size:105px;text-align:center;">$current.windSpeed $current.windDir.ordinal_compass</td>
-              </tr>
-              <tr>
-                <td style="font-family:monospace;font-size:105px;text-align:center;">
-                  <span id="10m.windGust.max"></span><span>/</span><span id="day.windGust.max"></span>
+                <td style="text-align:center;font-family:monospace;font-size:105px;">
+                  <span id="windSpeedAndBearing" style="font-family:monospace;font-size:105px;text-align:center;">
+                    $current.windSpeed.formatted $current.windDir.ordinal_compass
+                  </span>
+                  <span>/</span><span id="10m.windGust.max.formatted"></span><span>/</span><span id="day.windGust.max"></span>
                 </td>
               </tr>
+              <tr>
+                <td style="text-align:center;font-family:monospace;font-size:105px">
+                  <span id="current.UV">$current.UV UV</span>
+                  <span>/</span>
+                  <span id="current.radiation">$current.radiation</span>
+              </td>
               <tr>
                 <td style="text-align:center;font-family:monospace;font-size:85px;">
                         <span id="day.rain.sum">$day.rain.sum</span><span>&nbsp;</span><span id="current.rainRate">$current.rainRate</span>
