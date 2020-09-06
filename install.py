@@ -56,9 +56,9 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         },
                         'Units' : {
                             'StringFormats': {
-                                'mile_per_hour': '%.0f',
+                                'mile_per_hour': '%.1f',
                                 'degree_C': '%.1f',
-                                'km_per_hour': '%.0f',
+                                'km_per_hour': '%.1f',
                                 'degree_F': '%.1f',
                             },
                         },
