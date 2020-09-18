@@ -127,30 +127,30 @@
           }
 
           // inTemp (extraTemp1)
-          if (result.hasOwnProperty("current.extraTemp1.formatted")) {
-            var inTemp = result["current.extraTemp1.formatted"];
+          if (result.hasOwnProperty("current.extraTemp1")) {
+            var inTemp = result["current.extraTemp1"];
             // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-            if (inTemp.length == 3) {
+            if (inTemp.length == 5) {
               inTemp = "&nbsp;&nbsp;" + inTemp;
-            } else if (inTemp.length == 4) {
+            } else if (inTemp.length == 6) {
               inTemp = "&nbsp;" + inTemp;
             }
-            document.getElementById("current.extraTemp1.formatted").innerHTML = inTemp;
+            document.getElementById("current.extraTemp1").innerHTML = inTemp;
           } else {
-            document.getElementById("current.extraTemp1.formatted").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("current.extraTemp1").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          if (result.hasOwnProperty("current.dewpoint")) {
+          if (result.hasOwnProperty("current.dewpoint.formatted")) {
             // dew point
-            var dew = result["current.dewpoint"];
-            if (dew.length == 5) {
+            var dew = result["current.dewpoint.formatted"];
+            if (dew.length == 3) {
               dew = "&nbsp;&nbsp;" + dew;
-            } else if (dew.length == 6) {
+            } else if (dew.length == 4) {
               dew = "&nbsp;" + dew;
             }
-            document.getElementById("current.dewpoint").innerHTML = dew;
+            document.getElementById("current.dewpoint.formatted").innerHTML = dew;
           } else {
-            document.getElementById("current.dewpoint").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("current.dewpoint.formatted").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
           if (result.hasOwnProperty("current.windSpeed.formatted")) {
