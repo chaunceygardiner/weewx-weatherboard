@@ -136,8 +136,6 @@
               inTemp = "&nbsp;" + inTemp;
             }
             document.getElementById("current.extraTemp1").innerHTML = inTemp;
-          } else {
-            document.getElementById("current.extraTemp1").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
           if (result.hasOwnProperty("current.dewpoint.formatted")) {
