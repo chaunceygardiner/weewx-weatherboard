@@ -114,16 +114,30 @@
           activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
 
           // temp
-          if (result.hasOwnProperty("current.outTemp")) {
-            var temp = result["current.outTemp"];
-            if (temp.length == 5) {
+          if (result.hasOwnProperty("current.outTemp.formatted")) {
+            var temp = result["current.outTemp.formatted"];
+            if (temp.length == 3) {
               temp = "&nbsp;&nbsp;" + temp;
-            } else if (temp.length == 6) {
+            } else if (temp.length == 4) {
               temp = "&nbsp;" + temp;
             }
-            document.getElementById("current.outTemp").innerHTML = temp;
+            document.getElementById("current.outTemp.formatted").innerHTML = temp;
           } else {
-            document.getElementById("current.outTemp").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("current.outTemp.formatted").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+          }
+
+          // inTemp (extraTemp1)
+          if (result.hasOwnProperty("current.extraTemp1.formatted")) {
+            var inTemp = result["current.extraTemp1.formatted"];
+            // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
+            if (inTemp.length == 3) {
+              inTemp = "&nbsp;&nbsp;" + inTemp;
+            } else if (inTemp.length == 4) {
+              inTemp = "&nbsp;" + inTemp;
+            }
+            document.getElementById("current.extraTemp1.formatted").innerHTML = inTemp;
+          } else {
+            document.getElementById("current.extraTemp1.formatted").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
           if (result.hasOwnProperty("current.dewpoint")) {
