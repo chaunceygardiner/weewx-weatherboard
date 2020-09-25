@@ -126,18 +126,6 @@
             document.getElementById("current.outTemp.formatted").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          // inTemp (extraTemp1)
-          if (result.hasOwnProperty("current.extraTemp1")) {
-            var inTemp = result["current.extraTemp1"];
-            // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-            if (inTemp.length == 5) {
-              inTemp = "&nbsp;&nbsp;" + inTemp;
-            } else if (inTemp.length == 6) {
-              inTemp = "&nbsp;" + inTemp;
-            }
-            document.getElementById("current.extraTemp1").innerHTML = inTemp;
-          }
-
           if (result.hasOwnProperty("current.dewpoint.formatted")) {
             // dew point
             var dew = result["current.dewpoint.formatted"];
@@ -262,6 +250,26 @@
               document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
             }
           #end if
+
+          // indoor temp
+          fetch('indoor-temp.txt')
+            .then(indoorTempResponse => indoorTempResponse.text())
+            .then(indoorTempData => {
+              var indoorTempResult = JSON.parse(indoorTempData);
+              if (indoorTempResult.hasOwnProperty("data")) {
+                try {
+                  inTemp = indoorTempResult['data']['conditions'][1]['temp']
+                  // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
+                  if (inTemp.length == 5) {
+                    inTemp = "&nbsp;&nbsp;" + inTemp;
+                  } else if (inTemp.length == 6) {
+                    inTemp = "&nbsp;" + inTemp;
+                  }
+                  document.getElementById("current.extraTemp1").innerHTML = inTemp;
+                } catch (e) {
+                }
+              }
+            });
         }
       }
     };
