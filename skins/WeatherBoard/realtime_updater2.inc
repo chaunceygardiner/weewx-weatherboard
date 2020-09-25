@@ -258,7 +258,7 @@
               var indoorTempResult = JSON.parse(indoorTempData);
               if (indoorTempResult.hasOwnProperty("data")) {
                 try {
-                  inTemp = indoorTempResult['data']['conditions'][1]['temp']
+                  inTemp = indoorTempResult['data']['conditions'][1]['temp'].toFixed(1)
                   // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
                   if (inTemp.length == 5) {
                     inTemp = "&nbsp;&nbsp;" + inTemp;
