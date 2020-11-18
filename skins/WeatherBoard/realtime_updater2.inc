@@ -87,15 +87,15 @@
   addLoadEvent(updateCurrent);
 
   var barometer_symbols = {
-    'Rising Very Rapidly' : '&uarr;&plus;&plus;',
-    'Rising Quickly'      : '&uarr;&plus;&nbsp;',
-    'Rising'              : '&uarr;&nbsp;&nbsp;',
-    'Rising Slowly'       : '&uarr;&minus;&nbsp;',
-    'Steady'              : '&minus;minus;&minus;',
-    'Falling Slowly'      : '&darr;&minus;&nbsp;',
-    'Falling'             : '&darr;&nbsp;&nbsp;',
-    'Falling Quickly'     : '&darr;&plus;&nbsp;',
-    'Falling Very Rapidly': '&darr;&plus;&plus;',
+    'Rising Very Rapidly' : '&#8679;&plus;&plus;',
+    'Rising Quickly'      : '&#8679;&plus;&nbsp;',
+    'Rising'              : '&#8679;&nbsp;&nbsp;',
+    'Rising Slowly'       : '&#8679;&minus;&nbsp;',
+    'Steady'              : '&#9645;&nbsp;&nbsp;',
+    'Falling Slowly'      : '&#8681;&minus;&nbsp;',
+    'Falling'             : '&#8681;&nbsp;&nbsp;',
+    'Falling Quickly'     : '&#8681;&plus;&nbsp;',
+    'Falling Very Rapidly': '&#8681;&plus;&plus;',
   };
 
   function updateCurrent() {
