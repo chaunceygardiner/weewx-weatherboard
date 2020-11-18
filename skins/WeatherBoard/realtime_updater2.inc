@@ -138,18 +138,6 @@
             document.getElementById("current.outTemp.formatted").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          // inTemp (extraTemp1)
-          if (result.hasOwnProperty("current.extraTemp1")) {
-            var inTemp = result["current.extraTemp1"];
-            // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-            if (inTemp.length == 5) {
-              inTemp = "&nbsp;&nbsp;" + inTemp;
-            } else if (inTemp.length == 6) {
-              inTemp = "&nbsp;" + inTemp;
-            }
-            document.getElementById("current.extraTemp1").innerHTML = inTemp;
-          }
-
           if (result.hasOwnProperty("current.dewpoint.formatted")) {
             // dew point
             var dew = result["current.dewpoint.formatted"];
@@ -249,10 +237,26 @@
           fetch('purple-air-indoor.txt')
             .then(indoorAqiResponse => indoorAqiResponse.text())
             .then(indoorAqiData => {
-              var indoorAqiResult = JSON.parse(indoorAqiData);
-              if (indoorAqiResult.hasOwnProperty("pm2.5_aqi")) {
-                var indoor_aqi = indoorAqiResult["pm2.5_aqi"];
-                document.getElementById("indoor_aqi").innerHTML = indoor_aqi;
+              var indoor = JSON.parse(indoorAqiData);
+              if (indoor.hasOwnProperty("pm2_5_cf_1")) {
+                var indoor_pm2_5 = 0.541 * indoor["pm2_5_cf_1"] - 0.0618 * indoor['current_humidity'] + 0.00534 * indoor['current_temp_f'] + 3.634;
+                var indoor_aqi;
+                if (indoor_pm2_5 <= 12.0) { // Good
+                    indoor_aqi = indoor_pm2_5 / 12.0 * 50;
+                } else if (indoor_pm2_5 <= 35.4) { // Moderate
+                    indoor_aqi = (indoor_pm2_5 - 12.1) / 23.3 * 49.0 + 51.0;
+                } else if (indoor_pm2_5 <= 55.4) { // Unhealthy for senstive
+                    indoor_aqi = (indoor_pm2_5 - 35.5) / 19.9 * 49.0 + 101.0;
+                } else if (indoor_pm2_5 <= 150.4) { // Unhealthy
+                    indoor_aqi = (indoor_pm2_5 - 55.5) / 94.9 * 49.0 + 151.0;
+                } else if (indoor_pm2_5 <= 250.4) { // Very Unhealthy
+                    indoor_aqi = (indoor_pm2_5 - 150.5) / 99.9 * 99.0 + 201.0;
+                } else if (indoor_pm2_5 <= 350.4) { // Hazardous
+                    indoor_aqi = (indoor_pm2_5 - 250.5) / 99.9 * 99.0 + 301.0;
+                } else { // Hazardous
+                    indoor_aqi = (indoor_pm2_5 - 350.5) / 149.9 * 99.0 + 401.0;
+                }
+                document.getElementById("indoor_aqi").innerHTML = indoor_aqi.toFixed(0);
                 if (indoor_aqi <= 50) {
                     indoor_color = 'rgb(0,128,0)';   // Green
                 } else if (indoor_aqi <= 100) {
@@ -283,6 +287,26 @@
               document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
             }
           #end if
+
+          // indoor temp
+          fetch('indoor-temp.txt')
+            .then(indoorTempResponse => indoorTempResponse.text())
+            .then(indoorTempData => {
+              var indoorTempResult = JSON.parse(indoorTempData);
+              if (indoorTempResult.hasOwnProperty("data")) {
+                try {
+                  inTemp = indoorTempResult['data']['conditions'][1]['temp'].toFixed(1)
+                  // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
+                  if (inTemp.length == 5) {
+                    inTemp = "&nbsp;&nbsp;" + inTemp;
+                  } else if (inTemp.length == 6) {
+                    inTemp = "&nbsp;" + inTemp;
+                  }
+                  document.getElementById("current.extraTemp1").innerHTML = inTemp;
+                } catch (e) {
+                }
+              }
+            });
         }
       }
     };
