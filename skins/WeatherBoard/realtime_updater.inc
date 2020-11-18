@@ -86,6 +86,18 @@
   var timeOfNextPageExpiration = getTimeOfNextPageExpiration();
   addLoadEvent(updateCurrent);
 
+  var barometer_symbols = {
+    'Rising Very Rapidly' : '&uarr;&plus;&plus;',
+    'Rising Quickly'      : '&uarr;&plus;&nbsp;',
+    'Rising'              : '&uarr;&nbsp;&nbsp;',
+    'Rising Slowly'       : '&uarr;&minus;&nbsp;',
+    'Steady'              : '&minus;minus;&minus;',
+    'Falling Slowly'      : '&darr;&minus;&nbsp;',
+    'Falling'             : '&darr;&nbsp;&nbsp;',
+    'Falling Quickly'     : '&darr;&plus;&nbsp;',
+    'Falling Very Rapidly': '&darr;&plus;&plus;',
+  };
+
   function updateCurrent() {
     if (pageTimedOut) {
         return false;
@@ -195,12 +207,17 @@
           }
           document.getElementById("current.UV").innerHTML = uv;
 
-          if (result.hasOwnProperty("current.barometer")) {
-            barometer = result["current.barometer"];
+          if (result.hasOwnProperty("current.barometer.formatted")) {
+            barometer_desc = result["current.barometer.formatted"] + "&nbsp;";
+            if (result.hasOwnProperty("trend.barometer.desc")) {
+              barometer_desc += barometer_symbols[result["trend.barometer.desc"]];
+            } else {
+              barometer_desc += "&nbsp;&nbsp;&nbsp;"
+            }
           } else {
-            barometer = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nsbp;"
+            barometer_desc += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
           }
-          document.getElementById("current.barometer").innerHTML = barometer;
+          document.getElementById("barometer").innerHTML = barometer_desc;
 
           if (result.hasOwnProperty("current.rainRate")) {
             // rain rate
@@ -218,10 +235,14 @@
 
           // aqi
           #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-            if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+            if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
+              document.getElementById("aqi").innerHTML = result["current.pm2_5_1m_aqi.formatted"];
+            } else if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
               document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"];
             }
-            if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+            if (result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
+              document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
+            } else if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
               document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
             }
           #end if
