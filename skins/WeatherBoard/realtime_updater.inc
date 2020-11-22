@@ -91,7 +91,7 @@
     'Rising Quickly'      : '&#9650;&plus;&nbsp;',
     'Rising'              : '&#9650;&nbsp;&nbsp;',
     'Rising Slowly'       : '&#9650;&minus;&nbsp;',
-    'Steady'              : '&#9644;&nbsp;&nbsp;',
+    'Steady'              : '&minus;&minus;&minus;',
     'Falling Slowly'      : '&#9660;&minus;&nbsp;',
     'Falling'             : '&#9660;&nbsp;&nbsp;',
     'Falling Quickly'     : '&#9660;&plus;&nbsp;',
