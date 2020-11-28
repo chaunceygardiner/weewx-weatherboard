@@ -87,15 +87,15 @@
   addLoadEvent(updateCurrent);
 
   var barometer_symbols = {
-    'Rising Very Rapidly' : '&#9650;&plus;&plus;',
-    'Rising Quickly'      : '&#9650;&plus;&nbsp;',
-    'Rising'              : '&#9650;&nbsp;&nbsp;',
-    'Rising Slowly'       : '&#9650;&minus;&nbsp;',
-    'Steady'              : '&minus;&minus;&nbsp;',
-    'Falling Slowly'      : '&#9660;&minus;&nbsp;',
-    'Falling'             : '&#9660;&nbsp;&nbsp;',
-    'Falling Quickly'     : '&#9660;&plus;&nbsp;',
-    'Falling Very Rapidly': '&#9660;&plus;&plus;',
+     '4': '&#9650;&plus;&plus;',
+     '3': '&#9650;&plus;&nbsp;',
+     '2': '&#9650;&nbsp;&nbsp;',
+     '1': '&#9650;&minus;&nbsp;',
+     '0': '&minus;&minus;&nbsp;',
+    '-1': '&#9660;&minus;&nbsp;',
+    '-2': '&#9660;&nbsp;&nbsp;',
+    '-3': '&#9660;&plus;&nbsp;',
+    '-4': '&#9660;&plus;&plus;',
   };
 
   function updateCurrent() {
@@ -208,16 +208,16 @@
           document.getElementById("current.UV").innerHTML = uv;
 
           if (result.hasOwnProperty("current.barometer.formatted")) {
-            barometer_desc = result["current.barometer.formatted"] + "&nbsp;";
-            if (result.hasOwnProperty("trend.barometer.desc")) {
-              barometer_desc += barometer_symbols[result["trend.barometer.desc"]];
+            barometer_value = result["current.barometer.formatted"] + "&nbsp;";
+            if (result.hasOwnProperty("trend.barometer.code")) {
+              barometer_value += barometer_symbols[result["trend.barometer.code"]];
             } else {
-              barometer_desc += "&nbsp;&nbsp;&nbsp;"
+              barometer_value += "&nbsp;&nbsp;&nbsp;"
             }
           } else {
-            barometer_desc += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+            barometer_value += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
           }
-          document.getElementById("barometer").innerHTML = barometer_desc;
+          document.getElementById("barometer").innerHTML = barometer_value;
 
           if (result.hasOwnProperty("current.rainRate")) {
             // rain rate
