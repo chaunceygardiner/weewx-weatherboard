@@ -197,15 +197,15 @@
             document.getElementById("day.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
           }
 
-          if (result.hasOwnProperty("current.UV")) {
-            uv = result["current.UV"];
+          if (result.hasOwnProperty("current.UV.formatted")) {
+            uv = result["current.UV.formatted"];
             if (uv.lengh == 3) {
               uv = "&nbsp;" + uv;
             }
           } else {
             uv = "&nbsp;N/A";
           }
-          document.getElementById("current.UV").innerHTML = uv;
+          document.getElementById("current.UV.formatted").innerHTML = uv;
 
           if (result.hasOwnProperty("current.barometer.formatted")) {
             barometer_value = result["current.barometer.formatted"] + "&nbsp;";
