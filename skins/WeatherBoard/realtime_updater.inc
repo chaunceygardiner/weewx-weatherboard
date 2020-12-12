@@ -199,7 +199,7 @@
 
           if (result.hasOwnProperty("current.UV.formatted")) {
             uv = result["current.UV.formatted"];
-            if (uv.lengh == 3) {
+            if (uv.length == 3) {
               uv = "&nbsp;" + uv;
             }
           } else {
