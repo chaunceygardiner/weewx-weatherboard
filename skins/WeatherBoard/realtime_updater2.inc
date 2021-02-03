@@ -302,7 +302,7 @@
                   } else if (inTemp.length == 6) {
                     inTemp = "&nbsp;" + inTemp;
                   }
-                  document.getElementById("current.extraTemp1").innerHTML = inTemp;
+                  document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
                 } catch (e) {
                 }
               }
