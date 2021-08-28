@@ -238,8 +238,15 @@
             .then(indoorAqiResponse => indoorAqiResponse.text())
             .then(indoorAqiData => {
               var indoor = JSON.parse(indoorAqiData);
-              if (indoor.hasOwnProperty("pm2_5_cf_1")) {
-                var indoor_pm2_5 = 0.541 * indoor["pm2_5_cf_1"] - 0.0618 * indoor['current_humidity'] + 0.00534 * indoor['current_temp_f'] + 3.634;
+              if (indoor.hasOwnProperty("pm2_5_cf_1") && indoor.hasOwnProperty("current_humidity")) {
+                var indoor_pm2_5;
+                var in_pm25 = indoor["pm2_5_cf_1"];
+                var in_hum = indoor["current_humidity"];
+                if (in_pm25 < 343.0) {
+                    indoor_pm2_5 = 0.52 * in_pm25 - 0.086 * in_hum + 5.75;
+                } else {
+                    indoor_pm2_5 = 0.46 * in_pm25 + 3.93 * 10**-4 * in_pm25 ** 2 + 2.97;
+                }
                 var indoor_aqi;
                 if (indoor_pm2_5 <= 12.0) { // Good
                     indoor_aqi = indoor_pm2_5 / 12.0 * 50;
