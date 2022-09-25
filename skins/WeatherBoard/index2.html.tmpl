@@ -7,8 +7,8 @@
 <html lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="width=1196", inital-scale=0.3>
-    <meta name="apple-mobile-web-app-capable" content="yes"
+    <meta name="viewport" content="width=1196">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="icon" type="image/png" href="favicon.ico" />
     <link rel="apple-touch-icon" href="apple-touch-icon-180x180.png" />
     <link rel="stylesheet" type="text/css" href="weatherboard.css"/>
@@ -19,7 +19,11 @@
     #end if
     <meta name="description" content="(Internal) Tablet formatted display of current temperature, dew point, wind speed, UV Index, barometer, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
     <style>
-      #centered {
+      #centered_title {
+        width:100%;
+        margin: auto;
+      }
+      #centered_readings {
         width:100%;
         margin: auto;
       }
@@ -30,7 +34,7 @@
     #include "realtime_updater2.inc"
     <div style="background-color:black;color:#e51b23;">
       <div>
-        <table id="centered">
+        <table id="centered_title">
           <tr>
             #if $Extras.has_key('logo') and $Extras.logo != ''
               <td style="text-align:left;">
@@ -72,7 +76,7 @@
             </table>
           </div>
           <div style="color:red;">
-            <table id="centered">
+            <table id="centered_readings">
               <tr>
                 <td style="text-align:center;font-family:monospace;font-size:105px">
                   <span id="current.outTemp.formatted">$current.outTemp.formatted</span><span>/</span><span id="current.dewpoint.formatted">$current.dewpoint.formatted</span><span>/</span><span id="current.inTemp.formatted">$current.inTemp.formatted</span>

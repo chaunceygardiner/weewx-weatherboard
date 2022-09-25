@@ -24,10 +24,10 @@
 ##                $obs.label.legend - $obs.label.time_of_day<br/>
 ###end if
 ##                #include "contact.inc"
-              </td>
-              <td style="width:10px;"/>
+##              </td>
+              <td style="width:10px;"></td>
               <td id="indoor_aqi" style="width:9%;font-family:monospace;font-style:normal;font-size:95px;"></td>
-              <td style="width:10px;"/>
+              <td style="width:10px;"></td>
               <td id="aqi" style="width:9%;font-family:monospace;font-style:normal;font-size:95px;"></td>
               <td id="activity-string" style="width:65%;font-family:monospace;font-style:normal;font-size:95px;text-align:right;"></td>
             </tr>
