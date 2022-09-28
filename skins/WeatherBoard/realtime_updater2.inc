@@ -297,23 +297,19 @@
 
           // indoor temp
           fetch('indoor-temp.txt')
-            .then(response => response.text())
-            .then(data => {
-              var j = JSON.parse(data);
-              if (j.hasOwnProperty("data")) {
+            .then(indoorTempResponse => indoorTempResponse.text())
+            .then(indoorTempData => {
+              var indoorTempResult = JSON.parse(indoorTempData);
+              if (indoorTempResult.hasOwnProperty("data")) {
                 try {
-                  for (var condition in j['data']['conditions']) {
-                    if (condition.hasOwnProperty('txid') && condition['txid'] == '3') {
-                      inTemp = condition['temp'].toFixed(1)
-                      // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-                      if (inTemp.length == 5) {
-                        inTemp = "&nbsp;&nbsp;" + inTemp;
-                      } else if (inTemp.length == 6) {
-                        inTemp = "&nbsp;" + inTemp;
-                      }
-                      document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
-                    }
+                  inTemp = indoorTempResult['data']['conditions'][1]['temp'].toFixed(1)
+                  // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
+                  if (inTemp.length == 5) {
+                    inTemp = "&nbsp;&nbsp;" + inTemp;
+                  } else if (inTemp.length == 6) {
+                    inTemp = "&nbsp;" + inTemp;
                   }
+                  document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
                 } catch (e) {
                 }
               }
