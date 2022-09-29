@@ -234,50 +234,15 @@
           }
 
           // indoor aqi
-          fetch('purple-air-indoor.txt')
+          fetch('inAQI.txt')
             .then(indoorAqiResponse => indoorAqiResponse.text())
             .then(indoorAqiData => {
               var indoor = JSON.parse(indoorAqiData);
-              if (indoor.hasOwnProperty("pm2_5_cf_1") && indoor.hasOwnProperty("current_humidity")) {
-                var indoor_pm2_5;
-                var in_pm25 = indoor["pm2_5_cf_1"];
-                var in_hum = indoor["current_humidity"];
-                if (in_pm25 < 343.0) {
-                    indoor_pm2_5 = 0.52 * in_pm25 - 0.086 * in_hum + 5.75;
-                } else {
-                    indoor_pm2_5 = 0.46 * in_pm25 + 3.93 * 10**-4 * in_pm25 ** 2 + 2.97;
-                }
-                var indoor_aqi;
-                if (indoor_pm2_5 <= 12.0) { // Good
-                    indoor_aqi = indoor_pm2_5 / 12.0 * 50;
-                } else if (indoor_pm2_5 <= 35.4) { // Moderate
-                    indoor_aqi = (indoor_pm2_5 - 12.1) / 23.3 * 49.0 + 51.0;
-                } else if (indoor_pm2_5 <= 55.4) { // Unhealthy for senstive
-                    indoor_aqi = (indoor_pm2_5 - 35.5) / 19.9 * 49.0 + 101.0;
-                } else if (indoor_pm2_5 <= 150.4) { // Unhealthy
-                    indoor_aqi = (indoor_pm2_5 - 55.5) / 94.9 * 49.0 + 151.0;
-                } else if (indoor_pm2_5 <= 250.4) { // Very Unhealthy
-                    indoor_aqi = (indoor_pm2_5 - 150.5) / 99.9 * 99.0 + 201.0;
-                } else if (indoor_pm2_5 <= 350.4) { // Hazardous
-                    indoor_aqi = (indoor_pm2_5 - 250.5) / 99.9 * 99.0 + 301.0;
-                } else { // Hazardous
-                    indoor_aqi = (indoor_pm2_5 - 350.5) / 149.9 * 99.0 + 401.0;
-                }
-                document.getElementById("indoor_aqi").innerHTML = indoor_aqi.toFixed(0);
-                if (indoor_aqi <= 50) {
-                    indoor_color = 'rgb(0,128,0)';   // Green
-                } else if (indoor_aqi <= 100) {
-                    indoor_color = 'rgb(255,255,0)'; // Yellow
-                } else if (indoor_aqi <=  150) {
-                    indoor_color = 'rgb(255,140,0)'; // Orange
-                } else if (indoor_aqi <= 200) {
-                    indoor_color = 'rgb(255,0,0)';   // Red
-                } else if (indoor_aqi <= 300) {
-                    indoor_color = 'rgb(128,0,128)'; // Purple
-                } else {
-                    indoor_color = 'rgb(128,0,0)';   // Maroon
-                }
-                document.getElementById("indoor_aqi").style.color = indoor_color;
+              if (indoor.hasOwnProperty("inAQI") && indoor.hasOwnProperty("inColor")) {
+                inAQI = indoor['inAQI'];
+                inColor = indoor['inColor'];
+                document.getElementById("indoor_aqi").innerHTML = inAQI.toFixed(0);
+                document.getElementById("indoor_aqi").style.color = inColor;
               }
             });
 
