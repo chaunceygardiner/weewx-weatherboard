@@ -242,7 +242,8 @@
                 now = Date.now() / 1000.0;
                 var ts = indoor['ts'];
                 var age = now - ts;
-                if (age < 60) {
+                var hostname = location.hostname;
+                if (age < 60 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
                   inAQI = indoor['inAQI'].toFixed(0);
                   inColor = indoor['inColor'];
                 } else {
@@ -278,7 +279,8 @@
                   now = Date.now() / 1000.0;
                   var ts = j['ts'];
                   var age = now - ts;
-                  if (age < 60) {
+                  var hostname = location.hostname;
+                  if (age < 60 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
                     inTemp = j['inTemp'].toFixed(1);
                   } else {
                     inTemp = '??.?';
