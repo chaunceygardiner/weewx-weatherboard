@@ -223,14 +223,14 @@
             // rain rate
             document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
           } else {
-            document.getElementById("current.rainRate").innerHTML = '?.?? ????';
+            document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
           }
 
           if (age < 10 && result.hasOwnProperty("day.rain.sum")) {
             // rain fall
             document.getElementById("day.rain.sum").innerHTML = result["day.rain.sum"];
           } else {
-            document.getElementById("day.rain.sum").innerHTML = '?.?? ??';
+            document.getElementById("day.rain.sum").innerHTML = '?.??&nbsp;??';
           }
 
           // indoor aqi

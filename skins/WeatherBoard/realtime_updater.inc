@@ -126,7 +126,7 @@
           activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
 
           // temp
-          if (result.hasOwnProperty("current.outTemp")) {
+          if (age < 10 && result.hasOwnProperty("current.outTemp")) {
             var temp = result["current.outTemp"];
             if (temp.length == 5) {
               temp = "&nbsp;&nbsp;" + temp;
@@ -135,10 +135,10 @@
             }
             document.getElementById("current.outTemp").innerHTML = temp;
           } else {
-            document.getElementById("current.outTemp").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("current.outTemp").innerHTML = '&nbsp;??.???';
           }
 
-          if (result.hasOwnProperty("current.dewpoint")) {
+          if (age < 10 && result.hasOwnProperty("current.dewpoint")) {
             // dew point
             var dew = result["current.dewpoint"];
             if (dew.length == 5) {
@@ -148,10 +148,10 @@
             }
             document.getElementById("current.dewpoint").innerHTML = dew;
           } else {
-            document.getElementById("current.dewpoint").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("current.dewpoint").innerHTML = '&nbsp;??.???';
           }
 
-          if (result.hasOwnProperty("current.windSpeed.formatted")) {
+          if (age < 10 && result.hasOwnProperty("current.windSpeed.formatted")) {
             // wind speed and bearing
             var windSpeed = result["current.windSpeed.formatted"];
             if (windSpeed.length == 1) {
@@ -172,10 +172,10 @@
             }
             document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
           } else {
-            document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;?&nbsp;???';
           }
 
-          if (result.hasOwnProperty("10m.windGust.max.formatted")) {
+          if (age < 10 && result.hasOwnProperty("10m.windGust.max.formatted")) {
             // wind gust (10m gust)
             var windGust10m = result["10m.windGust.max.formatted"];
             if (windGust10m.length == 1) {
@@ -183,10 +183,10 @@
             }
             document.getElementById("10m.windGust.max.formatted").innerHTML = windGust10m;
           } else {
-            document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;&nbsp;';
+            document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;?';
           }
 
-          if (result.hasOwnProperty("day.windGust.max")) {
+          if (age < 10 && result.hasOwnProperty("day.windGust.max")) {
             // wind gust (today)
             var windGustTM = result["day.windGust.max"];
             if (windGustTM.length == 5) {
@@ -194,43 +194,43 @@
             }
             document.getElementById("day.windGust.max").innerHTML = windGustTM;
           } else {
-            document.getElementById("day.windGust.max").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("day.windGust.max").innerHTML = '&nbsp;?&nbsp;???';
           }
 
-          if (result.hasOwnProperty("current.UV.formatted")) {
+          if (age < 10 && result.hasOwnProperty("current.UV.formatted")) {
             uv = result["current.UV.formatted"];
             if (uv.length == 3) {
               uv = "&nbsp;" + uv;
             }
           } else {
-            uv = "&nbsp;N/A";
+            uv = "&nbsp;?.?";
           }
           document.getElementById("current.UV.formatted").innerHTML = uv;
 
-          if (result.hasOwnProperty("current.barometer.formatted")) {
+          if (age < 10 && result.hasOwnProperty("current.barometer.formatted")) {
             barometer_value = result["current.barometer.formatted"] + "&nbsp;";
             if (result.hasOwnProperty("trend.barometer.code")) {
               barometer_value += barometer_symbols[result["trend.barometer.code"]];
             } else {
-              barometer_value += "&nbsp;&nbsp;&nbsp;"
+              barometer_value += "???"
             }
           } else {
-            barometer_value += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+            barometer_value = "??.???&nbsp;?&nbsp;&nbsp;"
           }
           document.getElementById("barometer").innerHTML = barometer_value;
 
-          if (result.hasOwnProperty("current.rainRate")) {
+          if (age < 10 && result.hasOwnProperty("current.rainRate")) {
             // rain rate
             document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
           } else {
-            document.getElementById("current.rainRate").innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;';
+            document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
           }
 
-          if (result.hasOwnProperty("day.rain.sum")) {
+          if (age < 10 && result.hasOwnProperty("day.rain.sum")) {
             // rain fall
             document.getElementById("day.rain.sum").innerHTML = result["day.rain.sum"];
           } else {
-            document.getElementById("day.rain.sum").innerHTML = '';
+            document.getElementById("day.rain.sum").innerHTML = '?.??&nbsp;??';
           }
 
           // aqi
