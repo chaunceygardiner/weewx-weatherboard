@@ -297,21 +297,27 @@
 
           // indoor temp
           fetch('indoor-temp.txt')
-            .then(indoorTempResponse => indoorTempResponse.text())
-            .then(indoorTempData => {
-              var indoorTempResult = JSON.parse(indoorTempData);
-              if (indoorTempResult.hasOwnProperty("data")) {
-                try {
-                  inTemp = indoorTempResult['data']['conditions'][1]['temp'].toFixed(1)
-                  // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-                  if (inTemp.length == 5) {
-                    inTemp = "&nbsp;&nbsp;" + inTemp;
-                  } else if (inTemp.length == 6) {
-                    inTemp = "&nbsp;" + inTemp;
+            .then(response => response.text())
+            .then(responseData => {
+              try {
+                var j = JSON.parse(responseData);
+                if (j.hasOwnProperty("data")) {
+                  for (var i = 0; i < j['data']['conditions'].length; i++) {
+                    if (j['data']['conditions'][i].hasOwnProperty('txid') && j['data']['conditions'][i]['txid'] == '3') {
+                      inTemp = j['data']['conditions'][i]['temp'].toFixed(1)
+                      // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
+                      if (inTemp.length == 5) {
+                        inTemp = "&nbsp;&nbsp;" + inTemp;
+                      } else if (inTemp.length == 6) {
+                        inTemp = "&nbsp;" + inTemp;
+                      }
+                      document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
+                      break;
+                    }
                   }
-                  document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
-                } catch (e) {
                 }
+              } catch (e) {
+                // Sometimes, we get a partial file to parse.
               }
             });
         }
