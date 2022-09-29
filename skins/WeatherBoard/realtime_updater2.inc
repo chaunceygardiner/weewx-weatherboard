@@ -238,10 +238,18 @@
             .then(indoorAqiResponse => indoorAqiResponse.text())
             .then(indoorAqiData => {
               var indoor = JSON.parse(indoorAqiData);
-              if (indoor.hasOwnProperty("inAQI") && indoor.hasOwnProperty("inColor")) {
-                inAQI = indoor['inAQI'];
-                inColor = indoor['inColor'];
-                document.getElementById("indoor_aqi").innerHTML = inAQI.toFixed(0);
+              if (indoor.hasOwnProperty("ts") && indoor.hasOwnProperty("inAQI") && indoor.hasOwnProperty("inColor")) {
+                now = Date.now() / 1000.0;
+                var ts = indoor['ts'];
+                var age = now - ts;
+                if (age < 60) {
+                  inAQI = indoor['inAQI'].toFixed(0);
+                  inColor = indoor['inColor'];
+                } else {
+                  inAQI = '??';
+                  inColor = "rgb(128,128,128)";
+                }
+                document.getElementById("indoor_aqi").innerHTML = inAQI;
                 document.getElementById("indoor_aqi").style.color = inColor;
               }
             });
@@ -266,12 +274,19 @@
             .then(responseData => {
               try {
                 var j = JSON.parse(responseData);
-                if (j.hasOwnProperty("inTemp")) {
-                  inTemp = j['inTemp'].toFixed(1);
+                if (j.hasOwnProperty("ts") && j.hasOwnProperty("inTemp")) {
+                  now = Date.now() / 1000.0;
+                  var ts = j['ts'];
+                  var age = now - ts;
+                  if (age < 60) {
+                    inTemp = j['inTemp'].toFixed(1);
+                  } else {
+                    inTemp = '??.?';
+                  }
                   // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
                   if (inTemp.length == 5) {
                     inTemp = "&nbsp;&nbsp;" + inTemp;
-                  } else if (inTemp.length == 6) {
+                    } else if (inTemp.length == 6) {
                     inTemp = "&nbsp;" + inTemp;
                   }
                   document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
