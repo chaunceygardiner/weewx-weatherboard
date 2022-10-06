@@ -48,7 +48,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                                 'air_quality_index': 'Air Quality Index',
                                 'contact'          : 'Contact',
                                 'legend'           : 'Legend',
-                                'rain_24h'         : '24H Rainfall',
+                                'rain_today'       : 'Rain Today',
                                 'ten_min_max_gust' : '10m Gust',
                                 'time_of_day'      : 'Time',
                                 'high_gust_today'  : "Today's High Gust",
