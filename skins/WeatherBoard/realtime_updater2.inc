@@ -226,11 +226,11 @@
             document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
           }
 
-          if (age < 10 && result.hasOwnProperty("24h.rain.sum")) {
+          if (age < 10 && result.hasOwnProperty("day.rain.sum")) {
             // rain fall
-            document.getElementById("24h.rain.sum").innerHTML = result["24h.rain.sum"];
+            document.getElementById("day.rain.sum").innerHTML = result["day.rain.sum"];
           } else {
-            document.getElementById("24h.rain.sum").innerHTML = '?.??&nbsp;??';
+            document.getElementById("day.rain.sum").innerHTML = '?.??&nbsp;??';
           }
 
           // indoor aqi
