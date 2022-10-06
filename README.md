@@ -24,7 +24,7 @@ The WeatherBoard&trade; sking provides a simple one page skin that shows:
 * Current Wind Speed and Direction
 * 10 Minute High Wind Gust
 * Today's High Wind Gust
-* Today's Total Rainfall
+* 24H Total Rainfall
 * Current Rain Rate
 * Air Quality Indicator (If [weewx-purple](https://github.com/chaunceygardiner/weewx-purple) is installed.)
 
@@ -61,7 +61,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    changes:
       `[[LoopData]]`
           `target_report = WeatherBoardReport`
-          `fields = current.dateTime.raw, current.windDir.ordinal_compass, day.rain.sum, current.dewpoint, current.outTemp, current.rainRate, current.windSpeed, current.windSpeed.raw, 10m.windGust.max, day.windGust.max`
+          `fields = current.dateTime.raw, current.windDir.ordinal_compass, 24h.rain.sum, current.dewpoint, current.outTemp, current.rainRate, current.windSpeed, current.windSpeed.raw, 10m.windGust.max, day.windGust.max`
 
 1. Download the lastest release, weewx-weatherboard-2.0.1.zip, from the
    [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard).
