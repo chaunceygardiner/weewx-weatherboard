@@ -226,11 +226,11 @@
             document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
           }
 
-          if (age < 10 && result.hasOwnProperty("current.rain24h")) {
+          if (age < 10 && result.hasOwnProperty("24h.rain.sum")) {
             // rain fall
-            document.getElementById("current.rain24h").innerHTML = result["current.rain24h"];
+            document.getElementById("24h.rain.sum").innerHTML = result["24h.rain.sum"];
           } else {
-            document.getElementById("current.rain24h").innerHTML = '?.??&nbsp;??';
+            document.getElementById("24h.rain.sum").innerHTML = '?.??&nbsp;??';
           }
 
           // aqi
