@@ -100,7 +100,8 @@
 
   function updateCurrent() {
     if (pageTimedOut) {
-        return false;
+      setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
+      return false;
     }
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
@@ -301,16 +302,16 @@
       }
     };
     try {
-      xhttp.open("GET", "$Extras.loop_data_file", true);
+      xhttp.open("GET", "$Extras.loop_data_file", false);
       xhttp.send();
     } catch (e) {
     } finally {
-      // set a timer to call updateCurrent (the 2 second timer) 2s from now.
-      setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
       // Check to see if it's time to call expirePage.
       if (Date.now() >= timeOfNextPageExpiration) {
         expirePage();
       }
+      // set a timer to call updateCurrent (the 2 second timer) 2s from now.
+      setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
     }
   }
   function decode_rgb(i) {
