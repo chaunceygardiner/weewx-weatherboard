@@ -189,26 +189,15 @@
               document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;?';
             }
   
-            if (age < 10 && result.hasOwnProperty("day.windGust.max.formatted")) {
+            if (age < 10 && result.hasOwnProperty("day.windGust.max")) {
               // wind gust (today)
-              var windGustTM = result["day.windGust.max.formatted"];
-              if (windGustTM.length == 1) {
-                windGustTM = "&nbsp;" + windGustTM;
+              var windGustDay = result["day.windGust.max"];
+              if (windGustDay.length == 1) {
+                windGustDay = "&nbsp;" + windGustDay;
               }
-              document.getElementById("day.windGust.max.formatted").innerHTML = windGustTM;
+              document.getElementById("day.windGust.max").innerHTML = windGustDay;
             } else {
-              document.getElementById("day.windGust.max.formatted").innerHTML = '&nbsp;?&nbsp;???';
-            }
-  
-            if (age < 10 && result.hasOwnProperty("day.wind.rms.formatted")) {
-              // wind.rms (today)
-              var windRMS = result["day.wind.rms.formatted"];
-              if (windRMS.length == 1) {
-                windRMS = "&nbsp;" + windRMS;
-              }
-              document.getElementById("day.wind.rms.formatted").innerHTML = windRMS;
-            } else {
-              document.getElementById("day.wind.rms.formatted").innerHTML = '&nbsp;?&nbsp;???';
+              document.getElementById("day.windGust.max").innerHTML = '&nbsp;?&nbsp;???';
             }
   
             if (age < 10 && result.hasOwnProperty("current.UV.formatted")) {
