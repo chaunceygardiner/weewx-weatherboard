@@ -104,214 +104,231 @@
       return false;
     }
     var xhttp = new XMLHttpRequest();
+    xhttp.timeout = 2000;
     xhttp.onreadystatechange = function() {
       if (this.readyState == 4) {
-        if (this.status == 200) {
-          var result = JSON.parse(this.responseText);
-
-          // Check the date
-          // "dateTime": 1578965850,
-          var lastUpdate = new Date(result["current.dateTime.raw"] * 1000);
-          var age = Math.round(Math.abs(new Date() - lastUpdate) / 1000);
-          var element = document.getElementById("live-label");
-          element.style.fontWeight = "bolder";
-          element.style.color = "#e51b23";
-          if (age <= 6) {
-            element.innerHTML = "&nbsp;LIVE&nbsp;";
-          } else {
-            element.innerHTML = "&nbsp;" + age + "s ago&nbsp;";
-          }
-
-          // Display the time of the last update.
-          var activityElement = document.getElementById("activity-string");
-          activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-
-          // temp
-          if (age < 10 && result.hasOwnProperty("current.outTemp.formatted")) {
-            var temp = result["current.outTemp.formatted"];
-            if (temp.length == 3) {
-              temp = "&nbsp;&nbsp;" + temp;
-            } else if (temp.length == 4) {
-              temp = "&nbsp;" + temp;
-            }
-            document.getElementById("current.outTemp.formatted").innerHTML = temp;
-          } else {
-            document.getElementById("current.outTemp.formatted").innerHTML = '&nbsp;??.?';
-          }
-
-          if (age < 10 && result.hasOwnProperty("current.dewpoint.formatted")) {
-            // dew point
-            var dew = result["current.dewpoint.formatted"];
-            if (dew.length == 3) {
-              dew = "&nbsp;&nbsp;" + dew;
-            } else if (dew.length == 4) {
-              dew = "&nbsp;" + dew;
-            }
-            document.getElementById("current.dewpoint.formatted").innerHTML = dew;
-          } else {
-            document.getElementById("current.dewpoint.formatted").innerHTML = '&nbsp;??.?';
-          }
-
-          if (age < 10 && result.hasOwnProperty("current.windSpeed.formatted")) {
-            // wind speed and bearing
-            var windSpeed = result["current.windSpeed.formatted"];
-            if (windSpeed.length == 1) {
-              windSpeed = '&nbsp;' + windSpeed;
-            }
-            var windBearing = "";
-            if (result["current.windSpeed.raw"] != 0.0) {
-              if (result.hasOwnProperty("current.windDir.ordinal_compass")) {
-                windBearing = result["current.windDir.ordinal_compass"];
-              }
-            }
-            if (windBearing.length == 0) {
-              windBearing = windBearing + '&nbsp;&nbsp;&nbsp;';
-            } else if (windBearing.length == 1) {
-              windBearing = windBearing + '&nbsp;&nbsp;';
-            } else if (windBearing.length == 2) {
-              windBearing = windBearing + '&nbsp;';
-            }
-            document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
-          } else {
-            document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;?&nbsp;???';
-          }
-
-          if (age < 10 && result.hasOwnProperty("10m.windGust.max.formatted")) {
-            // wind gust (10m gust)
-            var windGust10m = result["10m.windGust.max.formatted"];
-            if (windGust10m.length == 1) {
-              windGust10m = "&nbsp;" + windGust10m;
-            }
-            document.getElementById("10m.windGust.max.formatted").innerHTML = windGust10m;
-          } else {
-            document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;?';
-          }
-
-          if (age < 10 && result.hasOwnProperty("day.windGust.max")) {
-            // wind gust (today)
-            var windGustTM = result["day.windGust.max"];
-            if (windGustTM.length == 5) {
-              windGustTM = "&nbsp;" + windGustTM;
-            }
-            document.getElementById("day.windGust.max").innerHTML = windGustTM;
-          } else {
-            document.getElementById("day.windGust.max").innerHTML = '&nbsp;?&nbsp;???';
-          }
-
-          if (age < 10 && result.hasOwnProperty("current.UV.formatted")) {
-            uv = result["current.UV.formatted"];
-            if (uv.length == 3) {
-              uv = "&nbsp;" + uv;
-            }
-          } else {
-            uv = "&nbsp;?.?";
-          }
-          document.getElementById("current.UV.formatted").innerHTML = uv;
-
-          if (age < 10 && result.hasOwnProperty("current.barometer.formatted")) {
-            barometer_value = result["current.barometer.formatted"] + "&nbsp;";
-            if (result.hasOwnProperty("trend.barometer.code")) {
-              barometer_value += barometer_symbols[result["trend.barometer.code"]];
+        try {
+          if (this.status == 200) {
+            var result = JSON.parse(this.responseText);
+  
+            // Check the date
+            // "dateTime": 1578965850,
+            var lastUpdate = new Date(result["current.dateTime.raw"] * 1000);
+            var age = Math.round(Math.abs(new Date() - lastUpdate) / 1000);
+            var element = document.getElementById("live-label");
+            element.style.fontWeight = "bolder";
+            element.style.color = "#e51b23";
+            if (age <= 6) {
+              element.innerHTML = "&nbsp;LIVE&nbsp;";
             } else {
-              barometer_value += "???"
+              element.innerHTML = "&nbsp;" + age + "s ago&nbsp;";
             }
-          } else {
-            barometer_value = "??.???&nbsp;?&nbsp;&nbsp;"
-          }
-          document.getElementById("barometer").innerHTML = barometer_value;
-
-          if (age < 10 && result.hasOwnProperty("current.rainRate")) {
-            // rain rate
-            document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
-          } else {
-            document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
-          }
-
-          if (age < 10 && result.hasOwnProperty("24h.rain.sum")) {
-            // rain fall
-            document.getElementById("24h.rain.sum").innerHTML = result["24h.rain.sum"];
-          } else {
-            document.getElementById("24h.rain.sum").innerHTML = '?.??&nbsp;??';
-          }
-
-          // indoor aqi
-          fetch('inAQI.txt')
-            .then(indoorAqiResponse => indoorAqiResponse.text())
-            .then(indoorAqiData => {
-              var indoor = JSON.parse(indoorAqiData);
-              if (indoor.hasOwnProperty("ts") && indoor.hasOwnProperty("inAQI") && indoor.hasOwnProperty("inColor")) {
-                now = Date.now() / 1000.0;
-                var ts = indoor['ts'];
-                var age = now - ts;
-                var hostname = location.hostname;
-                if (age < 60 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                  inAQI = indoor['inAQI'].toFixed(0);
-                  inColor = indoor['inColor'];
-                } else {
-                  inAQI = '??';
-                  inColor = "rgb(128,128,128)";
-                }
-                document.getElementById("indoor_aqi").innerHTML = inAQI;
-                document.getElementById("indoor_aqi").style.color = inColor;
+  
+            // Display the time of the last update.
+            var activityElement = document.getElementById("activity-string");
+            activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+  
+            // temp
+            if (age < 10 && result.hasOwnProperty("current.outTemp.formatted")) {
+              var temp = result["current.outTemp.formatted"];
+              if (temp.length == 3) {
+                temp = "&nbsp;&nbsp;" + temp;
+              } else if (temp.length == 4) {
+                temp = "&nbsp;" + temp;
               }
-            });
-
-          // aqi
-          #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-            if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
-              document.getElementById("aqi").innerHTML = result["current.pm2_5_1m_aqi.formatted"];
-            } else if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
-              document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"];
+              document.getElementById("current.outTemp.formatted").innerHTML = temp;
+            } else {
+              document.getElementById("current.outTemp.formatted").innerHTML = '&nbsp;??.?';
             }
-            if (result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
-              document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
-            } else if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
-              document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
+  
+            if (age < 10 && result.hasOwnProperty("current.dewpoint.formatted")) {
+              // dew point
+              var dew = result["current.dewpoint.formatted"];
+              if (dew.length == 3) {
+                dew = "&nbsp;&nbsp;" + dew;
+              } else if (dew.length == 4) {
+                dew = "&nbsp;" + dew;
+              }
+              document.getElementById("current.dewpoint.formatted").innerHTML = dew;
+            } else {
+              document.getElementById("current.dewpoint.formatted").innerHTML = '&nbsp;??.?';
             }
-          #end if
-
-          // indoor temp
-          fetch('inTemp.txt')
-            .then(response => response.text())
-            .then(responseData => {
-              try {
-                var j = JSON.parse(responseData);
-                if (j.hasOwnProperty("ts") && j.hasOwnProperty("inTemp")) {
+  
+            if (age < 10 && result.hasOwnProperty("current.windSpeed.formatted")) {
+              // wind speed and bearing
+              var windSpeed = result["current.windSpeed.formatted"];
+              if (windSpeed.length == 1) {
+                windSpeed = '&nbsp;' + windSpeed;
+              }
+              var windBearing = "";
+              if (result["current.windSpeed.raw"] != 0.0) {
+                if (result.hasOwnProperty("current.windDir.ordinal_compass")) {
+                  windBearing = result["current.windDir.ordinal_compass"];
+                }
+              }
+              if (windBearing.length == 0) {
+                windBearing = windBearing + '&nbsp;&nbsp;&nbsp;';
+              } else if (windBearing.length == 1) {
+                windBearing = windBearing + '&nbsp;&nbsp;';
+              } else if (windBearing.length == 2) {
+                windBearing = windBearing + '&nbsp;';
+              }
+              document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
+            } else {
+              document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;?&nbsp;???';
+            }
+  
+            if (age < 10 && result.hasOwnProperty("10m.windGust.max.formatted")) {
+              // wind gust (10m gust)
+              var windGust10m = result["10m.windGust.max.formatted"];
+              if (windGust10m.length == 1) {
+                windGust10m = "&nbsp;" + windGust10m;
+              }
+              document.getElementById("10m.windGust.max.formatted").innerHTML = windGust10m;
+            } else {
+              document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;?';
+            }
+  
+            if (age < 10 && result.hasOwnProperty("day.windGust.max.formatted")) {
+              // wind gust (today)
+              var windGustTM = result["day.windGust.max.formatted"];
+              if (windGustTM.length == 1) {
+                windGustTM = "&nbsp;" + windGustTM;
+              }
+              document.getElementById("day.windGust.max.formatted").innerHTML = windGustTM;
+            } else {
+              document.getElementById("day.windGust.max.formatted").innerHTML = '&nbsp;?&nbsp;???';
+            }
+  
+            if (age < 10 && result.hasOwnProperty("day.wind.rms.formatted")) {
+              // wind.rms (today)
+              var windRMS = result["day.wind.rms.formatted"];
+              if (windRMS.length == 1) {
+                windRMS = "&nbsp;" + windRMS;
+              }
+              document.getElementById("day.wind.rms.formatted").innerHTML = windRMS;
+            } else {
+              document.getElementById("day.wind.rms.formatted").innerHTML = '&nbsp;?&nbsp;???';
+            }
+  
+            if (age < 10 && result.hasOwnProperty("current.UV.formatted")) {
+              uv = result["current.UV.formatted"];
+              if (uv.length == 3) {
+                uv = "&nbsp;" + uv;
+              }
+            } else {
+              uv = "&nbsp;?.?";
+            }
+            document.getElementById("current.UV.formatted").innerHTML = uv;
+  
+            if (age < 10 && result.hasOwnProperty("current.barometer.formatted")) {
+              barometer_value = result["current.barometer.formatted"] + "&nbsp;";
+              if (result.hasOwnProperty("trend.barometer.code")) {
+                barometer_value += barometer_symbols[result["trend.barometer.code"]];
+              } else {
+                barometer_value += "???"
+              }
+            } else {
+              barometer_value = "??.???&nbsp;?&nbsp;&nbsp;"
+            }
+            document.getElementById("barometer").innerHTML = barometer_value;
+  
+            if (age < 10 && result.hasOwnProperty("current.rainRate")) {
+              // rain rate
+              document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
+            } else {
+              document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
+            }
+  
+            if (age < 10 && result.hasOwnProperty("24h.rain.sum")) {
+              // rain fall
+              document.getElementById("24h.rain.sum").innerHTML = result["24h.rain.sum"];
+            } else {
+              document.getElementById("24h.rain.sum").innerHTML = '?.??&nbsp;??';
+            }
+  
+            // indoor aqi
+            fetch('inAQI.txt')
+              .then(indoorAqiResponse => indoorAqiResponse.text())
+              .then(indoorAqiData => {
+                var indoor = JSON.parse(indoorAqiData);
+                if (indoor.hasOwnProperty("ts") && indoor.hasOwnProperty("inAQI") && indoor.hasOwnProperty("inColor")) {
                   now = Date.now() / 1000.0;
-                  var ts = j['ts'];
+                  var ts = indoor['ts'];
                   var age = now - ts;
                   var hostname = location.hostname;
                   if (age < 60 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                    inTemp = j['inTemp'].toFixed(1);
+                    inAQI = indoor['inAQI'].toFixed(0);
+                    inColor = indoor['inColor'];
                   } else {
-                    inTemp = '??.?';
+                    inAQI = '??';
+                    inColor = "rgb(128,128,128)";
                   }
-                  // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-                  if (inTemp.length == 5) {
-                    inTemp = "&nbsp;&nbsp;" + inTemp;
-                    } else if (inTemp.length == 6) {
-                    inTemp = "&nbsp;" + inTemp;
-                  }
-                  document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
+                  document.getElementById("indoor_aqi").innerHTML = inAQI;
+                  document.getElementById("indoor_aqi").style.color = inColor;
                 }
-              } catch (e) {
-                // Sometimes, we get a partial file to parse.
+              });
+  
+            // aqi
+            #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
+              if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
+                document.getElementById("aqi").innerHTML = result["current.pm2_5_1m_aqi.formatted"];
+              } else if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+                document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"];
               }
-            });
+              if (result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
+                document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
+              } else if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+                document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
+              }
+            #end if
+  
+            // indoor temp
+            fetch('inTemp.txt')
+              .then(response => response.text())
+              .then(responseData => {
+                try {
+                  var j = JSON.parse(responseData);
+                  if (j.hasOwnProperty("ts") && j.hasOwnProperty("inTemp")) {
+                    now = Date.now() / 1000.0;
+                    var ts = j['ts'];
+                    var age = now - ts;
+                    var hostname = location.hostname;
+                    if (age < 60 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
+                      inTemp = j['inTemp'].toFixed(1);
+                    } else {
+                      inTemp = '??.?';
+                    }
+                    // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
+                    if (inTemp.length == 5) {
+                      inTemp = "&nbsp;&nbsp;" + inTemp;
+                      } else if (inTemp.length == 6) {
+                      inTemp = "&nbsp;" + inTemp;
+                    }
+                    document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
+                  }
+                } catch (e) {
+                  // Sometimes, we get a partial file to parse.
+                }
+              });
+          }
+        } catch (e) {
+          console.log(e);
+        } finally {
+          // Check to see if it's time to call expirePage.
+          if (Date.now() >= timeOfNextPageExpiration) {
+            expirePage();
+          }
+          // set a timer to call updateCurrent (the 2 second timer) 2s from now.
+          setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
         }
       }
     };
     try {
-      xhttp.open("GET", "$Extras.loop_data_file", false);
+      xhttp.open("GET", "$Extras.loop_data_file", true);
       xhttp.send();
     } catch (e) {
-    } finally {
-      // Check to see if it's time to call expirePage.
-      if (Date.now() >= timeOfNextPageExpiration) {
-        expirePage();
-      }
-      // set a timer to call updateCurrent (the 2 second timer) 2s from now.
-      setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
+      console.log(e);
     }
   }
   function decode_rgb(i) {
