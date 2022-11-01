@@ -311,6 +311,14 @@
                   // Sometimes, we get a partial file to parse.
                 }
               });
+          } else {
+            // Status not OK (!= 200).
+            var element = document.getElementById("live-label");
+            element.style.fontWeight = "bolder";
+            element.style.color = "#e51b23";
+            element.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+            var activityElement = document.getElementById("activity-string");
+            activityElement.innerHTML = "OFFLINE";
           }
         } catch (e) {
           console.log(e);

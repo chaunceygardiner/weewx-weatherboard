@@ -248,6 +248,14 @@
                 document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
               }
             #end if
+          } else {
+            // Status not OK (!= 200).
+            var element = document.getElementById("live-label");
+            element.style.fontWeight = "bolder";
+            element.style.color = "#e51b23";
+            element.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+            var activityElement = document.getElementById("activity-string");
+            activityElement.innerHTML = "OFFLINE";
           }
         } finally {
           // Check to see if it's time to call expirePage.
