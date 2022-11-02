@@ -229,11 +229,18 @@
               document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
             }
   
-            if (age < 10 && result.hasOwnProperty("24h.rain.sum")) {
+            if (age < 10 && result.hasOwnProperty("day.rain.sum.formatted")) {
               // rain fall
-              document.getElementById("24h.rain.sum").innerHTML = result["24h.rain.sum"];
+              document.getElementById("day.rain.sum.formatted").innerHTML = result["day.rain.sum.formatted"];
             } else {
-              document.getElementById("24h.rain.sum").innerHTML = '?.??&nbsp;??';
+              document.getElementById("day.rain.sum.formatted").innerHTML = '?.??';
+            }
+  
+            if (age < 10 && result.hasOwnProperty("24h.rain.sum.formatted")) {
+              // rain fall
+              document.getElementById("24h.rain.sum.formatted").innerHTML = result["24h.rain.sum.formatted"];
+            } else {
+              document.getElementById("24h.rain.sum.formatted").innerHTML = '?.??';
             }
   
             // indoor aqi
