@@ -86,7 +86,7 @@
   var timeOfNextPageExpiration = getTimeOfNextPageExpiration();
   addLoadEvent(updateCurrent);
 
-  var barometer_symbols = {
+  const barometer_symbols = {
      '4': '&#9650;&plus;&plus;',
      '3': '&#9650;&plus;&nbsp;',
      '2': '&#9650;&nbsp;&nbsp;',
@@ -98,19 +98,21 @@
     '-4': '&#9660;&plus;&plus;',
   };
 
+  var counter = 0;
   function updateCurrent() {
     if (pageTimedOut) {
       setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
       return false;
     }
     var xhttp = new XMLHttpRequest();
-    xhttp.timeout = 2000;
+    xhttp.timeout = 4000;
     xhttp.onreadystatechange = function() {
       if (this.readyState == 4) {
         try {
           if (this.status == 200) {
+            counter = 0;
             var result = JSON.parse(this.responseText);
-  
+
             // Check the date
             // "dateTime": 1578965850,
             var lastUpdate = new Date(result["current.dateTime.raw"] * 1000);
@@ -123,11 +125,11 @@
             } else {
               element.innerHTML = "&nbsp;" + age + "s ago&nbsp;";
             }
-  
+
             // Display the time of the last update.
             var activityElement = document.getElementById("activity-string");
             activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-  
+
             // temp
             if (age < 10 && result.hasOwnProperty("current.outTemp.formatted")) {
               var temp = result["current.outTemp.formatted"];
@@ -140,7 +142,7 @@
             } else {
               document.getElementById("current.outTemp.formatted").innerHTML = '&nbsp;??.?';
             }
-  
+
             if (age < 10 && result.hasOwnProperty("current.dewpoint.formatted")) {
               // dew point
               var dew = result["current.dewpoint.formatted"];
@@ -153,7 +155,7 @@
             } else {
               document.getElementById("current.dewpoint.formatted").innerHTML = '&nbsp;??.?';
             }
-  
+
             if (age < 10 && result.hasOwnProperty("current.windSpeed.formatted")) {
               // wind speed and bearing
               var windSpeed = result["current.windSpeed.formatted"];
@@ -177,7 +179,7 @@
             } else {
               document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;?&nbsp;???';
             }
-  
+
             if (age < 10 && result.hasOwnProperty("10m.windGust.max.formatted")) {
               // wind gust (10m gust)
               var windGust10m = result["10m.windGust.max.formatted"];
@@ -188,7 +190,7 @@
             } else {
               document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;?';
             }
-  
+
             if (age < 10 && result.hasOwnProperty("day.windGust.max")) {
               // wind gust (today)
               var windGustDay = result["day.windGust.max"];
@@ -199,7 +201,7 @@
             } else {
               document.getElementById("day.windGust.max").innerHTML = '&nbsp;?&nbsp;???';
             }
-  
+
             if (age < 10 && result.hasOwnProperty("current.UV.formatted")) {
               uv = result["current.UV.formatted"];
               if (uv.length == 3) {
@@ -209,7 +211,7 @@
               uv = "&nbsp;?.?";
             }
             document.getElementById("current.UV.formatted").innerHTML = uv;
-  
+
             if (age < 10 && result.hasOwnProperty("current.barometer.formatted")) {
               barometer_value = result["current.barometer.formatted"] + "&nbsp;";
               if (result.hasOwnProperty("trend.barometer.code")) {
@@ -221,28 +223,28 @@
               barometer_value = "??.???&nbsp;?&nbsp;&nbsp;"
             }
             document.getElementById("barometer").innerHTML = barometer_value;
-  
-            if (age < 10 && result.hasOwnProperty("current.rainRate")) {
-              // rain rate
-              document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
-            } else {
-              document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
-            }
-  
+
             if (age < 10 && result.hasOwnProperty("day.rain.sum.formatted")) {
               // rain fall
               document.getElementById("day.rain.sum.formatted").innerHTML = result["day.rain.sum.formatted"];
             } else {
               document.getElementById("day.rain.sum.formatted").innerHTML = '?.??';
             }
-  
+
             if (age < 10 && result.hasOwnProperty("24h.rain.sum.formatted")) {
               // rain fall
               document.getElementById("24h.rain.sum.formatted").innerHTML = result["24h.rain.sum.formatted"];
             } else {
               document.getElementById("24h.rain.sum.formatted").innerHTML = '?.??';
             }
-  
+
+            if (age < 10 && result.hasOwnProperty("current.rainRate")) {
+              // rain rate
+              document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
+            } else {
+              document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
+            }
+
             // indoor aqi
             fetch('inAQI.txt')
               .then(indoorAqiResponse => indoorAqiResponse.text())
@@ -264,7 +266,7 @@
                   document.getElementById("indoor_aqi").style.color = inColor;
                 }
               });
-  
+
             // aqi
             #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
               if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
@@ -278,7 +280,7 @@
                 document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
               }
             #end if
-  
+
             // indoor temp
             fetch('inTemp.txt')
               .then(response => response.text())
@@ -309,12 +311,15 @@
               });
           } else {
             // Status not OK (!= 200).
+            counter += 1;
+            console.log('status: ' + this.status + ', counter: ' + counter);
             var element = document.getElementById("live-label");
             element.style.fontWeight = "bolder";
             element.style.color = "#e51b23";
             element.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
             var activityElement = document.getElementById("activity-string");
             activityElement.innerHTML = "OFFLINE";
+            console.log(counter+"OFF"+this.status);
           }
         } catch (e) {
           console.log(e);
