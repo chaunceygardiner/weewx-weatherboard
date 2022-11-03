@@ -104,7 +104,7 @@
         return false;
     }
     var xhttp = new XMLHttpRequest();
-    xhttp.timeout = 4000;
+    xhttp.timeout = 10000;
     xhttp.onreadystatechange = function() {
       if (this.readyState == 4) {
         try {
