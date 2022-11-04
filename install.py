@@ -41,7 +41,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             'googleAnalyticsId': '',
                             'analytics_host'   : '',
                             'show_purple'      : False,
-                            'refresh_rate'     : 2.5,
+                            'refresh_rate'     : 2,
                         },
                         'Labels': {
                             'Generic': {

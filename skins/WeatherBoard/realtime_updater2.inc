@@ -12,7 +12,7 @@
   #if $Extras.has_key('refresh_rate')
     refresh_rate = $Extras.refresh_rate;
   #else
-    refresh_rate = 2.5;
+    refresh_rate = 2;
   #end if
   #if $Extras.has_key('expiration_time')
     expiration_time = $Extras.expiration_time;
@@ -44,20 +44,8 @@
           return results[1];
       }
   }
-  var pageTimedOut = false;
   function expirePage() {
-    if (pageTimedOut) {
-        // We've already timed out,
-        return false;
-    }
     pageTimedOut = true;
-    var liveLabel = document.getElementById("live-label");
-    liveLabel.innerHTML = "CLICK";
-    liveLabel.style.color = "red";
-    var activityElement = document.getElementById("activity-string");
-    activityElement.innerHTML = "";
-    // set an onclick event on live-label to restart everything
-    liveLabel.addEventListener("click", clickListener);
   }
   function clickListener() {
     // disable the onClick event again
@@ -67,23 +55,23 @@
     // restart everything
     pageTimedOut = false;
     // restart the page timeout
-    timeOfNextPageExpiration = getTimeOfNextPageExpiration();
+    setPageExpirationTimer();
   }
   function getTimeToNextUpdateCurrent() {
     return refresh_rate * 1000;
   }
-  // Get time that page expires.
-  function getTimeOfNextPageExpiration() {
+  function setPageExpirationTimer() {
     if (getUrlParam('pageUpdate') !== page_update_pwd) {
       // expire in N hours
-      return Date.now() + 1000 * 60 * 60 * expiration_time;
+      setTimeout(expirePage, 1000 * 60 * 60 * expiration_time);
     } else {
       // expire in 10,000 days
       return Date.now() + 1000 * 60 * 60 * 24 * 10000;
     }
   }
-  // global variables - times of next events
-  var timeOfNextPageExpiration = getTimeOfNextPageExpiration();
+  // Set interval and page expiration timer.
+  setPageExpirationTimer();
+  setInterval(updateCurrent, refresh_rate * 1000);
   addLoadEvent(updateCurrent);
 
   const barometer_symbols = {
@@ -98,14 +86,23 @@
     '-4': '&#9660;&plus;&plus;',
   };
 
-  var counter = 0;
+  var counter      = 0;
+  var pageTimedOut = false;
   function updateCurrent() {
     if (pageTimedOut) {
-      setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
+      // If click listener not already set up...
+      var liveLabel = document.getElementById("live-label");
+      if (liveLabel.innterHTML != "Expired") {
+        liveLabel.innerHTML = "Expired";
+        var activityElement = document.getElementById("activity-string");
+        activityElement.innerHTML = "CLICK-ME";
+        // set an onclick event to restart
+        activityElement.addEventListener("click", clickListener);
+      }
       return false;
     }
     var xhttp = new XMLHttpRequest();
-    xhttp.timeout = 2000;
+    xhttp.timeout = 1800;
     xhttp.onload = function() {
       try {
         counter = 0;
@@ -326,14 +323,6 @@
       } catch (e) {
         console.log(e);
       }
-    }
-    xhttp.onloadend = function() {
-      // Check to see if it's time to call expirePage.
-      if (Date.now() >= timeOfNextPageExpiration) {
-        expirePage();
-      }
-      // set a timer to call updateCurrent (the 2 second timer) 2s from now.
-      setTimeout(updateCurrent, getTimeToNextUpdateCurrent());
     }
     try {
       xhttp.open("GET", "$Extras.loop_data_file", true);
