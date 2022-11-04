@@ -58,17 +58,10 @@
     // restart the page timeout
     setPageExpirationTimer();
   }
-  function getTimeToNextUpdateCurrent() {
-    return refresh_rate * 1000;
-  }
   function setPageExpirationTimer() {
     if (getUrlParam('pageUpdate') !== page_update_pwd) {
       // expire in N hours
-      //setTimeout(expirePage, 1000 * 60 * 60 * expiration_time);
-      setTimeout(expirePage, 1000 * 10);
-    } else {
-      // expire in 10,000 days
-      return Date.now() + 1000 * 60 * 60 * 24 * 10000;
+      setTimeout(expirePage, 1000 * 60 * 60 * expiration_time);
     }
   }
   // Set interval and page expiration timer.
