@@ -118,6 +118,7 @@
         // Display the time of the last update.
         var activityElement = document.getElementById("activity-string");
         activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        activityElement.style.color = "red";
 
         // temp
         if (age < 10 && result.hasOwnProperty("current.outTemp.formatted")) {
@@ -312,8 +313,7 @@
         element.style.color = "#e51b23";
         element.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
         var activityElement = document.getElementById("activity-string");
-        activityElement.innerHTML = "OFFLINE";
-        console.log(counter + "OFFLINE" + this.status);
+        activityElement.style.color = "blue";
       } catch (e) {
         console.log(e);
       }
