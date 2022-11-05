@@ -236,7 +236,7 @@
         }
 
         // indoor aqi
-        fetch('inAQI.txt')
+        fetch('$Extras.in_aqi_file')
           .then(indoorAqiResponse => indoorAqiResponse.text())
           .then(indoorAqiData => {
             var indoor = JSON.parse(indoorAqiData);
@@ -272,7 +272,7 @@
         #end if
 
         // indoor temp
-        fetch('inTemp.txt')
+        fetch('$Extras.in_temp_file')
           .then(response => response.text())
           .then(responseData => {
             try {
