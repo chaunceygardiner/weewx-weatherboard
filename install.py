@@ -35,7 +35,6 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             'subtitle'         : 'Updated continuously.',
                             'logo'             : '',
                             'loop_data_file'   : 'loop-data.txt',
-                            'contact_email'    : 'weatherguy@my-weather-website.com',
                             'expiration_time'  : 4,
                             'page_update_pwd'  : 'foobar',
                             'googleAnalyticsId': '',
@@ -46,7 +45,6 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'Labels': {
                             'Generic': {
                                 'air_quality_index': 'Air Quality Index',
-                                'contact'          : 'Contact',
                                 'legend'           : 'Legend',
                                 'rain_today'       : 'Rain Today',
                                 'ten_min_max_gust' : '10m Gust',
@@ -68,7 +66,6 @@ class WeatherBoardInstaller(ExtensionInstaller):
             files = [('skins/WeatherBoard', [
                 'skins/WeatherBoard/analytics.inc',
                 'skins/WeatherBoard/apple-touch-icon-180x180.png',
-                'skins/WeatherBoard/contact.inc',
                 'skins/WeatherBoard/favicon.ico',
                 'skins/WeatherBoard/footer.inc',
                 'skins/WeatherBoard/footer2.inc',
