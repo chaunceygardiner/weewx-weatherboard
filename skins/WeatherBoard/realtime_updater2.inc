@@ -250,7 +250,7 @@
                 inColor = indoor['inColor'];
               } else {
                 inAQI = '??';
-                inColor = "rgb(128,128,128)";
+                inColor = "rgb(255,255,255)";
               }
               document.getElementById("indoor_aqi").innerHTML = inAQI;
               document.getElementById("indoor_aqi").style.color = inColor;
