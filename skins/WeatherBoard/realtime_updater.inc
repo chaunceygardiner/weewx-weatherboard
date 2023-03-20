@@ -70,15 +70,16 @@
   addLoadEvent(updateCurrent);
 
   const barometer_symbols = {
-     '4': '&#9650;&plus;&plus;',
-     '3': '&#9650;&plus;&nbsp;',
-     '2': '&#9650;&nbsp;&nbsp;',
-     '1': '&#9650;&minus;&nbsp;',
+     '4': '<i class="arrow up_dir" style="margin-right:15px;"></i>&plus;&plus;',
+     '3': '<i class="arrow up_dir" style="margin-right:15px;"></i>&plus;&nbsp;',
+     '2': '<i class="arrow up_dir" style="margin-right:15px;"></i>&nbsp;&nbsp;',
+     '1': '<i class="arrow up_dir" style="margin-right:15px;"></i>&minus;&nbsp;',
      '0': '&minus;&minus;&nbsp;',
-    '-1': '&#9660;&minus;&nbsp;',
-    '-2': '&#9660;&nbsp;&nbsp;',
-    '-3': '&#9660;&plus;&nbsp;',
-    '-4': '&#9660;&plus;&plus;',
+    '-1': '<i class="arrow down_dir" style="margin-right:15px;"></i>&minus;&nbsp;',
+    '-2': '<i class="arrow down_dir" style="margin-right:15px;"></i>&nbsp;&nbsp;',
+    '-2': '<i class="arrow down_dir" style="margin-right:15px;"></i>&nbsp;&nbsp;',
+    '-3': '<i class="arrow down_dir" style="margin-right:15px;"></i>&plus;&nbsp;',
+    '-4': '<i class="arrow down_dir" style="margin-right:15px;"></i>&plus;&plus;',
   };
 
   var counter = 0;
