@@ -283,7 +283,7 @@
                 var ts = j['ts'];
                 var age = now - ts;
                 var hostname = location.hostname;
-                if (age < 60 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
+                if (age < 90 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
                   inTemp = j['inTemp'].toFixed(1);
                 } else {
                   inTemp = '??.?';
