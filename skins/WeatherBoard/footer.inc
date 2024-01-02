@@ -23,7 +23,7 @@
                 <span style="border-bottom:1px solid;">$obs.label.rain24h - $obs.label.rainRate</span><br>
                 $obs.label.legend - $obs.label.time_of_day<br>
 #end if
-                <span>&copy;2019-2023 by John A Kline.</span>
+                <span>&copy;2019-2024 by John A Kline.</span>
               </td>
               <td id="aqi" style="width:9%;font-family:monospace;font-style:normal;font-size:95px;"></td>
               <td id="activity-string" style="width:65%;font-family:monospace;font-style:normal;font-size:95px;text-align:right;"></td>
