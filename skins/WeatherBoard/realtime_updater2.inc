@@ -246,7 +246,7 @@
               var ts = indoor['ts'];
               var age = now - ts;
               var hostname = location.hostname;
-              if (age < 120 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
+              if (age < 180 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
                 inAQI = indoor['inAQI'].toFixed(0);
                 inColor = indoor['inColor'];
               } else {
