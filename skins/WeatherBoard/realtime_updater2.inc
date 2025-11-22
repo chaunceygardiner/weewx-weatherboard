@@ -236,6 +236,29 @@
           document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
         }
 
+        // indoor co2
+        fetch('$Extras.in_co2_file')
+          .then(indoorCo2Response => indoorCo2Response.text())
+          .then(indoorCo2Data => {
+            // {"ts": 1763844900, "inCO2": 818.33, "inColor": "#FF0000"}
+            var indoor = JSON.parse(indoorCo2Data);
+            if (indoor.hasOwnProperty("ts") && indoor.hasOwnProperty("inCO2") && indoor.hasOwnProperty("inColor")) {
+              now = Date.now() / 1000.0;
+              var ts = indoor['ts'];
+              var age = now - ts;
+              var hostname = location.hostname;
+              if (age < 120 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
+                inCO2 = indoor['inCO2'].toFixed(0);
+                inColor = indoor['inColor'];
+              } else {
+                inCO2 = '???';
+                inColor = "rgb(255,255,255)";
+              }
+              document.getElementById("indoor_co2").innerHTML = inCO2;
+              document.getElementById("indoor_co2").style.color = inColor;
+            }
+          });
+
         // indoor aqi
         fetch('$Extras.in_aqi_file')
           .then(indoorAqiResponse => indoorAqiResponse.text())
