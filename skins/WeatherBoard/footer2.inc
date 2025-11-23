@@ -9,16 +9,16 @@
       </div>
       <div class="widget_contents">
         <div class="footnote" style="color:red;width:100%;">
-          <table style="width:95%;">
+          <table style="width:95%;font-size:83px;">
             <tr>
               <td style="width:1%;"></td>
-              <td id="indoor_co2" style="width:14%;font-family:monospace;font-style:normal;font-size:92px;text-align:right;"></td>
+              <td id="indoor_co2" style="width:13.4%;font-family:monospace;font-style:normal;text-align:right;"></td>
               <td style="width:2%;"></td>
-              <td id="indoor_aqi" style="width:7%;font-family:monospace;font-style:normal;font-size:92px;"></td>
+              <td id="indoor_aqi" style="width:10%;font-family:monospace;font-style:normal;"></td>
               <td style="width:2%;"></td>
-              <td id="aqi" style="width:7%;font-family:monospace;font-style:normal;font-size:92px;"></td>
+              <td id="aqi" style="width:10%;font-family:monospace;font-style:normal;"></td>
               <td style="width:2%;"></td>
-              <td id="activity-string" style="width:65%;font-family:monospace;font-style:normal;font-size:92px;text-align:right;"></td>
+              <td id="activity-string" style="width:61.5%;font-family:monospace;font-style:normal;text-align:right;"></td>
             </tr>
           </table>
         </div>

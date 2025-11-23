@@ -248,10 +248,10 @@
               var age = now - ts;
               var hostname = location.hostname;
               if (age < 120 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                inCO2 = indoor['inCO2'].toFixed(0);
+                inCO2 = String(indoor['inCO2'].toFixed(0)).padStart(4).replaceAll(' ','&nbsp;');
                 inColor = indoor['inColor'];
               } else {
-                inCO2 = '???';
+                inCO2 = '????';
                 inColor = "rgb(255,255,255)";
               }
               document.getElementById("indoor_co2").innerHTML = inCO2;
@@ -270,10 +270,10 @@
               var age = now - ts;
               var hostname = location.hostname;
               if (age < 120 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                inAQI = indoor['inAQI'].toFixed(0);
+                inAQI = String(indoor['inAQI'].toFixed(0)).padStart(3).replaceAll(' ','&nbsp;');
                 inColor = indoor['inColor'];
               } else {
-                inAQI = '??';
+                inAQI = '???';
                 inColor = "rgb(255,255,255)";
               }
               document.getElementById("indoor_aqi").innerHTML = inAQI;
@@ -283,16 +283,8 @@
 
         // aqi
         #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-          if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
-            document.getElementById("aqi").innerHTML = result["current.pm2_5_1m_aqi.formatted"];
-          } else if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
-            document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"];
-          }
-          if (result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
-            document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
-          } else if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
-            document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
-          }
+          document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"].padStart(3).replaceAll(' ','&nbsp;');
+          document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
         #end if
 
         // indoor temp
