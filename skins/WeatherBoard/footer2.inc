@@ -12,13 +12,13 @@
           <table style="width:95%;">
             <tr>
               <td style="width:1%;"></td>
-              <td id="indoor_aqi" style="width:7%;font-family:monospace;font-style:normal;font-size:90px;"></td>
+              <td id="indoor_co2" style="width:14%;font-family:monospace;font-style:normal;font-size:92px;text-align:right;"></td>
               <td style="width:2%;"></td>
-              <td id="aqi" style="width:7%;font-family:monospace;font-style:normal;font-size:90px;"></td>
+              <td id="indoor_aqi" style="width:7%;font-family:monospace;font-style:normal;font-size:92px;"></td>
               <td style="width:2%;"></td>
-              <td id="indoor_co2" style="width:14%;font-family:monospace;font-style:normal;font-size:90px;text-align:right;"></td>
+              <td id="aqi" style="width:7%;font-family:monospace;font-style:normal;font-size:92px;"></td>
               <td style="width:2%;"></td>
-              <td id="activity-string" style="width:55%;font-family:monospace;font-style:normal;font-size:90px;text-align:right;"></td>
+              <td id="activity-string" style="width:65%;font-family:monospace;font-style:normal;font-size:92px;text-align:right;"></td>
             </tr>
           </table>
         </div>
