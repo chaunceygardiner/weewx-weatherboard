@@ -79,7 +79,7 @@
             <table id="centered_readings">
               <tr>
                 <td style="text-align:center;font-family:monospace;font-size:105px">
-                  <span id="current.outTemp.formatted">$current.outTemp.formatted</span><span>/</span><span id="current.dewpoint.formatted">$current.dewpoint.formatted</span><span>/</span><span id="current.inTemp.formatted">$current.inTemp.formatted</span>
+                  <span id="current.outTemp.formatted">$current.outTemp.formatted</span><span>&nbsp;</span><span id="current.dewpoint.formatted">$current.dewpoint.formatted</span><span>&nbsp;</span><span id="current.inTemp.formatted">$current.inTemp.formatted</span>
               </td>
               </tr>
               <tr>
@@ -87,13 +87,14 @@
                   <span id="windSpeedAndBearing" style="font-family:monospace;font-size:105px;text-align:center;">
                     $current.windSpeed.formatted $current.windDir.ordinal_compass
                   </span><span>/</span><span id="10m.windGust.max.formatted">
-                  </span><span>/</span><span id="day.windGust.max"></span>
+                  </span><span>/</span><span id="day.windGust.max.formatted"></span>
+                  <span>&nbsp;</span><span id="current.radiation.formatted"></span>
                 </td>
               </tr>
               <tr>
                 <td style="text-align:center;font-family:monospace;font-size:105px">
                   <span id="current.UV.formatted">$current.UV.formatted</span>
-                  <span>/</span>
+                  <span>&nbsp;</span>
                   <span id="barometer">$current.barometer</span>
                 </td>
               </tr>
