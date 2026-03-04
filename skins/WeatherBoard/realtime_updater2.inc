@@ -63,6 +63,13 @@
       setTimeout(expirePage, 1000 * 60 * 60 * expiration_time);
     }
   }
+  function getInCo2File() {
+    in_co2_file = getUrlParam('inCO2File');
+    if (in_co2_file == "") {
+        in_co2_file = '$Extras.in_co2_file';
+    }
+    return in_co2_file;
+  }
   // Set interval and page expiration timer.
   setPageExpirationTimer();
   setInterval(updateCurrent, refresh_rate * 1000);
@@ -239,7 +246,7 @@
         }
 
         // indoor co2
-        fetch('$Extras.in_co2_file')
+        fetch(getInCo2File())
           .then(indoorCo2Response => indoorCo2Response.text())
           .then(indoorCo2Data => {
             // {"ts": 1763844900, "inCO2": 818.33, "inColor": "#FF0000"}
