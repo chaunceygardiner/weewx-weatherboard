@@ -63,6 +63,13 @@
       setTimeout(expirePage, 1000 * 60 * 60 * expiration_time);
     }
   }
+  function getInTempFile() {
+    in_temp_file = getUrlParam('inTempFile');
+    if (in_temp_file == "") {
+        in_temp_file = '$Extras.in_temp_file';
+    }
+    return in_temp_file;
+  }
   function getInCo2File() {
     in_co2_file = getUrlParam('inCO2File');
     if (in_co2_file == "") {
@@ -297,7 +304,8 @@
         #end if
 
         // indoor temp
-        fetch('$Extras.in_temp_file')
+        console.log(getInTempFile())
+        fetch(getInTempFile())
           .then(response => response.text())
           .then(responseData => {
             try {
