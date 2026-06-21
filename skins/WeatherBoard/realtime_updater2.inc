@@ -254,7 +254,13 @@
 
         // indoor co2
         fetch(getInCo2File())
-          .then(indoorCo2Response => indoorCo2Response.text())
+          .then(indoorCo2Response => {
+            // fetch only rejects on network failure, not on HTTP error status
+            // (e.g. 403/404/500), so check explicitly and route a bad status
+            // into the .catch below.
+            if (!indoorCo2Response.ok) throw new Error('HTTP ' + indoorCo2Response.status);
+            return indoorCo2Response.text();
+          })
           .then(indoorCo2Data => {
             // {"ts": 1763844900, "inCO2": 818.33, "inColor": "#FF0000"}
             var indoor = JSON.parse(indoorCo2Data);
@@ -273,11 +279,20 @@
               document.getElementById("indoor_co2").innerHTML = inCO2;
               document.getElementById("indoor_co2").style.color = inColor;
             }
+          })
+          .catch(e => {
+            // Bad status, unparseable body, or network error: show the value
+            // as unreadable rather than leaving a stale reading on the page.
+            document.getElementById("indoor_co2").innerHTML = '????';
+            document.getElementById("indoor_co2").style.color = "rgb(255,255,255)";
           });
 
         // indoor aqi
         fetch('$Extras.in_aqi_file')
-          .then(indoorAqiResponse => indoorAqiResponse.text())
+          .then(indoorAqiResponse => {
+            if (!indoorAqiResponse.ok) throw new Error('HTTP ' + indoorAqiResponse.status);
+            return indoorAqiResponse.text();
+          })
           .then(indoorAqiData => {
             var indoor = JSON.parse(indoorAqiData);
             if (indoor.hasOwnProperty("ts") && indoor.hasOwnProperty("inAQI") && indoor.hasOwnProperty("inColor")) {
@@ -295,6 +310,10 @@
               document.getElementById("indoor_aqi").innerHTML = inAQI;
               document.getElementById("indoor_aqi").style.color = inColor;
             }
+          })
+          .catch(e => {
+            document.getElementById("indoor_aqi").innerHTML = '???';
+            document.getElementById("indoor_aqi").style.color = "rgb(255,255,255)";
           });
 
         // aqi
@@ -306,31 +325,36 @@
         // indoor temp
         console.log(getInTempFile())
         fetch(getInTempFile())
-          .then(response => response.text())
+          .then(response => {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.text();
+          })
           .then(responseData => {
-            try {
-              var j = JSON.parse(responseData);
-              if (j.hasOwnProperty("ts") && j.hasOwnProperty("inTemp")) {
-                now = Date.now() / 1000.0;
-                var ts = j['ts'];
-                var age = now - ts;
-                var hostname = location.hostname;
-                if (age < 90 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                  inTemp = j['inTemp'].toFixed(1);
-                } else {
-                  inTemp = '??.?';
-                }
-                // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-                if (inTemp.length == 5) {
-                  inTemp = "&nbsp;&nbsp;" + inTemp;
-                  } else if (inTemp.length == 6) {
-                  inTemp = "&nbsp;" + inTemp;
-                }
-                document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
+            var j = JSON.parse(responseData);
+            if (j.hasOwnProperty("ts") && j.hasOwnProperty("inTemp")) {
+              now = Date.now() / 1000.0;
+              var ts = j['ts'];
+              var age = now - ts;
+              var hostname = location.hostname;
+              if (age < 90 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
+                inTemp = j['inTemp'].toFixed(1);
+              } else {
+                inTemp = '??.?';
               }
-            } catch (e) {
-              // Sometimes, we get a partial file to parse.
+              // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
+              if (inTemp.length == 5) {
+                inTemp = "&nbsp;&nbsp;" + inTemp;
+                } else if (inTemp.length == 6) {
+                inTemp = "&nbsp;" + inTemp;
+              }
+              document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
             }
+          })
+          .catch(e => {
+            // Bad status, unparseable body, or network error. (Previously this
+            // swallowed parse errors silently, leaving a stale reading on the
+            // page -- which is why an unreadable file went unnoticed.)
+            document.getElementById("current.inTemp.formatted").innerHTML = '&nbsp;??.?';
           });
       } catch (e) {
         console.log(e);
