@@ -96,6 +96,7 @@
   };
 
   var counter      = 0;
+  var indoorCounter = 0;  // throttles indoor CO2/temp/AQI reads to every 8th loop (~16s)
   var pageTimedOut = false;
   function updateCurrent() {
     if (pageTimedOut) {
@@ -252,6 +253,16 @@
           document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
         }
 
+        // Indoor CO2/temp/AQI files are written by cron only every 30s, so
+        // reading them every 2s just produces 304s. Throttle to every 8th
+        // loop (~16s). Decoupled from the cron write schedule on purpose, so
+        // worst-case staleness stays bounded (~write 30s + read 16s) and this
+        // keeps working regardless of how the writers are rescheduled.
+        // %8===1 so a freshly loaded page fetches indoor data on the first
+        // tick rather than waiting 16s.
+        indoorCounter += 1;
+        if (indoorCounter % 8 === 1) {
+
         // indoor co2
         fetch(getInCo2File())
           .then(indoorCo2Response => {
@@ -316,13 +327,16 @@
             document.getElementById("indoor_aqi").style.color = "rgb(255,255,255)";
           });
 
+        }  // end indoor CO2/AQI throttle
+
         // aqi
         #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
           document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"].padStart(3).replaceAll(' ','&nbsp;');
           document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
         #end if
 
-        // indoor temp
+        // indoor temp (same 16s throttle as indoor CO2/AQI above)
+        if (indoorCounter % 8 === 1) {
         console.log(getInTempFile())
         fetch(getInTempFile())
           .then(response => {
@@ -356,6 +370,7 @@
             // page -- which is why an unreadable file went unnoticed.)
             document.getElementById("current.inTemp.formatted").innerHTML = '&nbsp;??.?';
           });
+        }  // end indoor temp throttle
       } catch (e) {
         console.log(e);
       }
