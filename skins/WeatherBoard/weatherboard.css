@@ -132,60 +132,25 @@ body {
     color: blue;
 }
 
-/* Outdoor board footer (footer.inc) */
+/* Board footer (footer.inc) */
 
-.footer-outdoor {
+.board-footer {
     width: 95%;
 }
-.footer-outdoor #debug_info {
+.board-footer #debug_info {
     width: 26%;
     text-align: left;
 }
-.footer-outdoor #aqi {
+.board-footer #aqi {
     width: 9%;
     font-family: monospace;
     font-style: normal;
     font-size: 95px;
 }
-.footer-outdoor #activity-string {
+.board-footer #activity-string {
     width: 65%;
     font-family: monospace;
     font-style: normal;
     font-size: 95px;
-    text-align: right;
-}
-
-/* Indoor board footer (footer2.inc) */
-
-.footer-indoor {
-    width: 95%;
-    font-size: 83px;
-}
-.footer-indoor .footer-gap-1 {
-    width: 1%;
-}
-.footer-indoor .footer-gap-2 {
-    width: 2%;
-}
-.footer-indoor #indoor_co2 {
-    width: 13.4%;
-    font-family: monospace;
-    font-style: normal;
-    text-align: right;
-}
-.footer-indoor #indoor_aqi {
-    width: 10%;
-    font-family: monospace;
-    font-style: normal;
-}
-.footer-indoor #aqi {
-    width: 10%;
-    font-family: monospace;
-    font-style: normal;
-}
-.footer-indoor #activity-string {
-    width: 61.5%;
-    font-family: monospace;
-    font-style: normal;
     text-align: right;
 }

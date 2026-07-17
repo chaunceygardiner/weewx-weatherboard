@@ -1,4 +1,4 @@
-# Copyright 2020 by John A Kline <john@johnkline.com>
+# Copyright 2020-2026 by John A Kline <john@johnkline.com>
 # Distributed under the terms of the GNU Public License (GPLv3)
 # See LICENSE for your rights.
 
@@ -18,7 +18,7 @@ def loader():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "2.0.1",
+            version = "3.0",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -29,27 +29,17 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'HTML_ROOT':'weatherboard',
                         'enable': 'true',
                         'skin':'WeatherBoard',
-                        # NOTE (paloaltoweather branch): these are John's SITE values so
-                        # a fresh install comes up as PaloAltoWeather.com turnkey (only
-                        # page_update_pwd needs editing in weewx.conf).  The master
-                        # branch carries generic public defaults here instead.
                         'Extras': {
-                            'meta_title'       : 'PaloAltoWeather.com Weather at a Glance&mdash;WeatherBoard&trade;',
-                            'title'            : 'PaloAltoWeather.com WeatherBoard&trade;',
-                            'subtitle'         : '<a style="color:#e51b23;" href="..">Full Site</a> | <a style="color:#e51b23;" href="../about_us.html">About Us</a>',
-                            'logo'             : 'paw_logo.png',
-                            'loop_data_file'   : '/gauge-data/loop-data.txt',
-                            'in_temp_file'     : '/gauge-data/inTemp.txt',
-                            'in_co2_file'      : '/gauge-data/inCO2.txt',
-                            'in_aqi_file'      : '/gauge-data/inAQI.txt',
-                            'in_file_max_age'  : 120,
-                            'in_file_slow_host': 'www.paloaltoweather.com',
-                            'in_file_slow_max_age': 360,
+                            'meta_title'       : 'my-weather-website.com Weather at a Glance WeatherBoard&trade;',
+                            'title'            : 'my-weather-website.com WeatherBoard&trade;',
+                            'subtitle'         : 'Updated continuously.',
+                            'logo'             : '',
+                            'loop_data_file'   : 'loop-data.txt',
                             'expiration_time'  : 4,
                             'page_update_pwd'  : 'foobar',
-                            'googleAnalyticsId': 'G-C2EGLPRF51',
-                            'analytics_host'   : 'www.paloaltoweather.com',
-                            'show_purple'      : True,
+                            'googleAnalyticsId': '',
+                            'analytics_host'   : '',
+                            'show_purple'      : False,
                             'refresh_rate'     : 2,
                         },
                         'Labels': {
@@ -79,12 +69,8 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/apple-touch-icon-180x180.png',
                 'skins/WeatherBoard/favicon.ico',
                 'skins/WeatherBoard/footer.inc',
-                'skins/WeatherBoard/footer2.inc',
                 'skins/WeatherBoard/index.html.tmpl',
-                'skins/WeatherBoard/index2.html.tmpl',
-                'skins/WeatherBoard/paw_logo.png',
                 'skins/WeatherBoard/realtime_updater.inc',
-                'skins/WeatherBoard/realtime_updater2.inc',
                 'skins/WeatherBoard/skin.conf',
                 'skins/WeatherBoard/updater_common.inc',
                 'skins/WeatherBoard/weatherboard.css',

@@ -9,7 +9,7 @@
       </div>
       <div class="widget_contents">
         <div class="footnote">
-          <table class="footer-outdoor">
+          <table class="board-footer">
             <tr>
               <td id="debug_info">
                 $obs.label.outTemp - $obs.label.dewpoint<br>

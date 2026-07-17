@@ -1,6 +1,42 @@
 weatherboard change history
 ---------------------------
 
+3.0 07/17/2026
+--------------
+Action required:
+1. WeatherBoard 3.0 reads more fields from loop-data.txt than 2.x.  Make sure
+   the LoopData `fields` list for the WeatherBoard report includes:
+   current.dateTime.raw, current.outTemp, current.dewpoint,
+   current.windSpeed.formatted, current.windSpeed.raw,
+   current.windDir.ordinal_compass, 10m.windGust.max.formatted,
+   day.windGust.max, current.UV.formatted, current.barometer,
+   current.barometer.formatted, trend.barometer.code, day.rain.sum.formatted,
+   24h.rain.sum.formatted, current.rainRate
+   (plus current.pm2_5_aqi.formatted and current.pm2_5_aqi_color.raw if
+   show_purple is enabled).
+2. The default `loop_data_file` is now `loop-data.txt` (relative to the
+   report's HTML_ROOT).  If your loop-data.txt lives elsewhere, set
+   `loop_data_file` in the Extras section of weewx.conf.
+3. `contact_email` and contact.inc have been removed.
+
+New features:
+1. UV index and barometer readings, with a barometer trend arrow.
+2. 24-hour rain total displayed alongside today's rain.
+3. All readings are now age-checked: if the loop record is more than 10
+   seconds old, question marks are shown instead of stale values.  A missing
+   or unreadable loop-data.txt marks the board disconnected (the time
+   display turns blue) instead of silently freezing the readings.
+4. The keep-alive URL parameter is now `?page_update_pwd=...` as documented
+   (the legacy `?pageUpdate=...` still works).
+5. Offline template checker: tests/check_templates.py.
+
+Other changes:
+1. All styling moved from the templates into weatherboard.css.
+2. Updater internals are shared in updater_common.inc.
+3. Fixed the expired-page CLICK-ME restart, the barometer trend symbol
+   table, and HTTP error/timeout handling in the updater.
+4. Documentation modernized for WeeWX 5 / weectl (WeeWX 4 still supported).
+
 2.0.1 9 Aug 2020
 ----------------
 2.0.1 Install now specifies a default `loop_data_file` of
