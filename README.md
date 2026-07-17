@@ -80,18 +80,18 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    If `show_purple` is enabled, also include `current.pm2_5_aqi.formatted` and
    `current.pm2_5_aqi_color.raw`.
 
-1. Download the latest release, weewx-weatherboard-3.0.zip, from the
+1. Download the latest release, weewx-weatherboard.zip, from the
    [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard/releases).
 
 1. Install the extension.
 
    WeeWX 5:
 
-   `weectl extension install weewx-weatherboard-3.0.zip`
+   `weectl extension install weewx-weatherboard.zip`
 
    WeeWX 4:
 
-   `sudo /home/weewx/bin/wee_extension --install weewx-weatherboard-3.0.zip`
+   `sudo /home/weewx/bin/wee_extension --install weewx-weatherboard.zip`
 
    (Adjust the path of wee_extension if WeeWX is installed elsewhere.)
 
