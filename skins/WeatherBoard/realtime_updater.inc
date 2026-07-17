@@ -2,9 +2,9 @@
 ## Distributed under the terms of the GNU Public License (GPLv3)
 ## See LICENSE for your rights.
 ##
-## Updater for the outdoor board (index.html.tmpl).  Uses loop data fields
-## that include the unit label (e.g. current.outTemp).  Scaffolding and the
-## reading updaters shared with the indoor board live in updater_common.inc.
+## Updater for the board (index.html.tmpl).  Uses loop data fields that
+## include the unit label (e.g. current.outTemp).  Scaffolding and the
+## shared reading updaters live in updater_common.inc.
 
 #errorCatcher Echo
 <script>

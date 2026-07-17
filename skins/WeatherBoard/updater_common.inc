@@ -2,10 +2,10 @@
 ## Distributed under the terms of the GNU Public License (GPLv3)
 ## See LICENSE for your rights.
 ##
-## Shared scaffolding for realtime_updater.inc and realtime_updater2.inc.
-## Must be #included inside a <script> element.  The including updater must
-## define updateReadings(result, age), which is called on every successful
-## poll of the loop data file.
+## Shared scaffolding for the realtime updater(s).  Must be #included inside
+## a <script> element.  The including updater must define
+## updateReadings(result, age), which is called on every successful poll of
+## the loop data file.
 
 #errorCatcher Echo
   #if $Extras.has_key('page_update_pwd')

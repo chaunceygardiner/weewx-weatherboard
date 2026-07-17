@@ -1,4 +1,4 @@
-# Copyright 2020 by John A Kline <john@johnkline.com>
+# Copyright 2020-2026 by John A Kline <john@johnkline.com>
 # Distributed under the terms of the GNU Public License (GPLv3)
 # See LICENSE for your rights.
 
@@ -18,7 +18,7 @@ def loader():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "2.0.1",
+            version = "3.0",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",

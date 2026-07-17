@@ -3,7 +3,7 @@
 # See LICENSE for your rights.
 """Offline check for the WeatherBoard templates.
 
-Renders index.html.tmpl and index2.html.tmpl with a stub searchList (both
+Renders every *.html.tmpl in the skin with a stub searchList (both
 show_purple settings) and validates the output:
 
   - templates render without Cheetah errors
@@ -68,11 +68,11 @@ def make_extras(show_purple):
         'meta_title': 'Test WeatherBoard',
         'title': 'Test WeatherBoard&trade;',
         'subtitle': 'Updated continuously.',
-        'logo': 'paw_logo.png',
-        'loop_data_file': '/gauge-data/loop-data.txt',
-        'in_temp_file': '/gauge-data/inTemp.txt',
-        'in_co2_file': '/gauge-data/inCO2.txt',
-        'in_aqi_file': '/gauge-data/inAQI.txt',
+        'logo': 'logo.png',
+        'loop_data_file': 'loop-data.txt',
+        'in_temp_file': 'inTemp.txt',
+        'in_co2_file': 'inCO2.txt',
+        'in_aqi_file': 'inAQI.txt',
         'in_file_max_age': 120,
         'in_file_slow_host': 'www.example.com',
         'in_file_slow_max_age': 360,
@@ -131,7 +131,10 @@ def main():
         print('WARNING: esprima not importable; skipping JS syntax checks.')
         print('         (pip install esprima to a dir on PYTHONPATH -- never into the venv.)')
     ok = True
-    for tmpl in ('index.html.tmpl', 'index2.html.tmpl'):
+    templates = sorted(f for f in os.listdir(SKIN) if f.endswith('.html.tmpl'))
+    if not templates:
+        sys.exit('no *.html.tmpl files found in %s' % SKIN)
+    for tmpl in templates:
         for purple in (True, False):
             name = '%s show_purple=%s' % (tmpl, purple)
             try:

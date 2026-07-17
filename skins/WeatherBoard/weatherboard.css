@@ -132,22 +132,22 @@ body {
     color: blue;
 }
 
-/* Outdoor board footer (footer.inc) */
+/* Board footer (footer.inc) */
 
-.footer-outdoor {
+.board-footer {
     width: 95%;
 }
-.footer-outdoor #debug_info {
+.board-footer #debug_info {
     width: 26%;
     text-align: left;
 }
-.footer-outdoor #aqi {
+.board-footer #aqi {
     width: 9%;
     font-family: monospace;
     font-style: normal;
     font-size: 95px;
 }
-.footer-outdoor #activity-string {
+.board-footer #activity-string {
     width: 65%;
     font-family: monospace;
     font-style: normal;
@@ -155,7 +155,7 @@ body {
     text-align: right;
 }
 
-/* Indoor board footer (footer2.inc) */
+/* Indoor board footer (footer2.inc) -- paloaltoweather branch only */
 
 .footer-indoor {
     width: 95%;
