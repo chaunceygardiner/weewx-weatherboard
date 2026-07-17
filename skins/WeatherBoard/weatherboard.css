@@ -1,80 +1,102 @@
-/* CSS for the weewx Seasons skin
- * Copyright (c) Tom Keffer, Matthew Wall
- * Distributed under terms of GPLv3.  See LICENSE.txt for your rights.
+/* CSS for the WeeWX WeatherBoard skin.
+ * Originally derived from the Seasons skin (Copyright Tom Keffer, Matthew Wall).
+ * Distributed under terms of GPLv3.  See LICENSE for your rights.
  *
- * Note: This is a greatly stripped down seasons.css file.
+ * ALL styling lives here, not in the templates: hex colors in a Cheetah
+ * template invite directive-parsing accidents.
  */
-
-:root {
-    --background-color:#ffffff;
-    --title-background-color:#dddddd;
-    --button-background-color:#bbbbbb;
-    --element-background-color:#d2e8e8;
-    --section-border-color:#aaaaaa;
-    --cell-border-color:#dddddd;
-    --highlight-color:#4282b4;
-    --link-color:#4282b4;
-    --visited-color:#4282b4;
-    --hover-color:#4282b4;
-    --timestamp-color:#aaaaaa;
-    --hival-color:#aa4444;
-    --loval-color:#4444aa;
-    --ok-color:#44aa44;
-    --low-color:#aa4444;
-}
 
 body {
     margin: 0;
     padding: 0;
     border: 0;
     font-family: 'Open Sans', arial, sans-serif;
-    background-color: var(--background-color);
+    background-color: #000000;
 }
 
-a {
-    text-decoration: none;
-    cursor: pointer;
-    color: var(--link-color);
+/* Title band */
+
+.header-band {
+    background-color: #000000;
+    color: #e51b23;
 }
 
-a:link {
-    color: var(--link-color);
-}
-a:visited {
-    color: var(--visited-color);
-}
-a:hover {
-    color: var(--hover-color);
+#centered_title,
+#centered_readings {
+    width: 100%;
+    margin: auto;
 }
 
-#title_bar {
-    overflow: auto;
-    margin-bottom: 5px;
-    background-color: var(--element-background-color);
-    border: 1px solid var(--section-border-color);
+.title-left {
+    text-align: left;
+    width: 145px;
 }
 
-#title {
-    float: left;
-    margin-left: 10px;
+.title-center {
+    text-align: center;
 }
 
-.footnote {
-    font-size: 80%;
-    font-style: italic;
-    clear: both;
-    padding-left: 20px;
+.title-right {
+    text-align: right;
+    width: 145px;
+}
+
+.title-logo {
+    margin-left: 25px;
 }
 
 .page_title {
-    font-size: 140%;
+    font-size: 28px;
     line-height: 50%;
 }
 
 .lastupdate {
-    font-size: 80%;
+    font-size: 18px;
     line-height: 50%;
 }
+
+#live-label {
+    font-weight: bolder;
+    color: #e51b23;
+}
+
+/* Readings */
+
+.board-readings {
+    color: red;
+}
+
+.reading {
+    text-align: center;
+    font-family: monospace;
+    font-size: 105px;
+}
+
+.reading-small {
+    text-align: center;
+    font-family: monospace;
+    font-size: 85px;
+}
+
+/* Barometer trend arrows */
+
+.arrow {
+  border: solid red;
+  border-width: 0 8px 8px 0;
+  display: inline-block;
+  padding: 20px;
+  margin-right: 15px;
+}
+.down_dir {
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+}
+.up_dir {
+  transform: rotate(-135deg);
+  -webkit-transform: rotate(-135deg);
+}
+
+/* Footer */
 
 .widget {
     margin-bottom: 30px;
@@ -85,5 +107,85 @@ a:hover {
     font-weight: bold;
     padding: 2px 10px 2px 10px;
     /* underlined titles */
-    border-bottom: 2px solid var(--section-border-color);
+    border-bottom: 2px solid #aaaaaa;
+}
+
+.footnote {
+    font-size: 80%;
+    font-style: italic;
+    clear: both;
+    padding-left: 20px;
+    color: red;
+    width: 100%;
+}
+
+.overline {
+    border-top: 1px solid;
+}
+
+.underline {
+    border-bottom: 1px solid;
+}
+
+/* Colored blue by the updaters while the loop data fetch is failing. */
+#activity-string.disconnected {
+    color: blue;
+}
+
+/* Outdoor board footer (footer.inc) */
+
+.footer-outdoor {
+    width: 95%;
+}
+.footer-outdoor #debug_info {
+    width: 26%;
+    text-align: left;
+}
+.footer-outdoor #aqi {
+    width: 9%;
+    font-family: monospace;
+    font-style: normal;
+    font-size: 95px;
+}
+.footer-outdoor #activity-string {
+    width: 65%;
+    font-family: monospace;
+    font-style: normal;
+    font-size: 95px;
+    text-align: right;
+}
+
+/* Indoor board footer (footer2.inc) */
+
+.footer-indoor {
+    width: 95%;
+    font-size: 83px;
+}
+.footer-indoor .footer-gap-1 {
+    width: 1%;
+}
+.footer-indoor .footer-gap-2 {
+    width: 2%;
+}
+.footer-indoor #indoor_co2 {
+    width: 13.4%;
+    font-family: monospace;
+    font-style: normal;
+    text-align: right;
+}
+.footer-indoor #indoor_aqi {
+    width: 10%;
+    font-family: monospace;
+    font-style: normal;
+}
+.footer-indoor #aqi {
+    width: 10%;
+    font-family: monospace;
+    font-style: normal;
+}
+.footer-indoor #activity-string {
+    width: 61.5%;
+    font-family: monospace;
+    font-style: normal;
+    text-align: right;
 }

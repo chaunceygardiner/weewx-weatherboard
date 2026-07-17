@@ -14,14 +14,14 @@
     <link rel="apple-touch-icon" href="apple-touch-icon-180x180.png">
     <link rel="stylesheet" type="text/css" href="weatherboard.css">
     #if $Extras.has_key('meta_title')
-      <title>$Extras.meta_title</title>
+      <title>$Extras.meta_title (Internal)</title>
     #else
-      <title>WeatherBoard&trade;&mdash;$station.location</title>
+      <title>WeatherBoard&trade;&mdash;$station.location (Internal)</title>
     #end if
-    <meta name="description" content="Tablet formatted display of current temperature, dew point, wind speed, UV Index, barometer, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
+    <meta name="description" content="(Internal) Tablet formatted display of current temperature, dew point, wind speed, UV Index, barometer, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
   </head>
   <body>
-    #include "realtime_updater.inc"
+    #include "realtime_updater2.inc"
     <div class="header-band">
       <div>
         <table id="centered_title">
@@ -51,7 +51,7 @@
               </span>
             </td>
             <td class="title-right">
-              <span id="live-label"></span>&nbsp;&nbsp;&nbsp;&nbsp;<br>&nbsp;<br>&nbsp;
+              <span id="live-label"></span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>&nbsp;<br>&nbsp;
             </td>
           </tr>
         </table>
@@ -62,7 +62,7 @@
       <table id="centered_readings">
         <tr>
           <td class="reading">
-            <span id="current.outTemp">$current.outTemp</span><span>&nbsp;</span><span id="current.dewpoint">$current.dewpoint</span>
+            <span id="current.outTemp.formatted">$current.outTemp.formatted</span><span>&nbsp;</span><span id="current.dewpoint.formatted">$current.dewpoint.formatted</span><span>&nbsp;</span><span id="current.inTemp.formatted">$current.inTemp.formatted</span>
           </td>
         </tr>
         <tr>
@@ -70,13 +70,14 @@
             <span id="windSpeedAndBearing">
               $current.windSpeed.formatted $current.windDir.ordinal_compass
             </span><span>/</span><span id="10m.windGust.max.formatted">
-              </span><span>/</span><span id="day.windGust.max"></span>
+            </span><span>/</span><span id="day.windGust.max.formatted"></span>
+            <span>&nbsp;</span><span id="current.radiation.formatted"></span>
           </td>
         </tr>
         <tr>
           <td class="reading">
             <span id="current.UV.formatted">$current.UV.formatted</span>
-            <span>/</span>
+            <span>&nbsp;</span>
             <span id="barometer">$current.barometer</span>
           </td>
         </tr>
@@ -87,6 +88,6 @@
         </tr>
       </table>
     </div>
-    #include "footer.inc"
+    #include "footer2.inc"
   </body>
 </html>
