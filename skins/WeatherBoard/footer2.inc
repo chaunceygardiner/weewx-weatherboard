@@ -8,17 +8,17 @@
       <div class="widget_title">
       </div>
       <div class="widget_contents">
-        <div class="footnote" style="color:red;width:100%;">
-          <table style="width:95%;font-size:83px;">
+        <div class="footnote">
+          <table class="footer-indoor">
             <tr>
-              <td style="width:1%;"></td>
-              <td id="indoor_co2" style="width:13.4%;font-family:monospace;font-style:normal;text-align:right;"></td>
-              <td style="width:2%;"></td>
-              <td id="indoor_aqi" style="width:10%;font-family:monospace;font-style:normal;"></td>
-              <td style="width:2%;"></td>
-              <td id="aqi" style="width:10%;font-family:monospace;font-style:normal;"></td>
-              <td style="width:2%;"></td>
-              <td id="activity-string" style="width:61.5%;font-family:monospace;font-style:normal;text-align:right;"></td>
+              <td class="footer-gap-1"></td>
+              <td id="indoor_co2"></td>
+              <td class="footer-gap-2"></td>
+              <td id="indoor_aqi"></td>
+              <td class="footer-gap-2"></td>
+              <td id="aqi"></td>
+              <td class="footer-gap-2"></td>
+              <td id="activity-string"></td>
             </tr>
           </table>
         </div>

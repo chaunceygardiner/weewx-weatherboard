@@ -29,24 +29,35 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'HTML_ROOT':'weatherboard',
                         'enable': 'true',
                         'skin':'WeatherBoard',
+                        # NOTE (paloaltoweather branch): these are John's SITE values so
+                        # a fresh install comes up as PaloAltoWeather.com turnkey (only
+                        # page_update_pwd needs editing in weewx.conf).  The master
+                        # branch carries generic public defaults here instead.
                         'Extras': {
-                            'meta_title'       : 'my-weather-website.com Weather at a Glance WeatherBoard&trade;',
-                            'title'            : 'my-weather-website.com WeatherBoard&trade;',
-                            'subtitle'         : 'Updated continuously.',
-                            'logo'             : '',
-                            'loop_data_file'   : 'loop-data.txt',
+                            'meta_title'       : 'PaloAltoWeather.com Weather at a Glance&mdash;WeatherBoard&trade;',
+                            'title'            : 'PaloAltoWeather.com WeatherBoard&trade;',
+                            'subtitle'         : '<a style="color:#e51b23;" href="..">Full Site</a> | <a style="color:#e51b23;" href="../about_us.html">About Us</a>',
+                            'logo'             : 'paw_logo.png',
+                            'loop_data_file'   : '/gauge-data/loop-data.txt',
+                            'in_temp_file'     : '/gauge-data/inTemp.txt',
+                            'in_co2_file'      : '/gauge-data/inCO2.txt',
+                            'in_aqi_file'      : '/gauge-data/inAQI.txt',
+                            'in_file_max_age'  : 120,
+                            'in_file_slow_host': 'www.paloaltoweather.com',
+                            'in_file_slow_max_age': 360,
                             'expiration_time'  : 4,
                             'page_update_pwd'  : 'foobar',
-                            'googleAnalyticsId': '',
-                            'analytics_host'   : '',
-                            'show_purple'      : False,
+                            'googleAnalyticsId': 'G-C2EGLPRF51',
+                            'analytics_host'   : 'www.paloaltoweather.com',
+                            'show_purple'      : True,
                             'refresh_rate'     : 2,
                         },
                         'Labels': {
                             'Generic': {
                                 'air_quality_index': 'Air Quality Index',
                                 'legend'           : 'Legend',
-                                'rain_today'       : 'Rain Today',
+                                'rainToday'        : 'Rain Today',
+                                'rain24h'          : 'Rain 24h',
                                 'ten_min_max_gust' : '10m Gust',
                                 'time_of_day'      : 'Time',
                                 'high_gust_today'  : "Today's High Gust",
@@ -75,6 +86,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/realtime_updater.inc',
                 'skins/WeatherBoard/realtime_updater2.inc',
                 'skins/WeatherBoard/skin.conf',
+                'skins/WeatherBoard/updater_common.inc',
                 'skins/WeatherBoard/weatherboard.css',
             ])]
         )

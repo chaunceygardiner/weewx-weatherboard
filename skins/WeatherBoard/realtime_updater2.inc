@@ -1,406 +1,178 @@
 ## Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
 ## Distributed under the terms of the GNU Public License (GPLv3)
 ## See LICENSE for your rights.
+##
+## Updater for the indoor board (index2.html.tmpl).  Uses .formatted loop
+## data fields (no unit labels) and adds indoor temp/CO2/AQI read from
+## separate single-value files.  Scaffolding and the reading updaters shared
+## with the outdoor board live in updater_common.inc.
 
 #errorCatcher Echo
 <script>
-  #if $Extras.has_key('page_update_pwd')
-    page_update_pwd = '$Extras.page_update_pwd';
+#include "updater_common.inc"
+
+  #if $Extras.has_key('in_temp_file')
+    var default_in_temp_file = '$Extras.in_temp_file';
   #else
-    page_update_pwd = 'foo';
+    var default_in_temp_file = 'inTemp.txt';
   #end if
-  #if $Extras.has_key('refresh_rate')
-    refresh_rate = $Extras.refresh_rate;
+  #if $Extras.has_key('in_co2_file')
+    var default_in_co2_file = '$Extras.in_co2_file';
   #else
-    refresh_rate = 2;
+    var default_in_co2_file = 'inCO2.txt';
   #end if
-  #if $Extras.has_key('expiration_time')
-    expiration_time = $Extras.expiration_time;
+  #if $Extras.has_key('in_aqi_file')
+    var default_in_aqi_file = '$Extras.in_aqi_file';
   #else
-    expiration_time = 4;
+    var default_in_aqi_file = 'inAQI.txt';
   #end if
-  function addLoadEvent(func) {
-    var oldonload = window.onload;
-    if (typeof window.onload != 'function') {
-      window.onload = func;
-    } else {
-      window.onload = function() {
-        if (oldonload) {
-          oldonload();
-        }
-        func();
-      }
-    }
-  }
-  function getUrlParam(paramName) {
-      var name, regexS, regex, results;
-      name = paramName.replace(/(\[|\])/g, '\\$1');
-      regexS = '[\\?&]' + name + '=([^&#]*)';
-      regex = new RegExp(regexS);
-      results = regex.exec(window.location.href);
-      if (results === null) {
-          return '';
-      } else {
-          return results[1];
-      }
-  }
-  function expirePage() {
-    pageTimedOut = true;
-  }
-  function clickListener() {
-    // disable the onClick event again
-    var liveLabel = document.getElementById("live-label");
-    liveLabel.removeEventListener('click', clickListener);
-    liveLabel.innerHTML = "";
-    // restart everything
-    pageTimedOut = false;
-    // restart the page timeout
-    setPageExpirationTimer();
-  }
-  function setPageExpirationTimer() {
-    if (getUrlParam('pageUpdate') !== page_update_pwd) {
-      // expire in N hours
-      setTimeout(expirePage, 1000 * 60 * 60 * expiration_time);
-    }
-  }
+  ## Maximum age of the indoor observation files before ?? placeholders are
+  ## shown; on in_file_slow_host (a host where the files sync less often)
+  ## in_file_slow_max_age applies instead.
+  #if $Extras.has_key('in_file_max_age')
+    var in_file_max_age = $Extras.in_file_max_age;
+  #else
+    var in_file_max_age = 120;
+  #end if
+  #if $Extras.has_key('in_file_slow_host')
+    var in_file_slow_host = '$Extras.in_file_slow_host';
+  #else
+    var in_file_slow_host = '';
+  #end if
+  #if $Extras.has_key('in_file_slow_max_age')
+    var in_file_slow_max_age = $Extras.in_file_slow_max_age;
+  #else
+    var in_file_slow_max_age = 360;
+  #end if
+
   function getInTempFile() {
-    in_temp_file = getUrlParam('inTempFile');
-    if (in_temp_file == "") {
-        in_temp_file = '$Extras.in_temp_file';
-    }
-    return in_temp_file;
+    var f = getUrlParam('inTempFile');
+    return f !== '' ? f : default_in_temp_file;
   }
   function getInCo2File() {
-    in_co2_file = getUrlParam('inCO2File');
-    if (in_co2_file == "") {
-        in_co2_file = '$Extras.in_co2_file';
-    }
-    return in_co2_file;
+    var f = getUrlParam('inCO2File');
+    return f !== '' ? f : default_in_co2_file;
   }
-  // Set interval and page expiration timer.
-  setPageExpirationTimer();
-  setInterval(updateCurrent, refresh_rate * 1000);
-  addLoadEvent(updateCurrent);
-
-  const barometer_symbols = {
-     '4': '<i class="arrow up_dir" style="margin-right:15px;"></i>&plus;&plus;',
-     '3': '<i class="arrow up_dir" style="margin-right:15px;"></i>&plus;&nbsp;',
-     '2': '<i class="arrow up_dir" style="margin-right:15px;"></i>&nbsp;&nbsp;',
-     '1': '<i class="arrow up_dir" style="margin-right:15px;"></i>&minus;&nbsp;',
-     '0': '&minus;&minus;&nbsp;',
-    '-1': '<i class="arrow down_dir" style="margin-right:15px;"></i>&minus;&nbsp;',
-    '-2': '<i class="arrow down_dir" style="margin-right:15px;"></i>&nbsp;&nbsp;',
-    '-2': '<i class="arrow down_dir" style="margin-right:15px;"></i>&nbsp;&nbsp;',
-    '-3': '<i class="arrow down_dir" style="margin-right:15px;"></i>&plus;&nbsp;',
-    '-4': '<i class="arrow down_dir" style="margin-right:15px;"></i>&plus;&plus;',
-  };
-
-  var counter      = 0;
-  var indoorCounter = 0;  // throttles indoor CO2/temp/AQI reads to every 8th loop (~16s)
-  var pageTimedOut = false;
-  function updateCurrent() {
-    if (pageTimedOut) {
-      // If click listener not already set up...
-      var liveLabel = document.getElementById("live-label");
-      if (liveLabel.innterHTML != "Expired") {
-        liveLabel.innerHTML = "Expired";
-        var activityElement = document.getElementById("activity-string");
-        activityElement.innerHTML = "CLICK-ME";
-        // set an onclick event to restart
-        activityElement.addEventListener("click", clickListener);
-      }
-      return false;
-    }
-    var xhttp = new XMLHttpRequest();
-    xhttp.timeout = 1800;
-    xhttp.onload = function() {
-      try {
-        counter = 0;
-        var result = JSON.parse(this.responseText);
-
-        // Check the date
-        // "dateTime": 1578965850,
-        var lastUpdate = new Date(result["current.dateTime.raw"] * 1000);
-        var age = Math.round(Math.abs(new Date() - lastUpdate) / 1000);
-        var element = document.getElementById("live-label");
-        element.style.fontWeight = "bolder";
-        element.style.color = "#e51b23";
-        if (age <= 6) {
-          element.innerHTML = "&nbsp;LIVE&nbsp;";
-        } else {
-          element.innerHTML = "&nbsp;" + age + "s ago&nbsp;";
-        }
-
-        // Display the time of the last update.
-        var activityElement = document.getElementById("activity-string");
-        activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-        activityElement.style.color = "red";
-
-        // temp
-        if (age < 10 && result.hasOwnProperty("current.outTemp.formatted")) {
-          var temp = result["current.outTemp.formatted"];
-          if (temp.length == 3) {
-            temp = "&nbsp;&nbsp;" + temp;
-          } else if (temp.length == 4) {
-            temp = "&nbsp;" + temp;
-          }
-          document.getElementById("current.outTemp.formatted").innerHTML = temp;
-        } else {
-          document.getElementById("current.outTemp.formatted").innerHTML = '&nbsp;??.?';
-        }
-
-        if (age < 10 && result.hasOwnProperty("current.dewpoint.formatted")) {
-          // dew point
-          var dew = result["current.dewpoint.formatted"];
-          if (dew.length == 3) {
-            dew = "&nbsp;&nbsp;" + dew;
-          } else if (dew.length == 4) {
-            dew = "&nbsp;" + dew;
-          }
-          document.getElementById("current.dewpoint.formatted").innerHTML = dew;
-        } else {
-          document.getElementById("current.dewpoint.formatted").innerHTML = '&nbsp;??.?';
-        }
-
-        if (age < 10 && result.hasOwnProperty("current.windSpeed.formatted")) {
-          // wind speed and bearing
-          var windSpeed = result["current.windSpeed.formatted"];
-          if (windSpeed.length == 1) {
-            windSpeed = '&nbsp;' + windSpeed;
-          }
-          var windBearing = "";
-          if (result["current.windSpeed.raw"] != 0.0) {
-            if (result.hasOwnProperty("current.windDir.ordinal_compass")) {
-              windBearing = result["current.windDir.ordinal_compass"];
-            }
-          }
-          if (windBearing.length == 0) {
-            windBearing = windBearing + '&nbsp;&nbsp;&nbsp;';
-          } else if (windBearing.length == 1) {
-            windBearing = windBearing + '&nbsp;&nbsp;';
-          } else if (windBearing.length == 2) {
-            windBearing = windBearing + '&nbsp;';
-          }
-          document.getElementById("windSpeedAndBearing").innerHTML = windSpeed + " " + windBearing;
-        } else {
-          document.getElementById("windSpeedAndBearing").innerHTML = '&nbsp;?&nbsp;???';
-        }
-
-        if (age < 10 && result.hasOwnProperty("10m.windGust.max.formatted")) {
-          // wind gust (10m gust)
-          var windGust10m = result["10m.windGust.max.formatted"].padStart(2).replaceAll(' ', '&nbsp;');
-          document.getElementById("10m.windGust.max.formatted").innerHTML = windGust10m;
-        } else {
-          document.getElementById("10m.windGust.max.formatted").innerHTML = '&nbsp;?';
-        }
-
-        if (age < 10 && result.hasOwnProperty("day.windGust.max.formatted")) {
-          // wind gust (today)
-          var windGustDay = result["day.windGust.max.formatted"].padStart(2).replaceAll(' ', '&nbsp;');
-          document.getElementById("day.windGust.max.formatted").innerHTML = windGustDay;
-        } else {
-          document.getElementById("day.windGust.max.formatted").innerHTML = '&nbsp;?';
-        }
-
-        if (age < 10 && result.hasOwnProperty("current.radiation.formatted")) {
-          // radiation
-          radiation = result["current.radiation.formatted"].padStart(4).replaceAll(' ', '&nbsp;');
-        } else {
-          radiation = "????";
-        }
-        document.getElementById("current.radiation.formatted").innerHTML = radiation;
-
-        if (age < 10 && result.hasOwnProperty("current.UV.formatted")) {
-          uv = result["current.UV.formatted"];
-          if (uv.length == 3) {
-            uv = "&nbsp;" + uv;
-          }
-        } else {
-          uv = "&nbsp;?.?";
-        }
-        document.getElementById("current.UV.formatted").innerHTML = uv;
-
-        if (age < 10 && result.hasOwnProperty("current.barometer.formatted")) {
-          barometer_value = result["current.barometer.formatted"] + "&nbsp;";
-          if (result.hasOwnProperty("trend.barometer.code")) {
-            barometer_value += barometer_symbols[result["trend.barometer.code"]];
-          } else {
-            barometer_value += "???"
-          }
-        } else {
-          barometer_value = "??.???&nbsp;?&nbsp;&nbsp;"
-        }
-        document.getElementById("barometer").innerHTML = barometer_value;
-
-        if (age < 10 && result.hasOwnProperty("day.rain.sum.formatted")) {
-          // rain fall
-          document.getElementById("day.rain.sum.formatted").innerHTML = result["day.rain.sum.formatted"];
-        } else {
-          document.getElementById("day.rain.sum.formatted").innerHTML = '?.??';
-        }
-
-        if (age < 10 && result.hasOwnProperty("24h.rain.sum.formatted")) {
-          // rain fall
-          document.getElementById("24h.rain.sum.formatted").innerHTML = result["24h.rain.sum.formatted"];
-        } else {
-          document.getElementById("24h.rain.sum.formatted").innerHTML = '?.??';
-        }
-
-        if (age < 10 && result.hasOwnProperty("current.rainRate")) {
-          // rain rate
-          document.getElementById("current.rainRate").innerHTML = result["current.rainRate"];
-        } else {
-          document.getElementById("current.rainRate").innerHTML = '?.??&nbsp;????';
-        }
-
-        // Indoor CO2/temp/AQI files are written by cron only every 30s, so
-        // reading them every 2s just produces 304s. Throttle to every 8th
-        // loop (~16s). Decoupled from the cron write schedule on purpose, so
-        // worst-case staleness stays bounded (~write 30s + read 16s) and this
-        // keeps working regardless of how the writers are rescheduled.
-        // %8===1 so a freshly loaded page fetches indoor data on the first
-        // tick rather than waiting 16s.
-        indoorCounter += 1;
-        if (indoorCounter % 8 === 1) {
-
-        // indoor co2
-        fetch(getInCo2File())
-          .then(indoorCo2Response => {
-            // fetch only rejects on network failure, not on HTTP error status
-            // (e.g. 403/404/500), so check explicitly and route a bad status
-            // into the .catch below.
-            if (!indoorCo2Response.ok) throw new Error('HTTP ' + indoorCo2Response.status);
-            return indoorCo2Response.text();
-          })
-          .then(indoorCo2Data => {
-            // {"ts": 1763844900, "inCO2": 818.33, "inColor": "#FF0000"}
-            var indoor = JSON.parse(indoorCo2Data);
-            if (indoor.hasOwnProperty("ts") && indoor.hasOwnProperty("inCO2") && indoor.hasOwnProperty("inColor")) {
-              now = Date.now() / 1000.0;
-              var ts = indoor['ts'];
-              var age = now - ts;
-              var hostname = location.hostname;
-              if (age < 120 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                inCO2 = String(indoor['inCO2'].toFixed(0)).padStart(4).replaceAll(' ','&nbsp;');
-                inColor = indoor['inColor'];
-              } else {
-                inCO2 = '????';
-                inColor = "rgb(255,255,255)";
-              }
-              document.getElementById("indoor_co2").innerHTML = inCO2;
-              document.getElementById("indoor_co2").style.color = inColor;
-            }
-          })
-          .catch(e => {
-            // Bad status, unparseable body, or network error: show the value
-            // as unreadable rather than leaving a stale reading on the page.
-            document.getElementById("indoor_co2").innerHTML = '????';
-            document.getElementById("indoor_co2").style.color = "rgb(255,255,255)";
-          });
-
-        // indoor aqi
-        fetch('$Extras.in_aqi_file')
-          .then(indoorAqiResponse => {
-            if (!indoorAqiResponse.ok) throw new Error('HTTP ' + indoorAqiResponse.status);
-            return indoorAqiResponse.text();
-          })
-          .then(indoorAqiData => {
-            var indoor = JSON.parse(indoorAqiData);
-            if (indoor.hasOwnProperty("ts") && indoor.hasOwnProperty("inAQI") && indoor.hasOwnProperty("inColor")) {
-              now = Date.now() / 1000.0;
-              var ts = indoor['ts'];
-              var age = now - ts;
-              var hostname = location.hostname;
-              if (age < 120 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                inAQI = String(indoor['inAQI'].toFixed(0)).padStart(3).replaceAll(' ','&nbsp;');
-                inColor = indoor['inColor'];
-              } else {
-                inAQI = '???';
-                inColor = "rgb(255,255,255)";
-              }
-              document.getElementById("indoor_aqi").innerHTML = inAQI;
-              document.getElementById("indoor_aqi").style.color = inColor;
-            }
-          })
-          .catch(e => {
-            document.getElementById("indoor_aqi").innerHTML = '???';
-            document.getElementById("indoor_aqi").style.color = "rgb(255,255,255)";
-          });
-
-        }  // end indoor CO2/AQI throttle
-
-        // aqi
-        #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-          document.getElementById("aqi").innerHTML = result["current.pm2_5_aqi.formatted"].padStart(3).replaceAll(' ','&nbsp;');
-          document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
-        #end if
-
-        // indoor temp (same 16s throttle as indoor CO2/AQI above)
-        if (indoorCounter % 8 === 1) {
-        console.log(getInTempFile())
-        fetch(getInTempFile())
-          .then(response => {
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            return response.text();
-          })
-          .then(responseData => {
-            var j = JSON.parse(responseData);
-            if (j.hasOwnProperty("ts") && j.hasOwnProperty("inTemp")) {
-              now = Date.now() / 1000.0;
-              var ts = j['ts'];
-              var age = now - ts;
-              var hostname = location.hostname;
-              if (age < 90 || (age < 360 && hostname == 'www.paloaltoweather.com')) {
-                inTemp = j['inTemp'].toFixed(1);
-              } else {
-                inTemp = '??.?';
-              }
-              // It will be a tight squeeze (and a shift in characters) if inTemp >= 100.
-              if (inTemp.length == 5) {
-                inTemp = "&nbsp;&nbsp;" + inTemp;
-                } else if (inTemp.length == 6) {
-                inTemp = "&nbsp;" + inTemp;
-              }
-              document.getElementById("current.inTemp.formatted").innerHTML = inTemp;
-            }
-          })
-          .catch(e => {
-            // Bad status, unparseable body, or network error. (Previously this
-            // swallowed parse errors silently, leaving a stale reading on the
-            // page -- which is why an unreadable file went unnoticed.)
-            document.getElementById("current.inTemp.formatted").innerHTML = '&nbsp;??.?';
-          });
-        }  // end indoor temp throttle
-      } catch (e) {
-        console.log(e);
-      }
-    }
-    xhttp.onerror = function() {
-      try {
-        // Status not OK (!= 200).
-        counter += 1;
-        console.log('status: ' + this.status + ', counter: ' + counter);
-        var element = document.getElementById("live-label");
-        element.style.fontWeight = "bolder";
-        element.style.color = "#e51b23";
-        element.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-        var activityElement = document.getElementById("activity-string");
-        activityElement.style.color = "blue";
-      } catch (e) {
-        console.log(e);
-      }
-    }
-    try {
-      xhttp.open("GET", "$Extras.loop_data_file", true);
-      xhttp.send();
-    } catch (e) {
-      console.log(e);
-    }
+  function getInAqiFile() {
+    var f = getUrlParam('inAQIFile');
+    return f !== '' ? f : default_in_aqi_file;
   }
-  function decode_rgb(i) {
-    var red   = i >> 16;
-    var green = (i & 0xFF00) >> 8;
-    var blue  = i & 0xFF;
-    return `rgb(${red},${green},${blue})`
+
+  // Fetch one single-value indoor observation file, e.g.
+  // {"ts": 1763844900, "inCO2": 818.33, "inColor": ...}
+  // and update elementId, or show the placeholder if the file is missing,
+  // unreadable, or stale.
+  function updateIndoorFile(url, elementId, key, digits, width, placeholder, hasColor) {
+    var element = document.getElementById(elementId);
+    function showUnavailable() {
+      element.innerHTML = placeholder;
+      if (hasColor) {
+        element.style.color = "rgb(255,255,255)";
+      }
+    }
+    fetch(url)
+      .then(response => {
+        // fetch only rejects on network failure, not on HTTP error status
+        // (e.g. 403/404/500), so check explicitly and route a bad status
+        // into the .catch below.
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.text();
+      })
+      .then(data => {
+        var j = JSON.parse(data);
+        if (!j.hasOwnProperty("ts") || !j.hasOwnProperty(key)
+            || (hasColor && !j.hasOwnProperty("inColor"))) {
+          return;
+        }
+        var age = Date.now() / 1000.0 - j['ts'];
+        if (age < in_file_max_age
+            || (location.hostname == in_file_slow_host && age < in_file_slow_max_age)) {
+          element.innerHTML = padLeft(j[key].toFixed(digits), width);
+          if (hasColor) {
+            element.style.color = j['inColor'];
+          }
+        } else {
+          showUnavailable();
+        }
+      })
+      .catch(e => {
+        // Bad status, unparseable body, or network error: show the value
+        // as unreadable rather than leaving a stale reading on the page.
+        showUnavailable();
+      });
+  }
+
+  // Indoor files are written by cron only every 30s, so reading them every
+  // 2s just produces 304s.  Throttle to every 8th loop (~16s).  Decoupled
+  // from the cron write schedule on purpose, so worst-case staleness stays
+  // bounded (~write 30s + read 16s) and this keeps working regardless of how
+  // the writers are rescheduled.  %8===1 so a freshly loaded page fetches
+  // indoor data on the first tick rather than waiting 16s.
+  var indoorCounter = 0;
+
+  function updateReadings(result, age) {
+    // temp
+    if (age < 10 && result.hasOwnProperty("current.outTemp.formatted")) {
+      setReading("current.outTemp.formatted", padLeft(result["current.outTemp.formatted"], 5));
+    } else {
+      setReading("current.outTemp.formatted", '&nbsp;??.?');
+    }
+
+    // dew point
+    if (age < 10 && result.hasOwnProperty("current.dewpoint.formatted")) {
+      setReading("current.dewpoint.formatted", padLeft(result["current.dewpoint.formatted"], 5));
+    } else {
+      setReading("current.dewpoint.formatted", '&nbsp;??.?');
+    }
+
+    // wind speed and bearing
+    updateWind(result, age);
+
+    // wind gust (10m gust)
+    if (age < 10 && result.hasOwnProperty("10m.windGust.max.formatted")) {
+      setReading("10m.windGust.max.formatted", padLeft(result["10m.windGust.max.formatted"], 2));
+    } else {
+      setReading("10m.windGust.max.formatted", '&nbsp;?');
+    }
+
+    // wind gust (today)
+    if (age < 10 && result.hasOwnProperty("day.windGust.max.formatted")) {
+      setReading("day.windGust.max.formatted", padLeft(result["day.windGust.max.formatted"], 2));
+    } else {
+      setReading("day.windGust.max.formatted", '&nbsp;?');
+    }
+
+    // radiation
+    if (age < 10 && result.hasOwnProperty("current.radiation.formatted")) {
+      setReading("current.radiation.formatted", padLeft(result["current.radiation.formatted"], 4));
+    } else {
+      setReading("current.radiation.formatted", '????');
+    }
+
+    updateUV(result, age);
+    updateBarometer(result, age);
+    updateRain(result, age);
+
+    // aqi
+    #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
+      if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
+        setReading("aqi", padLeft(result["current.pm2_5_1m_aqi.formatted"], 3));
+      } else if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+        setReading("aqi", padLeft(result["current.pm2_5_aqi.formatted"], 3));
+      }
+      if (result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
+        document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
+      } else if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+        document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
+      }
+    #end if
+
+    // indoor temp, CO2 and AQI
+    indoorCounter += 1;
+    if (indoorCounter % 8 === 1) {
+      updateIndoorFile(getInTempFile(), "current.inTemp.formatted", "inTemp", 1, 5, '&nbsp;??.?', false);
+      updateIndoorFile(getInCo2File(), "indoor_co2", "inCO2", 0, 4, '????', true);
+      updateIndoorFile(getInAqiFile(), "indoor_aqi", "inAQI", 0, 3, '???', true);
+    }
   }
 </script>
