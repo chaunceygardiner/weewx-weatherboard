@@ -157,6 +157,7 @@
   }
 
   function updateRain(result, age) {
+    // rainRate is updated separately in realtime_updater.inc/realtime_updater2.inc
     if (age < 10 && result.hasOwnProperty("day.rain.sum.formatted")) {
       setReading("day.rain.sum.formatted", result["day.rain.sum.formatted"]);
     } else {
@@ -167,12 +168,6 @@
       setReading("24h.rain.sum.formatted", result["24h.rain.sum.formatted"]);
     } else {
       setReading("24h.rain.sum.formatted", '?.??');
-    }
-
-    if (age < 10 && result.hasOwnProperty("current.rainRate")) {
-      setReading("current.rainRate", result["current.rainRate"]);
-    } else {
-      setReading("current.rainRate", '?.??&nbsp;????');
     }
   }
 

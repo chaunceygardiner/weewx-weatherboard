@@ -42,6 +42,13 @@
       setReading("day.windGust.max", '&nbsp;?&nbsp;???');
     }
 
+    // rain rate
+    if (age < 10 && result.hasOwnProperty("current.rainRate")) {
+      setReading("current.rainRate", result["current.rainRate"]);
+    } else {
+      setReading("current.rainRate", '?.??&nbsp;????');
+    }
+
     updateUV(result, age);
     updateBarometer(result, age);
     updateRain(result, age);
