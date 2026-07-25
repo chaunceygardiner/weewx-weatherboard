@@ -176,11 +176,22 @@
     }
   }
 
-  function markDisconnected() {
+  function markDisconnected(code, hint) {
+    // With a code and hint (the config-shaped failures: an HTTP error
+    // status, a body that isn't json) the label and clock name the
+    // problem; without them (a network-level failure, presumed
+    // transient) the label blanks and the clock keeps its last time.
+    // Either way the clock wears the disconnected color, and a later
+    // successful poll restores everything.
     errorCount += 1;
     console.log('loop data fetch failed; consecutive failures: ' + errorCount);
-    document.getElementById("live-label").innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-    document.getElementById("activity-string").classList.add("disconnected");
+    document.getElementById("live-label").innerHTML =
+        code ? "&nbsp;" + code + "&nbsp;" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+    var activityElement = document.getElementById("activity-string");
+    if (hint) {
+      activityElement.innerHTML = hint;
+    }
+    activityElement.classList.add("disconnected");
   }
 
   function updateCurrent() {
@@ -198,16 +209,28 @@
     var xhttp = new XMLHttpRequest();
     xhttp.timeout = 1800;
     xhttp.onload = function() {
+      // onload also fires for HTTP error statuses (404/500/...); only a
+      // 2xx response carries loop data.  A persistent HTTP error is
+      // almost always loop_data_file not resolving to where loopdata
+      // writes -- the classic being a 404 because the file lives outside
+      // HTML_ROOT (say /dev/shm) with nothing on the web server serving
+      // it -- so name it instead of looking like a network blip.
+      if (this.status < 200 || this.status >= 300) {
+        markDisconnected("HTTP " + this.status, "check loop_data_file");
+        return;
+      }
+      var result;
       try {
-        // onload also fires for HTTP error statuses (404/500/...);
-        // only a 2xx response carries loop data.
-        if (this.status < 200 || this.status >= 300) {
-          markDisconnected();
-          return;
-        }
-        errorCount = 0;
-        var result = JSON.parse(this.responseText);
-
+        result = JSON.parse(this.responseText);
+      } catch (e) {
+        // A 2xx whose body isn't json: loop_data_file points at
+        // something, but not at loopdata's output.
+        markDisconnected("BAD DATA", "check loop_data_file");
+        console.log(e);
+        return;
+      }
+      errorCount = 0;
+      try {
         // Check the date
         // "dateTime": 1578965850,
         var lastUpdate = new Date(result["current.dateTime.raw"] * 1000);
@@ -226,11 +249,14 @@
 
         updateReadings(result, age);
       } catch (e) {
+        // A rendering error must not stop the polling.
         console.log(e);
       }
     }
-    xhttp.onerror = markDisconnected;
-    xhttp.ontimeout = markDisconnected;
+    // Wrapped so the handlers' event argument cannot reach
+    // markDisconnected's code parameter.
+    xhttp.onerror = function() { markDisconnected(); };
+    xhttp.ontimeout = function() { markDisconnected(); };
     try {
       xhttp.open("GET", "$Extras.loop_data_file", true);
       xhttp.send();
