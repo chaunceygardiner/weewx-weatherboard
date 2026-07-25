@@ -1,6 +1,22 @@
 weatherboard change history
 ---------------------------
 
+3.1 07/24/2026
+--------------
+The board now names a config-shaped loop-data failure instead of wearing
+the generic disconnected look.  An HTTP error status (the classic being a
+404 because loopdata writes outside HTML_ROOT, say /dev/shm, with nothing
+on the web server serving it) shows "HTTP 404" in the live label and
+"check loop_data_file" in the activity clock; a 2xx whose body isn't json
+shows "BAD DATA" with the same hint -- that case previously reached only
+the browser console, with no disconnected styling at all.  Network-level
+failures and timeouts keep the quiet look: blank label, last time in the
+disconnected color.  A later successful poll restores everything, as
+always.  The json parse also moves out of the rendering try, so a
+rendering error can no longer masquerade as bad data (it logs and the
+polling continues).  (Same fix family as weewx-celestial 7.1 and
+weewx-loopdata 6.2.)
+
 3.0 07/17/2026
 --------------
 Action required:
