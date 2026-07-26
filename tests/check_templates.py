@@ -41,13 +41,21 @@ SKIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 
 
 class Tag:
-    """Stub for WeeWX tags: $current.outTemp, $obs.label.foo, etc."""
+    """Stub for WeeWX tags: $current.outTemp, $obs.label.foo, etc.
+
+    .raw renders as a bare number and the numeric operators are defined
+    because logo.inc embeds tag values in JavaScript ('54.9°F' there
+    would be an esprima parse error) and compares/divides them in
+    Cheetah (#if a.raw >= b.raw, $almanac.moon.phase / 100.0).
+    """
     def __init__(self, s='54.9°F'):
         self._s = s
 
     def __getattr__(self, name):
         if name.startswith('__'):
             raise AttributeError(name)
+        if name == 'raw':
+            return Tag('4.2')
         return self
 
     def __call__(self, *args, **kwargs):
@@ -55,6 +63,12 @@ class Tag:
 
     def __str__(self):
         return self._s
+
+    def __ge__(self, other):
+        return False
+
+    def __truediv__(self, other):
+        return 0.42
 
 
 class Extras(dict):
@@ -68,7 +82,6 @@ def make_extras(show_purple):
         'meta_title': 'Test WeatherBoard',
         'title': 'Test WeatherBoard&trade;',
         'subtitle': 'Updated continuously.',
-        'logo': 'logo.png',
         'loop_data_file': 'loop-data.txt',
         'in_temp_file': 'inTemp.txt',
         'in_co2_file': 'inCO2.txt',
@@ -90,6 +103,8 @@ def render(tmpl, show_purple):
         'day': Tag(),
         'station': Tag('Test Station'),
         'obs': Tag('SomeLabel'),
+        # logo.inc embeds almanac values in JavaScript: bare number.
+        'almanac': Tag('42.0'),
     }
     # #include paths resolve relative to the CWD.
     os.chdir(SKIN)
@@ -116,7 +131,8 @@ def check(html):
     # $24h... is included deliberately: it is NOT a valid Cheetah placeholder
     # (digit start) and renders as literal text if put in a template.
     leaks = re.findall(
-        r'\$Extras[.\w]*|\$current[.\w]*|\$day[.\w]*|\$obs[.\w]*|\$24h[.\w]*|\$station[.\w]*',
+        r'\$Extras[.\w]*|\$current[.\w]*|\$day[.\w]*|\$obs[.\w]*|\$24h[.\w]*'
+        r'|\$station[.\w]*|\$almanac[.\w]*|\$pl_\w+',
         html)
     if leaks:
         failures.append('unrendered placeholders: %s' % sorted(set(leaks)))

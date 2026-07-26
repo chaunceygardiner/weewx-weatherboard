@@ -171,6 +171,44 @@
     }
   }
 
+  // The live label wears an age-tier color (classes in weatherboard.css),
+  // liveseasons' tiers: green while the loop record is under a minute
+  // old, neutral to five minutes, red beyond -- with white standing in
+  // for liveseasons' neutral black on this board's black background.
+  // 'failed' is the disconnected blue for the named fetch failures.
+  function setLiveLabelClass(cls) {
+    var classes = document.getElementById("live-label").classList;
+    classes.remove("live", "behind", "stale", "failed");
+    if (cls) {
+      classes.add(cls);
+    }
+  }
+
+  function getActivityClass(age) {
+    if (age < 60) {
+      return "live";
+    }
+    if (age < 300) {
+      return "behind";
+    }
+    return "stale";
+  }
+
+  // Same progressive age formatting as liveseasons' getActivityStr.
+  function getActivityStr(age) {
+    var actStr = "LIVE";
+    if (age >= (3600 * 24)) {
+      actStr = (age / (3600.0 * 24)).toFixed(1) + "d ago";
+    } else if (age >= 3600) {
+      actStr = (age / 3600.0).toFixed(1) + "h ago";
+    } else if (age >= 60) {
+      actStr = (age / 60.0).toFixed(1) + "m ago";
+    } else if (age > 6) {
+      actStr = age + "s ago";
+    }
+    return actStr;
+  }
+
   function markDisconnected(code, hint) {
     // With a code and hint (the config-shaped failures: an HTTP error
     // status, a body that isn't json) the label and clock name the
@@ -182,6 +220,7 @@
     console.log('loop data fetch failed; consecutive failures: ' + errorCount);
     document.getElementById("live-label").innerHTML =
         code ? "&nbsp;" + code + "&nbsp;" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+    setLiveLabelClass(code ? "failed" : "");
     var activityElement = document.getElementById("activity-string");
     if (hint) {
       activityElement.innerHTML = hint;
@@ -194,6 +233,7 @@
       if (!expiredShown) {
         expiredShown = true;
         document.getElementById("live-label").innerHTML = "Expired";
+        setLiveLabelClass("");
         var activityElement = document.getElementById("activity-string");
         activityElement.innerHTML = "CLICK-ME";
         // set an onclick event to restart
@@ -230,12 +270,9 @@
         // "dateTime": 1578965850,
         var lastUpdate = new Date(result["current.dateTime.raw"] * 1000);
         var age = Math.round(Math.abs(new Date() - lastUpdate) / 1000);
-        var liveLabel = document.getElementById("live-label");
-        if (age <= 6) {
-          liveLabel.innerHTML = "&nbsp;LIVE&nbsp;";
-        } else {
-          liveLabel.innerHTML = "&nbsp;" + age + "s ago&nbsp;";
-        }
+        document.getElementById("live-label").innerHTML =
+            "&nbsp;" + getActivityStr(age) + "&nbsp;";
+        setLiveLabelClass(getActivityClass(age));
 
         // Display the time of the last update.
         var activityElement = document.getElementById("activity-string");
@@ -243,6 +280,13 @@
         activityElement.classList.remove("disconnected");
 
         updateReadings(result, age);
+
+        // The live logo (logo.inc) repaints from the same poll.  Guarded
+        // by typeof so this shared file also works on a branch that has
+        // no logo.inc/paw_logo.js.
+        if (typeof pawLogoFromLoop === 'function') {
+          pawLogoFromLoop(result);
+        }
       } catch (e) {
         // A rendering error must not stop the polling.
         console.log(e);

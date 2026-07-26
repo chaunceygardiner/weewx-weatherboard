@@ -26,14 +26,9 @@
       <div>
         <table id="centered_title">
           <tr>
-            #if $Extras.has_key('logo') and $Extras.logo != ''
-              <td class="title-left">
-                <img src='$Extras.logo' alt='' width="100" class="title-logo">
-              </td>
-            #else
-              <td class="title-left">
-              </td>
-            #end if
+            <td class="title-left">
+              #include "logo.inc"
+            </td>
             <td class="title-center">
               <h1 class="page_title">
                 #if $Extras.has_key('title')
