@@ -29,9 +29,13 @@ body {
     margin: auto;
 }
 
+/* The side cells stay equal so the title stays centered.  250px is the
+ * measured one-line width for the longest live-label states ("10.5m
+ * ago", "HTTP 404") at 32px; narrower wraps them and, wrapped, they
+ * outgrow the logo and push the readings down. */
 .title-left {
     text-align: left;
-    width: 145px;
+    width: 250px;
 }
 
 .title-center {
@@ -40,7 +44,7 @@ body {
 
 .title-right {
     text-align: right;
-    width: 145px;
+    width: 250px;
 }
 
 .title-logo {
@@ -67,6 +71,7 @@ body {
 #live-label {
     font-weight: bolder;
     color: #e51b23;
+    font-size: 32px;
 }
 
 /* Age-tier colors, set by the updaters (updater_common.inc).  The tiers
