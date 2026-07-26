@@ -36,7 +36,10 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'Extras': {
                             'meta_title'       : 'PaloAltoWeather.com Weather at a Glance&mdash;WeatherBoard&trade;',
                             'title'            : 'PaloAltoWeather.com WeatherBoard&trade;',
-                            'subtitle'         : '<a style="color:#e51b23;" href="..">Full Site</a> | <a style="color:#e51b23;" href="../about_us.html">About Us</a>',
+                            # Subtitle links inherit the subtitle gray via
+                            # weatherboard.css (.lastupdate a) -- no inline
+                            # styles here.
+                            'subtitle'         : '<a href="..">Full Site</a> | <a href="../about_us.html">About Us</a>',
                             'loop_data_file'   : '/gauge-data/loop-data.txt',
                             'in_temp_file'     : '/gauge-data/inTemp.txt',
                             'in_co2_file'      : '/gauge-data/inCO2.txt',

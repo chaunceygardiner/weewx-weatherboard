@@ -14,11 +14,13 @@ body {
     background-color: #000000;
 }
 
-/* Title band */
+/* Title band.  White title over the color logo and green live label:
+ * red is reserved for the readings (and the label's stale/Expired
+ * states), so up here it only ever means trouble. */
 
 .header-band {
     background-color: #000000;
-    color: #e51b23;
+    color: #ffffff;
 }
 
 #centered_title,
@@ -53,6 +55,13 @@ body {
 .lastupdate {
     font-size: 18px;
     line-height: 50%;
+    color: #9aa7b0;
+}
+
+/* Subtitle links (e.g. Full Site | About Us) follow the subtitle color;
+ * the subtitle Extras value needs no inline styles. */
+.lastupdate a {
+    color: inherit;
 }
 
 #live-label {
