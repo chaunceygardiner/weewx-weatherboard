@@ -88,6 +88,9 @@
   <rect x="3.2" y="3.2" width="113.6" height="113.6" rx="20.8" fill="none" stroke="#ffffff" stroke-width="2.6"/>
 </svg>
 <script src="paw_logo.js"></script>
+#if $Extras.has_key('title_theme') and $Extras.title_theme == 'mono'
+<script src="paw_logo_mono.js"></script>
+#end if
 #set $pl_ws = $current.windSpeed.raw
 #if $pl_ws is None
 #set $pl_ws = 0

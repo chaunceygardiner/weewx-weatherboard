@@ -4,7 +4,8 @@
 """Offline check for the WeatherBoard templates.
 
 Renders every *.html.tmpl in the skin with a stub searchList (both
-show_purple settings) and validates the output:
+show_purple settings crossed with both title_theme settings) and
+validates the output:
 
   - templates render without Cheetah errors
   - every element id referenced by getElementById exists in the HTML
@@ -77,8 +78,9 @@ class Extras(dict):
         return k in self
 
 
-def make_extras(show_purple):
+def make_extras(show_purple, title_theme):
     return Extras({
+        'title_theme': title_theme,
         'meta_title': 'Test WeatherBoard',
         'title': 'Test WeatherBoard&trade;',
         'subtitle': 'Updated continuously.',
@@ -96,9 +98,9 @@ def make_extras(show_purple):
     })
 
 
-def render(tmpl, show_purple):
+def render(tmpl, show_purple, title_theme):
     ns = {
-        'Extras': make_extras(show_purple),
+        'Extras': make_extras(show_purple, title_theme),
         'current': Tag(),
         'day': Tag(),
         'station': Tag('Test Station'),
@@ -111,8 +113,13 @@ def render(tmpl, show_purple):
     return str(Template(file=os.path.join(SKIN, tmpl), searchList=[ns]))
 
 
-def check(html):
+def check(html, mono):
     failures = []
+    # The mono theme is body class + repaint script; color is neither.
+    for token in ('class="title-mono"', 'paw_logo_mono.js'):
+        if (token in html) != mono:
+            failures.append('%s %s for title_theme=%s' % (
+                token, 'missing' if mono else 'present', 'mono' if mono else 'color'))
     scripts = re.findall(r'<script>(.*?)</script>', html, re.S)
     if not scripts:
         failures.append('no <script> blocks found')
@@ -152,14 +159,15 @@ def main():
         sys.exit('no *.html.tmpl files found in %s' % SKIN)
     for tmpl in templates:
         for purple in (True, False):
-            name = '%s show_purple=%s' % (tmpl, purple)
+          for theme in ('color', 'mono'):
+            name = '%s show_purple=%s title_theme=%s' % (tmpl, purple, theme)
             try:
-                html = render(tmpl, purple)
+                html = render(tmpl, purple, theme)
             except Exception as e:
                 print('FAIL %s: render error: %s' % (name, e))
                 ok = False
                 continue
-            failures = check(html)
+            failures = check(html, theme == 'mono')
             print('%s %s' % ('FAIL' if failures else 'ok  ', name))
             for f in failures:
                 print('       - %s' % f)

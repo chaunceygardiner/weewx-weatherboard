@@ -20,7 +20,11 @@
     #end if
     <meta name="description" content="Tablet formatted display of current temperature, dew point, wind speed, UV Index, barometer, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
   </head>
+  #if $Extras.has_key('title_theme') and $Extras.title_theme == 'mono'
+  <body class="title-mono">
+  #else
   <body>
+  #end if
     #include "realtime_updater.inc"
     <div class="header-band">
       <div>

@@ -93,6 +93,42 @@ body {
     color: blue;
 }
 
+/* Mono title theme (Extras title_theme = mono): the templates put
+ * .title-mono on <body> and the whole title band goes red like the
+ * readings.  paw_logo_mono.js (loaded by logo.inc for this theme only)
+ * repaints the live logo pure red after every poll.  The label's age
+ * tiers can't be color-coded here, so they become brightness and
+ * blink: full red while live, dim red minutes behind, blinking when
+ * stale or the fetch is failing -- blink keeps the alarm that red
+ * carries in the color theme. */
+
+.title-mono .page_title {
+    color: red;
+}
+.title-mono .lastupdate {
+    color: #990000;
+}
+.title-mono #live-label {
+    color: red;
+}
+.title-mono #live-label.live {
+    color: red;
+}
+.title-mono #live-label.behind {
+    color: #990000;
+}
+.title-mono #live-label.stale {
+    color: red;
+    animation: paw-blink 1.2s step-end infinite;
+}
+.title-mono #live-label.failed {
+    color: #990000;
+    animation: paw-blink 1.2s step-end infinite;
+}
+@keyframes paw-blink {
+    50% { opacity: 0.15; }
+}
+
 /* Readings */
 
 .board-readings {

@@ -40,6 +40,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             # weatherboard.css (.lastupdate a) -- no inline
                             # styles here.
                             'subtitle'         : '<a href="..">Full Site</a> | <a href="../about_us.html">About Us</a>',
+                            'title_theme'      : 'color',
                             'loop_data_file'   : '/gauge-data/loop-data.txt',
                             'in_temp_file'     : '/gauge-data/inTemp.txt',
                             'in_co2_file'      : '/gauge-data/inCO2.txt',
@@ -86,6 +87,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/index2.html.tmpl',
                 'skins/WeatherBoard/logo.inc',
                 'skins/WeatherBoard/paw_logo.js',
+                'skins/WeatherBoard/paw_logo_mono.js',
                 'skins/WeatherBoard/realtime_updater.inc',
                 'skins/WeatherBoard/realtime_updater2.inc',
                 'skins/WeatherBoard/skin.conf',
