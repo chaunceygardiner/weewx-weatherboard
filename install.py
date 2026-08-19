@@ -18,7 +18,7 @@ def loader():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "3.2",
+            version = "3.3",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -30,10 +30,10 @@ class WeatherBoardInstaller(ExtensionInstaller):
                         'enable': 'true',
                         'skin':'WeatherBoard',
                         'Extras': {
-                            'meta_title'       : 'my-weather-website.com Weather at a Glance WeatherBoard&trade;',
-                            'title'            : 'my-weather-website.com WeatherBoard&trade;',
+                            'meta_title'       : 'Acme Weather at a Glance WeatherBoard&trade;',
+                            'title'            : 'Acme Weather WeatherBoard&trade;',
                             'subtitle'         : 'Updated continuously.',
-                            'logo'             : '',
+                            'logo'             : 'weatherboard_logo.png',
                             'loop_data_file'   : 'loop-data.txt',
                             'expiration_time'  : 4,
                             'page_update_pwd'  : 'foobar',
@@ -74,5 +74,6 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/skin.conf',
                 'skins/WeatherBoard/updater_common.inc',
                 'skins/WeatherBoard/weatherboard.css',
+                'skins/WeatherBoard/weatherboard_logo.png',
             ])]
         )
