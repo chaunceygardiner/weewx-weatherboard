@@ -120,6 +120,27 @@
     '-4': '<i class="arrow down_dir"></i>&plus;&plus;',
   };
 
+  // Server-now in milliseconds, from a response's own Date header, or NaN
+  // when the header cannot be read.  An intermediate cache preserves the
+  // origin's Date and adds Age (RFC 9111), so server-now is Date + Age;
+  // without that a cached hit reports itself as young as it was when it
+  // was stored.  Date is not a CORS-safelisted response header, so this
+  // returns NaN for a cross-origin fetch unless the server sends
+  // Access-Control-Expose-Headers: Date -- callers fall back on their own
+  // elapsed backstop.  getHeader is passed in because an XHR spells this
+  // getResponseHeader(name) and a fetch Response spells it headers.get(name).
+  function serverNowFromHeaders(getHeader) {
+    var serverNow = Date.parse(getHeader("Date"));
+    if (isNaN(serverNow)) {
+      return NaN;
+    }
+    var cacheAge = Number(getHeader("Age"));
+    if (isFinite(cacheAge) && cacheAge > 0) {
+      serverNow += cacheAge * 1000;
+    }
+    return serverNow;
+  }
+
   function decode_rgb(i) {
     var red   = i >> 16;
     var green = (i & 0xFF00) >> 8;
@@ -319,15 +340,11 @@
         // tens of milliseconds -- three orders of magnitude inside the
         // budget.)
         var age = null;
-        var serverNow = Date.parse(this.getResponseHeader("Date"));
+        var xhr = this;
+        var serverNow = serverNowFromHeaders(function(name) {
+          return xhr.getResponseHeader(name);
+        });
         if (!isNaN(serverNow)) {
-          // An intermediate cache preserves the origin's Date and adds Age
-          // (RFC 9111), so server-now is Date + Age.  Without this a cached
-          // hit reports itself as young as it was when it was stored.
-          var cacheAge = Number(this.getResponseHeader("Age"));
-          if (isFinite(cacheAge) && cacheAge > 0) {
-            serverNow += cacheAge * 1000;
-          }
           age = Math.round(serverNow / 1000 - dateTime);
         }
         // Backstop.  Elapsed since the data last advanced is always a LOWER

@@ -31,24 +31,40 @@
   #else
     var default_solar_array_file = 'solar-array.json';
   #end if
-  ## Maximum age of the indoor observation files before ?? placeholders are
-  ## shown; on in_file_slow_host (a host where the files sync less often)
-  ## in_file_slow_max_age applies instead.
-  #if $Extras.has_key('in_file_max_age')
-    var in_file_max_age = $Extras.in_file_max_age;
+  ## Maximum age (seconds) of each sidecar file before its reading falls
+  ## back to placeholders.  One limit per file, because they are written on
+  ## different schedules: the AirGradient trio on a ~30s cron, the solar
+  ## array every 15s but carrying data the Enphase pipeline has already
+  ## delayed by the better part of a minute.  Measured against the real
+  ## site, worst observed ages were inTemp 28s, inCO2 34s, inAQI 58s and
+  ## solar 73s, so each limit leaves room for a missed write or two.
+  #if $Extras.has_key('in_temp_max_age')
+    var in_temp_max_age = $Extras.in_temp_max_age;
   #else
-    var in_file_max_age = 120;
+    var in_temp_max_age = 120;
   #end if
-  #if $Extras.has_key('in_file_slow_host')
-    var in_file_slow_host = '$Extras.in_file_slow_host';
+  #if $Extras.has_key('in_co2_max_age')
+    var in_co2_max_age = $Extras.in_co2_max_age;
   #else
-    var in_file_slow_host = '';
+    var in_co2_max_age = 120;
   #end if
-  #if $Extras.has_key('in_file_slow_max_age')
-    var in_file_slow_max_age = $Extras.in_file_slow_max_age;
+  #if $Extras.has_key('in_aqi_max_age')
+    var in_aqi_max_age = $Extras.in_aqi_max_age;
   #else
-    var in_file_slow_max_age = 360;
+    var in_aqi_max_age = 120;
   #end if
+  #if $Extras.has_key('solar_array_max_age')
+    var solar_array_max_age = $Extras.solar_array_max_age;
+  #else
+    var solar_array_max_age = 150;
+  #end if
+
+  // Per-file staleness backstop, keyed by element id: how long each file's
+  // own timestamp has sat unchanged.  Same role as lastChangeAt in
+  // updater_common.inc -- it is used only when the response carries no
+  // readable Date header, and it can only ever understate the age.
+  var sidecarLastTs = {};
+  var sidecarLastChangeAt = {};
 
   function getInTempFile() {
     var f = getUrlParam('inTempFile');
@@ -67,37 +83,90 @@
     return f !== '' ? f : default_solar_array_file;
   }
 
-  // {"total_watts": 2583, "total_timestamp": 1784578112.383, ...}
-  // and update elementId, or show the placeholder if the file is missing,
-  // unreadable, or stale.
-    function updateIndoorFile(url, ts_key, elementId, key, digits, divisor, width, placeholder, hasColor) {
-    var element = document.getElementById(elementId);
+  // Read one sidecar file -- a small JSON document written beside the loop
+  // data, e.g. {"total_watts": 2583, "total_timestamp": 1784578112.383} --
+  // and update its reading, or show the placeholder if the file is
+  // missing, unreadable, or stale.  Options, rather than the nine
+  // positional arguments this used to take:
+  //
+  //   url          where to fetch it from
+  //   tsKey        name of the timestamp field inside the document
+  //   elementId    the reading to write
+  //   key          name of the value field inside the document
+  //   digits       decimal places to show
+  //   divisor      scale the raw value by this (e.g. 1000 for W -> kW)
+  //   width        pad the result to this many characters
+  //   placeholder  what to show when the value is unavailable
+  //   maxAge       seconds before the value counts as stale
+  //   hasColor     the document also carries an "inColor" for the reading
+  function updateSidecarFile(opts) {
+    var element = document.getElementById(opts.elementId);
     function showUnavailable() {
-      element.innerHTML = placeholder;
-      if (hasColor) {
+      element.innerHTML = opts.placeholder;
+      if (opts.hasColor) {
         element.style.color = "rgb(255,255,255)";
       }
     }
-    fetch(url)
+    // Both anti-cache measures the loop-data poll takes, because these
+    // files ship without cache headers too: a unique URL per fetch, and a
+    // demand for revalidation.  The loop poll asks for that with a
+    // Cache-Control request header and so must gate it to same-origin --
+    // the header is not CORS-safelisted and would draw a preflight that a
+    // plain file server refuses.  fetch's cache option is not a header, so
+    // it needs no such gate; measured cross-origin against a server that
+    // 405s OPTIONS, it revalidates with zero preflights.
+    var url = opts.url;
+    url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + (cacheBuster++);
+    fetch(url, {cache: 'no-cache'})
       .then(response => {
         // fetch only rejects on network failure, not on HTTP error status
         // (e.g. 403/404/500), so check explicitly and route a bad status
         // into the .catch below.
         if (!response.ok) throw new Error('HTTP ' + response.status);
-        return response.text();
+        // Carry the server's own clock forward with the body, by the same
+        // rules the loop-data poll uses.
+        var serverNow = serverNowFromHeaders(function(name) {
+          return response.headers.get(name);
+        });
+        return response.text().then(text => ({text: text, serverNow: serverNow}));
       })
-      .then(data => {
-        var j = JSON.parse(data);
-        if (!j.hasOwnProperty(ts_key) || !j.hasOwnProperty(key)
-            || (hasColor && !j.hasOwnProperty("inColor"))) {
+      .then(r => {
+        var j = JSON.parse(r.text);
+        if (!j.hasOwnProperty(opts.tsKey) || !j.hasOwnProperty(opts.key)
+            || (opts.hasColor && !j.hasOwnProperty("inColor"))) {
+          // A writer that stops emitting one of these leaves nothing to
+          // judge the reading by, so blank it rather than leaving the last
+          // good value on screen for ever -- the same answer an unusable
+          // timestamp gets below.
+          showUnavailable();
           return;
         }
-        var age = Date.now() / 1000.0 - j[ts_key];
-        if (age < in_file_max_age
-            || (location.hostname == in_file_slow_host && age < in_file_slow_max_age)) {
-          var value = j[key] / divisor;
-          element.innerHTML = padLeft(value.toFixed(digits), width);
-          if (hasColor) {
+        var ts = j[opts.tsKey];
+        if (sidecarLastTs[opts.elementId] !== ts) {
+          sidecarLastTs[opts.elementId] = ts;
+          sidecarLastChangeAt[opts.elementId] = performance.now();
+        }
+        // Age against the server's clock, as the loop-data poll does, so a
+        // tablet with a wrong clock does not blank these readings either.
+        var age = null;
+        if (!isNaN(r.serverNow)) {
+          age = Math.round(r.serverNow / 1000 - ts);
+        }
+        var elapsed = Math.round(
+            (performance.now() - sidecarLastChangeAt[opts.elementId]) / 1000);
+        age = (age === null) ? elapsed : Math.max(age, elapsed);
+        if (age < 0) {
+          age = 0;
+        }
+        if (ts == null || ts === '' || isNaN(Number(ts))) {
+          // No usable timestamp: NaN fails the comparison below, so the
+          // reading shows its placeholder rather than an invented age.
+          age = NaN;
+        }
+        if (age < opts.maxAge) {
+          var value = j[opts.key] / opts.divisor;
+          element.innerHTML = padLeft(value.toFixed(opts.digits), opts.width);
+          if (opts.hasColor) {
             element.style.color = j['inColor'];
           }
         } else {
@@ -111,13 +180,14 @@
       });
   }
 
-  // Indoor files are written by cron only every 30s, so reading them every
-  // 2s just produces 304s.  Throttle to every 8th loop (~16s).  Decoupled
-  // from the cron write schedule on purpose, so worst-case staleness stays
-  // bounded (~write 30s + read 16s) and this keeps working regardless of how
-  // the writers are rescheduled.  %8===1 so a freshly loaded page fetches
-  // indoor data on the first tick rather than waiting 16s.
-  var indoorCounter = 0;
+  // The sidecar files are written far more slowly than the loop data: the
+  // AirGradient trio on a ~30s cron, the solar array every 15s.  Reading
+  // them every 2s would buy nothing, so throttle to every 8th loop (~16s).
+  // Decoupled from the write schedules on purpose, so worst-case staleness
+  // stays bounded (~write + read 16s) and this keeps working regardless of
+  // how the writers are rescheduled.  %8===1 so a freshly loaded page
+  // fetches them on the first tick rather than waiting 16s.
+  var sidecarCounter = 0;
 
   function updateReadings(result, age) {
     // temp
@@ -173,25 +243,48 @@
 
     // aqi
     #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-      if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
+      // Age-gated like every other reading, as on the outdoor board.
+      // Clearing the inline color returns the cell to the footer's red.
+      if (age < 10 && result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
         setReading("aqi", padLeft(result["current.pm2_5_1m_aqi.formatted"], 3));
-      } else if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+      } else if (age < 10 && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
         setReading("aqi", padLeft(result["current.pm2_5_aqi.formatted"], 3));
+      } else {
+        // Three wide: the AQI never runs to four digits -- we would be dead.
+        setReading("aqi", '???');
       }
-      if (result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
+      if (age < 10 && result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
-      } else if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+      } else if (age < 10 && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
+      } else {
+        document.getElementById("aqi").style.color = '';
       }
     #end if
 
-    // indoor temp, CO2 and AQI
-    indoorCounter += 1;
-    if (indoorCounter % 8 === 1) {
-      updateIndoorFile(getInTempFile(),     "ts",              "current.inTemp.formatted", "inTemp",       1,    1, 5, '&nbsp;??.?', false);
-      updateIndoorFile(getInCo2File(),      "ts",              "indoor_co2",               "inCO2",        0,    1, 4, '????',       true);
-      updateIndoorFile(getInAqiFile(),      "ts",              "indoor_aqi",               "inAQI",        0,    1, 3, '???',        true);
-      updateIndoorFile(getSolarArrayFile(), "total_timestamp", "total_watts",               "total_watts", 1, 1000, 4, "??.?",       false);
+    // indoor temp, CO2 and AQI, and solar production
+    sidecarCounter += 1;
+    if (sidecarCounter % 8 === 1) {
+      updateSidecarFile({url: getInTempFile(), tsKey: "ts",
+                         elementId: "current.inTemp.formatted", key: "inTemp",
+                         digits: 1, divisor: 1, width: 5,
+                         placeholder: '&nbsp;??.?', maxAge: in_temp_max_age,
+                         hasColor: false});
+      updateSidecarFile({url: getInCo2File(), tsKey: "ts",
+                         elementId: "indoor_co2", key: "inCO2",
+                         digits: 0, divisor: 1, width: 4,
+                         placeholder: '????', maxAge: in_co2_max_age,
+                         hasColor: true});
+      updateSidecarFile({url: getInAqiFile(), tsKey: "ts",
+                         elementId: "indoor_aqi", key: "inAQI",
+                         digits: 0, divisor: 1, width: 3,
+                         placeholder: '???', maxAge: in_aqi_max_age,
+                         hasColor: true});
+      updateSidecarFile({url: getSolarArrayFile(), tsKey: "total_timestamp",
+                         elementId: "total_watts", key: "total_watts",
+                         digits: 1, divisor: 1000, width: 4,
+                         placeholder: "??.?", maxAge: solar_array_max_age,
+                         hasColor: false});
     }
   }
 </script>
