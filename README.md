@@ -17,7 +17,7 @@ across the room.
 
 Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
 
-**WeatherBoard 3.0 requires LoopData 2.x or later.  It will not work with LoopData 1.x.**
+**WeatherBoard 3.x requires LoopData 2.x or later.  It will not work with LoopData 1.x.**
 
 The WeatherBoard&trade; skin provides a simple one page report that shows:
 * Current Outside Temperature
@@ -60,7 +60,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
   returns averages over the archive period (as opposed to one shot readings) and
   catches up on AQI readings when WeeWX starts.
 
-# Installation Instructions
+## Installation Instructions
 
 1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
    per the installation instructions in the weewx-loopdata README.
@@ -103,10 +103,10 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
        enable = true
        skin = WeatherBoard
        [[[Extras]]]
-           meta_title = my-weather-website.com Weather at a Glance WeatherBoard&trade;
-           title = my-weather-website.com WeatherBoard&trade;
+           meta_title = Acme Weather at a Glance WeatherBoard&trade;
+           title = Acme Weather WeatherBoard&trade;
            subtitle = Updated continuously.
-           logo = ""
+           logo = weatherboard_logo.png
            loop_data_file = loop-data.txt
            expiration_time = 4
            page_update_pwd = foobar
@@ -117,10 +117,20 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    ```
 
 1. Edit the `Extras` section to suit your site.
-   * `title`, `meta_title`, `subtitle`: your site's branding.
+   * `title`, `meta_title`, `subtitle`: your site's branding.  Acme Weather is a
+     placeholder; put your own site's name here.
    * `loop_data_file`: where the updater fetches loop data from.  If not a full
-     path, it is interpreted as relative to this report's HTML_ROOT.
-   * `logo`: path to an image file if your site has a logo.
+     path, it is interpreted as relative to this report's HTML_ROOT.  Pointing it
+     at another host needs that server to send `Access-Control-Allow-Origin`, or
+     the fetch fails and the board sits permanently disconnected; and even then
+     the staleness check described below is weakened, because the `Date` header
+     is not readable cross-origin unless that server also sends
+     `Access-Control-Expose-Headers: Date`.
+   * `logo`: the mark shown at the left of the title bar.  A generic weather icon
+     (`weatherboard_logo.png`) ships with the skin; point this at your own logo if
+     you have one, or set it to `""` for no mark at all.  The value is a URL as the
+     browser sees it, so a bare filename must name a file in this report's
+     HTML_ROOT.
    * `refresh_rate`: seconds between updates in the browser.  A good choice is
      the rate at which your station's driver emits loop data.
    * `expiration_time`: hours after which the page stops polling (a click on the
@@ -140,6 +150,13 @@ Every reading is age-checked.  If the loop record is more than 10 seconds old, t
 affected readings show question marks of the appropriate width.  If loop-data.txt
 cannot be fetched at all, the time display turns blue until the next successful
 fetch.  The board never freezes silently on stale data.
+
+That age is measured against the server's clock, not the browser's: it is the
+difference between the `Date` header on the loop-data response and the timestamp
+written inside the record.  A wall tablet whose own clock is badly wrong therefore
+still shows a correct board.  Where no usable `Date` comes back, the board falls
+back on how long the record's timestamp has sat unchanged; that fallback can only
+understate the age, so it is a backstop rather than a substitute.
 
 ## Licensing
 

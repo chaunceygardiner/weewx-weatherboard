@@ -1,6 +1,58 @@
 weatherboard change history
 ---------------------------
 
+3.3 08/19/2026
+--------------
+A fresh install now looks like a finished board rather than an unfilled
+form.  The default title was my-weather-website.com, which reads as a
+mistake on a wall-mounted display, and the logo cell at the left of the
+title bar was empty, leaving the band lopsided against the live label on
+the right.  The title is now Acme Weather -- still a placeholder, but an
+unmistakable one -- and a generic weather icon, weatherboard_logo.png,
+ships with the skin and is the default logo.  Both are ordinary Extras:
+set title to your own site's name, and point logo at your own image, or
+at '' for no mark at all.  An existing install that still carries title
+and logo in weewx.conf keeps them, because weectl adds settings that are
+missing but never overwrites ones already there; a board whose weewx.conf
+has no logo line will pick the icon up, since skin.conf's defaults are
+replaced along with the rest of the skin.  Edit the Extras by hand if you
+want the new defaults.  The README's two screen shots are also recaptured
+-- the previous pair dated from 2020 and predated the barometer trend
+arrow, the 24-hour rain total and the current footer legend.
+
+The AQI reading is now age-checked like every other reading on the board.
+It was the one exception: when the loop data went stale every other
+reading fell back to question marks while the AQI went on showing its
+last value, in its last color, indefinitely.  It now shows ??? in the
+board's red once the data is more than ten seconds old, or if the AQI
+fields never arrive at all.
+
+Also fixed: on a board without the AQI reading, the footer legend named
+the rain line as "Rain 24h - Rain Rate" while the line itself showed
+three numbers -- today's rainfall, the 24-hour total and the rain rate.
+The legend now names all three, as it already did when the AQI reading
+was shown.
+
+3.2 08/18/2026
+--------------
+The board now measures how stale the loop data is by the server's clock
+instead of the browser's.  A wall-mounted tablet's clock can be badly
+wrong, and when it was the board did not merely mislabel itself: the same
+age gates every reading, so a skewed clock blanked the entire board to
+question marks.  The age now comes from the HTTP Date header on the
+loop-data response -- stamped by a server, checked against a timestamp
+written by a server -- so the browser's clock never enters the
+arithmetic.  If that header is missing, or if a cached response arrives
+with its Date frozen alongside its body, the updater falls back on how
+long the loop data has sat unchanged.  That fallback can only ever
+understate the age -- the browser sees a record some moments after it was
+written, and on a freshly loaded page it starts counting from zero -- so
+it is a backstop for a server that sends no usable Date, not a substitute
+for one.  Each poll now also carries a unique URL and asks for
+revalidation, because loop-data.txt ships without cache headers and a
+browser's heuristic freshness window widens exactly as the file goes
+stale.
+
 3.1 07/24/2026
 --------------
 The board now names a config-shaped loop-data failure instead of wearing

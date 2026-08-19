@@ -20,7 +20,7 @@
                 $obs.label.rainToday - $obs.label.rain24h - $obs.label.rainRate<br>
                 <span class="overline">$obs.label.legend - $obs.label.air_quality_index - $obs.label.time_of_day</span><br>
 #else
-                <span class="underline">$obs.label.rain24h - $obs.label.rainRate</span><br>
+                <span class="underline">$obs.label.rainToday - $obs.label.rain24h - $obs.label.rainRate</span><br>
                 $obs.label.legend - $obs.label.time_of_day<br>
 #end if
                 <span>&copy;2019-2026 by John A Kline.</span>

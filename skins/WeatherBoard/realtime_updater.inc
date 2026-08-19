@@ -55,15 +55,25 @@
 
     // aqi
     #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
-      if (result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
+      // Age-gated like every other reading.  Without the gate a stale board
+      // kept showing the last AQI, in the last color, while everything
+      // around it had fallen back to question marks.  Clearing the inline
+      // color returns the cell to the footer's red, which is what the rest
+      // of the placeholders wear.
+      if (age < 10 && result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
         setReading("aqi", result["current.pm2_5_1m_aqi.formatted"]);
-      } else if (result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+      } else if (age < 10 && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
         setReading("aqi", result["current.pm2_5_aqi.formatted"]);
+      } else {
+        // Three wide: the AQI never runs to four digits -- we would be dead.
+        setReading("aqi", '???');
       }
-      if (result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
+      if (age < 10 && result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
-      } else if (result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+      } else if (age < 10 && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
+      } else {
+        document.getElementById("aqi").style.color = '';
       }
     #end if
   }

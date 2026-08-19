@@ -28,6 +28,17 @@
   var expiredShown = false;
   var errorCount = 0;
 
+  // Staleness tracking.  lastDateTime/lastChangeAt record how long the loop
+  // data has sat unchanged; cacheBuster puts every poll on a URL of its own.
+  // Date.now() only seeds a unique starting value here and is never read
+  // back as a clock.  lastDateTime starts undefined rather than null
+  // because JSON can deliver null for a missing timestamp, and that has to
+  // read as a change rather than as "same as last time"; lastChangeAt is
+  // seeded here so the elapsed backstop is never measured from null.
+  var lastDateTime;
+  var lastChangeAt = performance.now();
+  var cacheBuster = Date.now();
+
   function addLoadEvent(func) {
     var oldonload = window.onload;
     if (typeof window.onload != 'function') {
@@ -53,6 +64,18 @@
       } else {
           return decodeURIComponent(results[1]);
       }
+  }
+
+  // True when url resolves to this page's own origin; a relative path
+  // always does.  URL() throws on a malformed value, which counts as
+  // cross-origin here so a bad config cannot add a preflight on top of
+  // whatever else is wrong with it.
+  function sameOrigin(url) {
+    try {
+      return new URL(url, window.location.href).origin === window.location.origin;
+    } catch (e) {
+      return false;
+    }
   }
 
   function expirePage() {
@@ -196,6 +219,13 @@
 
   // Same progressive age formatting as liveseasons' getActivityStr.
   function getActivityStr(age) {
+    if (isNaN(age)) {
+      // The record carried no usable timestamp, so its age is unknown.
+      // Every comparison below is false for NaN, which would fall through
+      // to "LIVE" and claim the board is current while its readings show
+      // question marks.  Say the same thing the readings say.
+      return "??";
+    }
     var actStr = "LIVE";
     if (age >= (3600 * 24)) {
       actStr = (age / (3600.0 * 24)).toFixed(1) + "d ago";
@@ -268,8 +298,59 @@
       try {
         // Check the date
         // "dateTime": 1578965850,
-        var lastUpdate = new Date(result["current.dateTime.raw"] * 1000);
-        var age = Math.round(Math.abs(new Date() - lastUpdate) / 1000);
+        var dateTime = result["current.dateTime.raw"];
+        var lastUpdate = new Date(dateTime * 1000);
+        if (dateTime !== lastDateTime) {
+          lastDateTime = dateTime;
+          lastChangeAt = performance.now();
+        }
+        // Age comes from the server's own clock, stamped on this very
+        // response, rather than from the browser's.  A wall-mounted
+        // tablet's clock can be badly wrong, and this age gates every
+        // reading below, so a skewed clock used to blank the whole board.
+        // Both operands are absolute times: Date.parse only decodes the
+        // header's string form, it does not consult the local clock.
+        // Note that the two operands can come from two different machines:
+        // the Date header is stamped by whatever web server answers, while
+        // dateTime was written by the weewx station.  Skew between them is
+        // charged against the 10-second gate below, so both hosts are
+        // assumed to keep NTP-grade time.  (Measured on this deployment:
+        // the station within tens of microseconds, the web server within
+        // tens of milliseconds -- three orders of magnitude inside the
+        // budget.)
+        var age = null;
+        var serverNow = Date.parse(this.getResponseHeader("Date"));
+        if (!isNaN(serverNow)) {
+          // An intermediate cache preserves the origin's Date and adds Age
+          // (RFC 9111), so server-now is Date + Age.  Without this a cached
+          // hit reports itself as young as it was when it was stored.
+          var cacheAge = Number(this.getResponseHeader("Age"));
+          if (isFinite(cacheAge) && cacheAge > 0) {
+            serverNow += cacheAge * 1000;
+          }
+          age = Math.round(serverNow / 1000 - dateTime);
+        }
+        // Backstop.  Elapsed since the data last advanced is always a LOWER
+        // bound on the true age (a new record is seen some delay after it
+        // was written), so it can only win when the header reads too young
+        // -- a response served from cache, whose Date is frozen along with
+        // its body.  performance.now() is monotonic, so an NTP correction
+        // on the tablet cannot make this jump.
+        var elapsed = Math.round((performance.now() - lastChangeAt) / 1000);
+        age = (age === null) ? elapsed : Math.max(age, elapsed);
+        if (age < 0) {
+          age = 0;
+        }
+        if (dateTime == null || dateTime === '' || isNaN(Number(dateTime))) {
+          // No usable timestamp: leave the age unknown so the reading gates
+          // below show question marks, as the browser-clock version did.
+          // Number() rather than a typeof test, so a timestamp that arrives
+          // as a numeric string still yields its real age -- but Number()
+          // maps null and '' to 0, which would read as epoch 0 and put an
+          // age of half a century on the label, so those are tested first.
+          // == null is deliberate: it catches undefined too.
+          age = NaN;
+        }
         document.getElementById("live-label").innerHTML =
             "&nbsp;" + getActivityStr(age) + "&nbsp;";
         setLiveLabelClass(getActivityClass(age));
@@ -297,7 +378,22 @@
     xhttp.onerror = function() { markDisconnected(); };
     xhttp.ontimeout = function() { markDisconnected(); };
     try {
-      xhttp.open("GET", "$Extras.loop_data_file", true);
+      // A unique URL per poll.  loop-data.txt ships without cache headers,
+      // so browsers fall back on heuristic freshness -- and that window
+      // widens as the file goes stale, which is exactly when a cached copy
+      // would report itself as live.
+      var url = "$Extras.loop_data_file";
+      url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + (cacheBuster++);
+      xhttp.open("GET", url, true);
+      // The unique URL misses a cache that keys on path alone, so ask for
+      // revalidation too -- but only same-origin.  Cache-Control is not a
+      // CORS-safelisted request header, so sending it cross-origin makes
+      // every poll a preflighted request, and a plain file server that
+      // answers OPTIONS with 405 would leave the board permanently
+      // disconnected on a configuration that worked before.
+      if (sameOrigin(url)) {
+        xhttp.setRequestHeader("Cache-Control", "no-cache");
+      }
       xhttp.send();
     } catch (e) {
       console.log(e);
