@@ -1,6 +1,26 @@
 weatherboard change history
 ---------------------------
 
+3.2 08/18/2026
+--------------
+The board now measures how stale the loop data is by the server's clock
+instead of the browser's.  A wall-mounted tablet's clock can be badly
+wrong, and when it was the board did not merely mislabel itself: the same
+age gates every reading, so a skewed clock blanked the entire board to
+question marks.  The age now comes from the HTTP Date header on the
+loop-data response -- stamped by a server, checked against a timestamp
+written by a server -- so the browser's clock never enters the
+arithmetic.  If that header is missing, or if a cached response arrives
+with its Date frozen alongside its body, the updater falls back on how
+long the loop data has sat unchanged.  That fallback can only ever
+understate the age -- the browser sees a record some moments after it was
+written, and on a freshly loaded page it starts counting from zero -- so
+it is a backstop for a server that sends no usable Date, not a substitute
+for one.  Each poll now also carries a unique URL and asks for
+revalidation, because loop-data.txt ships without cache headers and a
+browser's heuristic freshness window widens exactly as the file goes
+stale.
+
 3.1 07/24/2026
 --------------
 The board now names a config-shaped loop-data failure instead of wearing
