@@ -13,6 +13,12 @@ show_purple settings) and validates the output:
   - every <script> parses as valid JavaScript (needs the pure-Python
     'esprima' package; that check is skipped with a warning if absent)
 
+It also checks that install.py's LOOP_DATA_FIELDS/PURPLE_FIELDS -- the
+fields the installer adds to weewx.conf -- are exactly the loopdata fields
+the updaters read.  A field the updaters read but the installer does not
+add arrives as question marks on a fresh install; a field the installer
+adds that nothing reads is dead weight on the user's fields line.
+
 Run with a Python that has Cheetah installed, e.g. the WeeWX venv:
 
   PYTHONDONTWRITEBYTECODE=1 /home/weewx/weewx-venv/bin/python3 tests/check_templates.py
@@ -22,6 +28,8 @@ pages, not that the updater behaves.  Behavior is verified by loading the
 generated pages in a browser.
 """
 
+import ast
+import io
 import os
 import re
 import sys
@@ -36,8 +44,9 @@ try:
 except ImportError:
     esprima = None
 
-SKIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                    'skins', 'WeatherBoard')
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SKIN = os.path.join(REPO, 'skins', 'WeatherBoard')
+INSTALL = os.path.join(REPO, 'install.py')
 
 
 class Tag:
@@ -70,12 +79,8 @@ def make_extras(show_purple):
         'subtitle': 'Updated continuously.',
         'logo': 'logo.png',
         'loop_data_file': 'loop-data.txt',
-        'in_temp_file': 'inTemp.txt',
-        'in_co2_file': 'inCO2.txt',
-        'in_aqi_file': 'inAQI.txt',
-        'in_file_max_age': 120,
-        'in_file_slow_host': 'www.example.com',
-        'in_file_slow_max_age': 360,
+        'max_age': 10,
+        'clock_max_age': 120,
         'refresh_rate': 2,
         'expiration_time': 4,
         'page_update_pwd': 'testpwd',
@@ -96,7 +101,7 @@ def render(tmpl, show_purple):
     return str(Template(file=os.path.join(SKIN, tmpl), searchList=[ns]))
 
 
-def check(html):
+def check(html, show_purple):
     failures = []
     scripts = re.findall(r'<script>(.*?)</script>', html, re.S)
     if not scripts:
@@ -123,6 +128,91 @@ def check(html):
     inline = re.findall(r'style="[^"]*"', html)
     if inline:
         failures.append('inline styles (move to weatherboard.css): %s' % inline[:5])
+    # The show_purple gate itself.  The id check above cannot see this
+    # crossing: <td id="aqi"> is unconditional in footer.inc, so if the gate
+    # ever resolved the wrong way the whole AQI updater block would vanish
+    # and every other check here would still pass.  The reading's own field
+    # names appear only inside that block, so their presence is the gate.
+    has_aqi_js = 'pm2_5' in html
+    if show_purple and not has_aqi_js:
+        failures.append('show_purple is on but no AQI updater code was rendered')
+    if not show_purple and has_aqi_js:
+        failures.append('show_purple is off but AQI updater code was rendered')
+    return failures
+
+
+def installer_field_lists():
+    """install.py's LOOP_DATA_FIELDS and PURPLE_FIELDS, read without
+    importing it: install.py imports weectl's 'setup' module, which only
+    exists inside weectl."""
+    lists = {}
+    for node in ast.parse(io.open(INSTALL, encoding='utf-8').read()).body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in (
+                    'LOOP_DATA_FIELDS', 'PURPLE_FIELDS'):
+                lists[target.id] = [ast.literal_eval(e) for e in node.value.elts]
+    return lists
+
+
+def fields_read_by_updaters():
+    """Every loopdata field the javascript looks up in the poll result.
+
+    Catches result["field"] directly, and result[someVar] by resolving
+    someVar's literal in the same file -- which is how the clock field,
+    current.dateTime.format("%X"), is read."""
+    direct = re.compile(r"""result\[\s*(?:"([^"]+)"|'([^']+)')\s*\]""")
+    indirect = re.compile(r"""result\[\s*([A-Za-z_$][\w$]*)\s*\]""")
+    fields = set()
+    for name in sorted(os.listdir(SKIN)):
+        if not (name.endswith('.inc') or name.endswith('.tmpl')):
+            continue
+        src = io.open(os.path.join(SKIN, name), encoding='utf-8').read()
+        for dq, sq in direct.findall(src):
+            fields.add(dq or sq)
+        for var in indirect.findall(src):
+            assign = re.search(
+                r"""\b(?:var|let|const)\s+%s\s*=\s*(?:"([^"]+)"|'([^']+)')"""
+                % re.escape(var), src)
+            if assign:
+                fields.add(assign.group(1) or assign.group(2))
+            else:
+                fields.add('<unresolved variable %s in %s>' % (var, name))
+    return fields
+
+
+def check_installer_fields():
+    """The installer's field lists must match what the updaters read."""
+    lists = installer_field_lists()
+    failures = []
+    for name in ('LOOP_DATA_FIELDS', 'PURPLE_FIELDS'):
+        if name not in lists:
+            failures.append('install.py has no %s list' % name)
+    if failures:
+        return failures
+    declared = lists['LOOP_DATA_FIELDS'] + lists['PURPLE_FIELDS']
+    if len(set(declared)) != len(declared):
+        failures.append('duplicate entries in install.py field lists')
+    read = fields_read_by_updaters()
+    unresolved = sorted(f for f in read if f.startswith('<unresolved'))
+    if unresolved:
+        failures.append('cannot resolve field name(s): %s' % unresolved)
+        read = set(read) - set(unresolved)
+    missing = sorted(read - set(declared))
+    if missing:
+        failures.append('read by the updaters, not added by install.py: %s' % missing)
+    unread = sorted(set(declared) - read)
+    if unread:
+        failures.append('added by install.py, read by nothing: %s' % unread)
+    # AQI fields belong in the purple list: they are added only for a
+    # station with show_purple set.
+    for field in lists['LOOP_DATA_FIELDS']:
+        if 'aqi' in field:
+            failures.append('%s belongs in PURPLE_FIELDS' % field)
+    for field in lists['PURPLE_FIELDS']:
+        if 'aqi' not in field:
+            failures.append('%s does not look like an AQI field' % field)
     return failures
 
 
@@ -143,11 +233,17 @@ def main():
                 print('FAIL %s: render error: %s' % (name, e))
                 ok = False
                 continue
-            failures = check(html)
+            failures = check(html, purple)
             print('%s %s' % ('FAIL' if failures else 'ok  ', name))
             for f in failures:
                 print('       - %s' % f)
             ok = ok and not failures
+    failures = check_installer_fields()
+    print('%s install.py loopdata fields match the updaters'
+          % ('FAIL' if failures else 'ok  '))
+    for f in failures:
+        print('       - %s' % f)
+    ok = ok and not failures
     sys.exit(0 if ok else 1)
 
 

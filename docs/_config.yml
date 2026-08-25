@@ -1,0 +1,45 @@
+title: WeeWX WeatherBoard
+description: >-
+  A one-page WeeWX skin for a wall-mounted tablet — outside temperature,
+  dew point, wind, gusts, UV, barometer, rain and air quality in type you
+  can read across the room, updating every couple of seconds.
+url: "https://chaunceygardiner.github.io"
+baseurl: "/weewx-weatherboard"
+
+remote_theme: just-the-docs/just-the-docs@v0.12.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-sitemap
+  # GitHub Pages enables this one by default; naming it explicitly is what
+  # makes .md cross-links resolve in a LOCAL build too.
+  - jekyll-relative-links
+
+search_enabled: true
+heading_anchors: true
+
+aux_links:
+  "weewx-weatherboard on GitHub":
+    - "https://github.com/chaunceygardiner/weewx-weatherboard"
+aux_links_new_tab: true
+
+# External links shown at the bottom of the left sidebar nav, on every page.
+nav_external_links:
+  - title: weewx-weatherboard on GitHub
+    url: https://github.com/chaunceygardiner/weewx-weatherboard
+  - title: Download weewx-weatherboard.zip
+    url: https://github.com/chaunceygardiner/weewx-weatherboard/releases/latest/download/weewx-weatherboard.zip
+
+callouts:
+  note:
+    title: Note
+    color: blue
+  important:
+    title: Important
+    color: red
+  tip:
+    title: Tip
+    color: green
+
+footer_content: >-
+  weewx-weatherboard is Copyright &copy; 2020&ndash;2026 John A Kline and is
+  licensed under the GNU Public License v3.

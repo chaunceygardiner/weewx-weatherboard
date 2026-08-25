@@ -13,16 +13,55 @@
   #else
     var page_update_pwd = 'foo';
   #end if
-  #if $Extras.has_key('refresh_rate')
-    var refresh_rate = $Extras.refresh_rate;
-  #else
-    var refresh_rate = 2;
-  #end if
-  #if $Extras.has_key('expiration_time')
-    var expiration_time = $Extras.expiration_time;
-  #else
-    var expiration_time = 4;
-  #end if
+  // Every numeric Extra below is whatever the user typed in weewx.conf.
+  // Interpolated bare, a non-numeric value renders as a javascript
+  // identifier rather than a number (the word ten, not 10) and throws a
+  // ReferenceError at the top of this script.  That aborts the WHOLE
+  // updater: updateCurrent is
+  // never defined, nothing ever polls, and the board sits on its
+  // report-cycle numbers with no live label and no clock, which is the
+  // worst failure this file has.  A typo in a knob the manual invites you
+  // to tune must not be able to do that, so each value is passed through
+  // as a string and parsed here, falling back to the default it would have
+  // had if the setting were absent.
+  // A blank setting is treated as absent rather than as a number, because
+  // Number("") is 0, not NaN -- so an empty max_age would mean every
+  // reading is always stale, and an empty refresh_rate would poll as fast
+  // as the browser could schedule it.  Zero and negatives are rejected for
+  // the same reason: every one of these knobs is a count of seconds or
+  // hours, and none of them has a meaningful value at or below zero.
+  function numExtra(raw, dflt) {
+    if (typeof raw !== "string" || raw.trim() === "") {
+      return dflt;
+    }
+    var n = Number(raw);
+    return (isFinite(n) && n > 0) ? n : dflt;
+  }
+## Strip any quote or backslash so the javascript string literal below stays
+## well formed whatever the setting contains.
+#set $_refresh_rate = str($Extras.get('refresh_rate', 2)).replace('\\', '').replace('"', '')
+#set $_expiration_time = str($Extras.get('expiration_time', 4)).replace('\\', '').replace('"', '')
+  var refresh_rate = numExtra("$_refresh_rate", 2);
+  var expiration_time = numExtra("$_expiration_time", 4);
+  // How old a loop record may be before the readings it feeds show
+  // question marks instead.  The default suits a station emitting loop
+  // packets every couple of seconds; raise it for a slower one.
+#set $_max_age = str($Extras.get('max_age', 10)).replace('\\', '').replace('"', '')
+  var max_age = numExtra("$_max_age", 10);
+  // The clock gets its own, longer threshold, because it is answering a
+  // different question than the readings are.  A temperature a minute old
+  // is a stale reading; a clock a minute slow is still a clock.
+#set $_clock_max_age = str($Extras.get('clock_max_age', 120)).replace('\\', '').replace('"', '')
+  var clock_max_age = numExtra("$_clock_max_age", 120);
+  // The clock's threshold never sits below the readings'.  The two are
+  // configured independently, and a station that raised max_age alone --
+  // which the docs invite, for a slow emitter -- would otherwise show a
+  // blue ??:??:?? beside a LIVE label and a full set of live readings,
+  // exactly the incoherence two thresholds exist to avoid.  Raising
+  // max_age therefore carries the clock up with it.
+  if (clock_max_age < max_age) {
+    clock_max_age = max_age;
+  }
 
   var pageTimedOut = false;
   var expiredShown = false;
@@ -38,6 +77,22 @@
   var lastDateTime;
   var lastChangeAt = performance.now();
   var cacheBuster = Date.now();
+
+  // The last poll that rendered, kept so a FAILED poll can go on ageing
+  // its readings.  A failure never reaches updateReadings, so without
+  // these the numbers would hold their last values for as long as the
+  // outage lasted.  See markDisconnected.
+  //
+  // The seed matters as much as the update.  Before the first successful
+  // poll the board is showing the numbers CheetahGenerator rendered into
+  // the page, which are as old as the last report cycle -- an archive
+  // interval, typically minutes.  A board that loads while the fetch is
+  // already failing would otherwise present those indefinitely, in the
+  // ordinary red, having never confirmed a single reading.  So the clock
+  // on them starts at page load.
+  var lastResult = null;
+  var lastGoodAge = 0;
+  var lastSuccessAt = performance.now();
 
   function addLoadEvent(func) {
     var oldonload = window.onload;
@@ -140,7 +195,7 @@
   // Reading updaters shared by both boards.
 
   function updateWind(result, age) {
-    if (age < 10 && result.hasOwnProperty("current.windSpeed.formatted")) {
+    if (age < max_age && result.hasOwnProperty("current.windSpeed.formatted")) {
       var windSpeed = padLeft(result["current.windSpeed.formatted"], 2);
       var windBearing = "";
       if (result["current.windSpeed.raw"] != 0.0
@@ -156,7 +211,7 @@
 
   function updateUV(result, age) {
     var uv;
-    if (age < 10 && result.hasOwnProperty("current.UV.formatted")) {
+    if (age < max_age && result.hasOwnProperty("current.UV.formatted")) {
       uv = padLeft(result["current.UV.formatted"], 4);
     } else {
       uv = "&nbsp;?.?";
@@ -166,7 +221,7 @@
 
   function updateBarometer(result, age) {
     var barometer_value;
-    if (age < 10 && result.hasOwnProperty("current.barometer.formatted")) {
+    if (age < max_age && result.hasOwnProperty("current.barometer.formatted")) {
       barometer_value = result["current.barometer.formatted"] + "&nbsp;";
       if (result.hasOwnProperty("trend.barometer.code")) {
         barometer_value += barometer_symbols[result["trend.barometer.code"]];
@@ -180,23 +235,55 @@
   }
 
   function updateRain(result, age) {
-    if (age < 10 && result.hasOwnProperty("day.rain.sum.formatted")) {
+    if (age < max_age && result.hasOwnProperty("day.rain.sum.formatted")) {
       setReading("day.rain.sum.formatted", result["day.rain.sum.formatted"]);
     } else {
       setReading("day.rain.sum.formatted", '?.??');
     }
 
-    if (age < 10 && result.hasOwnProperty("24h.rain.sum.formatted")) {
+    if (age < max_age && result.hasOwnProperty("24h.rain.sum.formatted")) {
       setReading("24h.rain.sum.formatted", result["24h.rain.sum.formatted"]);
     } else {
       setReading("24h.rain.sum.formatted", '?.??');
     }
 
-    if (age < 10 && result.hasOwnProperty("current.rainRate")) {
+    if (age < max_age && result.hasOwnProperty("current.rainRate")) {
       setReading("current.rainRate", result["current.rainRate"]);
     } else {
       setReading("current.rainRate", '?.??&nbsp;????');
     }
+  }
+
+  // What the live label says about the age of the loop record.  Same
+  // progressive formatting as liveseasons' getActivityStr: a board that
+  // has been behind since yesterday should say so in days, not in eighty
+  // thousand seconds.
+  function getActivityStr(age) {
+    if (isNaN(age)) {
+      // The record carried no usable timestamp, so its age is unknown.
+      // Every comparison against NaN is false, so an unguarded label falls
+      // through to the seconds line and concatenates it into "NaNs ago".
+      // Say what the readings beside it say.
+      return "??";
+    }
+    // The LIVE cut comes before the ladder, not after it as liveseasons
+    // has it.  That order was harmless while the cut was a hardcoded six
+    // seconds, always below the one-minute rung; with max_age
+    // configurable, a board set to 120 would read "1.5m ago" at ninety
+    // seconds -- while every reading beside it was still live.
+    if (age < max_age) {
+      return "LIVE";
+    }
+    if (age >= (3600 * 24)) {
+      return (age / (3600.0 * 24)).toFixed(1) + "d ago";
+    }
+    if (age >= 3600) {
+      return (age / 3600.0).toFixed(1) + "h ago";
+    }
+    if (age >= 60) {
+      return (age / 60.0).toFixed(1) + "m ago";
+    }
+    return age + "s ago";
   }
 
   function markDisconnected(code, hint) {
@@ -215,6 +302,36 @@
       activityElement.innerHTML = hint;
     }
     activityElement.classList.add("disconnected");
+
+    // The readings age out through an outage too.  A failed poll never
+    // reaches updateReadings, so without this every number would sit at
+    // its last value in the ordinary red for as long as the fetch kept
+    // failing -- a ten-minute-old temperature presented exactly like a
+    // live one.  The clock has a signal for this already, the
+    // disconnected color it takes from the first failure; the numbers
+    // have none, so they fall back to the same question marks they show
+    // when the data itself goes stale, on the same max_age.
+    //
+    // The age carried forward is the last known age plus the time since
+    // that poll.  Both parts are lower bounds -- the outage cannot have
+    // made the data younger -- so the readings can only blank later than
+    // the truth, never earlier, and a single dropped poll at a two second
+    // cadence cannot blank a board whose data is fresh.  performance.now()
+    // is monotonic, so an NTP correction on the tablet cannot skew it.
+    // A last-known age of NaN needs no arithmetic: that poll had no usable
+    // timestamp and already blanked these readings.
+    var outageAge = lastGoodAge + (performance.now() - lastSuccessAt) / 1000;
+    if (outageAge >= max_age) {
+      try {
+        // An empty object when no poll has ever succeeded: every reading's
+        // hasOwnProperty check fails and they all fall back to question
+        // marks, which is the whole point -- there is nothing to vouch for.
+        updateReadings(lastResult === null ? {} : lastResult, outageAge);
+      } catch (e) {
+        // As on the success path, a rendering error must not stop polling.
+        console.log(e);
+      }
+    }
   }
 
   function updateCurrent() {
@@ -257,7 +374,6 @@
         // Check the date
         // "dateTime": 1578965850,
         var dateTime = result["current.dateTime.raw"];
-        var lastUpdate = new Date(dateTime * 1000);
         if (dateTime !== lastDateTime) {
           lastDateTime = dateTime;
           lastChangeAt = performance.now();
@@ -298,18 +414,49 @@
           // as a numeric string still yields its real age.
           age = NaN;
         }
+        // The label and the readings share max_age: the label stops saying
+        // LIVE at the same instant the readings fall back to question
+        // marks.  The label's tier was a separate six seconds, which meant
+        // a board could read "8s ago" beside a full set of live readings,
+        // and -- once max_age became configurable -- a station that raised
+        // it would never see LIVE again.
         var liveLabel = document.getElementById("live-label");
-        if (age <= 6) {
-          liveLabel.innerHTML = "&nbsp;LIVE&nbsp;";
+        liveLabel.innerHTML = "&nbsp;" + getActivityStr(age) + "&nbsp;";
+
+        // The time of the last update, on the STATION's clock.  loopdata
+        // renders this field through the target report's WeeWX formatter,
+        // so it carries the station's timezone, locale and time format.
+        // The browser's own formatting showed the TABLET's instead, and a
+        // wall display can sit in another timezone -- or simply have its
+        // clock set wrong, which is what sent the staleness math onto the
+        // server's clock in 3.2.
+        // The clock ages out too, but on clock_max_age, not max_age.
+        // Stale data a web server is still handing out looks exactly like
+        // live data at a glance, and a plausible time in the ordinary red
+        // is the most convincing thing on such a board; question marks in
+        // the disconnected blue -- the same color a failing fetch wears
+        // -- say plainly that this is no longer a clock.  But that is a
+        // later moment than a stale reading: a temperature fifteen
+        // seconds old has stopped being true, while a clock fifteen
+        // seconds slow is still the best clock in the room, and blueing
+        // it there would spend the warning on something that does not
+        // need warning about.  A missing field is different again and
+        // goes blue at once: the weewx.conf fields line does not list it,
+        // so there is no time to show, and a time this page cannot vouch
+        // for is worse than none.
+        var activityElement = document.getElementById("activity-string");
+        var clockKey = 'current.dateTime.format("%X")';
+        if (age < clock_max_age && result.hasOwnProperty(clockKey)) {
+          activityElement.textContent = result[clockKey];
+          activityElement.classList.remove("disconnected");
         } else {
-          liveLabel.innerHTML = "&nbsp;" + age + "s ago&nbsp;";
+          activityElement.textContent = "??:??:??";
+          activityElement.classList.add("disconnected");
         }
 
-        // Display the time of the last update.
-        var activityElement = document.getElementById("activity-string");
-        activityElement.innerHTML = lastUpdate.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-        activityElement.classList.remove("disconnected");
-
+        lastResult = result;
+        lastGoodAge = age;
+        lastSuccessAt = performance.now();
         updateReadings(result, age);
       } catch (e) {
         // A rendering error must not stop the polling.
@@ -339,7 +486,15 @@
       }
       xhttp.send();
     } catch (e) {
+      // open() throws synchronously on a malformed loop_data_file -- a bare
+      // "http://", say -- so this is a configuration error that repeats on
+      // every poll, not a transient.  It has to reach markDisconnected like
+      // any other failure: it is the one path that never gets an onerror,
+      // and without this the label would never blank, the clock would never
+      // go blue and the readings would never age out, leaving the board
+      // showing its report-cycle numbers in the ordinary red forever.
       console.log(e);
+      markDisconnected("BAD URL", "check loop_data_file");
     }
   }
 

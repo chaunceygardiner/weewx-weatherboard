@@ -1,6 +1,135 @@
 weatherboard change history
 ---------------------------
 
+4.0 08/19/2026
+--------------
+Action required:
+1. WeatherBoard 4.0 requires WeeWX 4.6 or later.  WeeWX 4.5 and earlier are
+   no longer supported; the installer refuses to run on them.
+2. WeatherBoard 4.0 requires LoopData 6.0 or later.  The clock in the lower
+   right corner is now a string loopdata renders with the target report's
+   WeeWX formatter, which is a 6.0 feature.
+3. One new field is read from loop-data.txt:
+   current.dateTime.format("%X").  Installing 4.0 adds it to the
+   [LoopData] [[Include]] fields line for you -- along with any other field
+   the board reads that the line is missing -- so the ordinary upgrade needs
+   no hand editing.  A board whose fields line does not carry it shows
+   ??:??:?? where the time used to be.
+
+The clock in the lower right corner now shows the STATION's time.  It was
+drawn by the browser, from the tablet's own clock, timezone and locale --
+so a tablet in another timezone, or with its clock simply set wrong, showed
+a confident time that had nothing to do with when the reading was taken.
+This is the same wrong clock that sent the staleness math onto the server's
+clock in 3.2; the displayed time was the half of it left behind.  The board
+now displays a value loopdata formats with the target report's own WeeWX
+formatter, so it carries the station's timezone and time format.  The
+format travels with the field name: %X is the station's time of day format,
+09:44:14 PM where the station runs a US locale and 21:44:14 under most
+others.  That locale comes from weewxd's environment (LANG), not from a
+report's lang setting, and a weewxd started with no LANG -- common in
+containers -- renders 24 hour times, and setting LANG is the way to change
+that.  The format cannot be pinned from the fields line: the board looks for
+the %X spelling specifically, so a different strftime string there does not
+reformat the clock, it removes the field the board reads and the corner falls
+back to ??:??:??.
+
+The clock also ages out now, instead of showing a plausible time forever.
+When weewxd stops while a web server goes on handing out the last
+loop-data.txt, every reading falls back to question marks -- and the clock
+used to keep displaying that record's timestamp, in the ordinary red, which
+is the most convincing thing on such a board.  It now reads ??:??:?? in the
+blue a failing fetch already wore.
+
+New: max_age, an Extra.  It is the number of seconds a loop record may be
+before the readings it feeds show question marks instead, and it was
+hardcoded at 10 in fourteen places.  The default is unchanged; raise it for
+a station that emits loop data slowly.
+
+The live label now changes at that same threshold.  Its LIVE tier was a
+separate six seconds, dating from the first release, so a board could read
+"8s ago" beside a full set of live readings; worse, once max_age was
+configurable, a station that raised it would have watched the label count
+seconds forever and never say LIVE again.  The label and the readings now
+move together: at max_age the label stops saying LIVE and starts counting,
+and every reading falls back to question marks.
+
+The count itself now scales, instead of running the seconds up forever: it
+reads seconds for the first minute, then minutes, then hours, then days, so
+a board that has been behind since yesterday says 1.2d ago rather than
+counting out a hundred thousand seconds.
+
+New: clock_max_age, an Extra, default 120 seconds.  It is how far behind
+the clock may fall before it goes blue, and it is deliberately longer than
+max_age, because the clock and the readings are answering different
+questions.  A temperature fifteen seconds old has stopped being true and
+should show question marks; a clock fifteen seconds slow is still a good
+clock, and probably the best one in the room.  The blue is the board
+saying it is no longer a clock at all, so it is worth saving for a time
+that would actually mislead you.  It is never allowed below max_age, so
+raising max_age for a slow station carries the clock up with it rather than
+leaving a blue clock beside live readings.  Two cases still turn it blue at
+once, as they should: a failing fetch, and a fields line that does not carry
+the time field, where there is no time to show in the first place.
+
+The label also stops reporting a nonsense age.  A loop record that carries
+no usable timestamp has no computable age, and the label is the one place
+that age is printed rather than compared, so it read "NaNs ago" while the
+readings beside it showed question marks.  It now reads ?? and says the
+same thing they do.
+
+A malformed loop_data_file no longer fails silently.  A value that is not a
+usable URL makes the browser throw before the request is even sent, on a
+path that never produced an error event, so the board showed no live label,
+no blue clock and no question marks -- just its report-cycle numbers in the
+ordinary red, forever.  It now reads BAD URL with check loop_data_file in
+the corner, like the other configuration-shaped failures.
+
+A typo in a numeric setting can no longer stop the board.  refresh_rate,
+expiration_time, max_age and clock_max_age were written straight into the
+page's javascript, so a value that is not a number -- or an empty one --
+aborted the whole updater before it defined anything: nothing polled, and
+the board froze at its report-cycle numbers with no label and no clock at
+all.  Each is now parsed, and anything that is not a number greater than
+zero falls back to that setting's default, exactly as if it had been left
+out.
+
+The readings now go on ageing while the fetch is failing.  A failed poll
+never reached the code that draws them, so every number held its last value
+in the board's ordinary red for as long as the outage lasted -- a
+ten-minute-old temperature presented exactly like a live one, with a blank
+label and a blue clock as the only signs.  The board now keeps counting
+from the last age it knew, and the readings fall back to question marks at
+max_age just as they do when the file is still being served but has stopped
+advancing.  A dropped poll or two changes nothing: at a two second refresh
+the count has not reached max_age yet.
+
+show_purple is now read as a boolean, as its name always implied.  It was
+compared against the strings 'True' and 'true', so other spellings of true
+turned the AQI reading off while looking like they turned it on.  Set it to
+True to show the reading; a value that is not a boolean at all leaves the
+reading off rather than failing the report.
+
+New: the installer now adds the loopdata fields the board reads to the
+[LoopData] [[Include]] fields line in weewx.conf, instead of asking you to
+paste them in from the README.  It only ever adds: fields already there are
+left alone, and nothing is removed or reordered, because that line is yours
+and usually feeds other pages too.  The AQI fields are added for a station
+that already has show_purple set; turning show_purple on later means adding
+those four by hand or simply installing the extension again.  When
+[LoopData] is not in weewx.conf at all -- the board installed before
+loopdata -- the installer prints the list and says to install loopdata and
+then install the board again, which adds the fields on the second run.  It
+warns about the order too: loopdata's own installer writes a fields line for
+its sample page, and WeeWX adds settings that are missing but never
+overwrites ones already there, so installing loopdata second and stopping
+there would leave the board's fields out entirely.
+
+New: a manual, at https://chaunceygardiner.github.io/weewx-weatherboard/ --
+installation, upgrading, every Extras setting, what each reading is, how
+staleness is measured, and troubleshooting.  The README keeps the quick
+version and links to it.
+
 3.3 08/19/2026
 --------------
 A fresh install now looks like a finished board rather than an unfilled
