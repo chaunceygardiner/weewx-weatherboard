@@ -31,6 +31,38 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 4.0.1
+
+Nothing is required of you.  One thing changes for a board whose
+`expiration_time` is above about 596 hours: 4.0 silently wrapped such a
+value (8760 came out near seventeen days), and 4.0.1 clamps it to 596
+hours, so that board now runs longer between expiries, not shorter.
+
+A board with no Google Analytics id configured no longer loads Google's tag
+loader at all.  4.0 and earlier tested for the setting's presence, and the
+installer ships it as an empty string, so every page load of an unconfigured
+board fetched the loader with an empty id.  And a board that set an id but left
+`analytics_host` at its shipped empty value never had analytics run at all
+— its `gtag` call sat behind a host check against `""` — so if that is you,
+analytics start with this release.
+
+If you installed 4.0 with `show_purple` already on, its installer added
+`current.pm2_5_1m_aqi.formatted` and `current.pm2_5_1m_aqi_color.raw` to
+your `[LoopData] [[Include]] fields` line.  The board now reads only the
+AQI of the `pm2_5` observation the WeeWX database carries — not whatever
+else a sensor's driver adds to the loop packet — so it no longer asks for
+that one-minute pair.  On most stations nothing changes on screen; on one
+whose driver supplies the pair, the AQI shown is `pm2_5`'s rather than the
+one-minute average's.  Your `fields` line keeps the two entries — the
+installer only ever adds — so delete them whenever it suits you, or leave
+them; LoopData ignores names nothing reads.
+
+Two settings behave differently at the edges.  A `page_update_pwd` with a
+lone `%` in it no longer stops the page when put on the URL as typed, and
+an empty `page_update_pwd` now means the default rather than "no
+password" — 4.0 let every visitor's absent password match an empty one, so
+no page ever expired.
+
 ## Upgrading to 4.0
 
 **WeeWX 4.6 or later is now required.**  WeeWX 4.5 and earlier are no longer

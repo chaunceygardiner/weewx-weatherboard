@@ -38,13 +38,14 @@ LOOP_DATA_FIELDS = [
     'current.rainRate',
 ]
 
-# Read only when show_purple is set.  The 1m fields are purple-proxy's
-# one-minute averages, which the board prefers when they are present;
-# loopdata omits any field the station cannot supply, so naming all four
-# costs a station without the proxy nothing.
+# Read only when show_purple is set.  One AQI reading: the AQI of the
+# pm2_5 observation the WeeWX database carries.  4.0's installer also named
+# current.pm2_5_1m_aqi.formatted and current.pm2_5_1m_aqi_color.raw, a
+# one-minute pair the updater had asked for since 2020 and preferred when
+# present.  The board reads the database's observations -- pm1_0, pm2_5,
+# pm10_0 -- not whatever else a sensor's driver adds to the loop packet, so
+# it no longer asks for them.
 PURPLE_FIELDS = [
-    'current.pm2_5_1m_aqi.formatted',
-    'current.pm2_5_1m_aqi_color.raw',
     'current.pm2_5_aqi.formatted',
     'current.pm2_5_aqi_color.raw',
 ]
@@ -75,7 +76,7 @@ def version_tuple(version):
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "4.0",
+            version = "4.0.1",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -129,6 +130,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/favicon.ico',
                 'skins/WeatherBoard/footer.inc',
                 'skins/WeatherBoard/index.html.tmpl',
+                'skins/WeatherBoard/jsstr.inc',
                 'skins/WeatherBoard/realtime_updater.inc',
                 'skins/WeatherBoard/skin.conf',
                 'skins/WeatherBoard/updater_common.inc',

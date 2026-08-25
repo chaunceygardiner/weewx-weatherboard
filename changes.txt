@@ -1,7 +1,83 @@
 weatherboard change history
 ---------------------------
 
-4.0 08/19/2026
+4.0.1 08/25/2026
+----------------
+The board reads one air quality field: the AQI of the pm2_5 observation
+the WeeWX database carries.  Since 2020 the updater had also asked for
+current.pm2_5_1m_aqi.formatted and current.pm2_5_1m_aqi_color.raw, a
+one-minute pair, and preferred them when present.  The board's readings are
+the database's observations -- pm1_0, pm2_5, pm10_0 -- not whatever else a
+sensor's driver adds to the loop packet, so the pair is gone from the
+installer, from the updater and from the manual, which had credited it to
+purple-proxy.  On most stations nothing changes on screen; on one whose
+driver supplies the pair, the AQI shown is pm2_5's rather than the
+one-minute average's.  An existing fields line keeps the two entries;
+loopdata ignores names nothing reads, and they can be deleted whenever it
+is convenient.
+
+The reading is a smoothed one in any case: weewx-purple averages the
+sensor's two channels where it has a pair, and purple-proxy averages over
+two minutes.
+
+The two settings that feed browser timers are bounded from above.  4.0
+began parsing refresh_rate and expiration_time rather than writing them
+into the page as-is, but nothing limited how large they could be, and a
+timer keeps its delay in a signed 32-bit integer: an expiration_time of
+8760 -- a year, the obvious way to ask for a board that never times out --
+wrapped to about seventeen days, and values just over the edge fired at
+once.  Anything whose milliseconds pass the timer's ceiling is now clamped
+to it -- about 596 hours for expiration_time -- rather than wrapping.  A
+station that typed 8760 asked for a very long time, and 596 hours honours
+that; dropping to the four-hour default would not have.
+max_age and clock_max_age are not bounded: they are compared against an age
+rather than handed to a timer, so there is nothing to overflow, and a
+station emitting slowly may legitimately want a large one.
+
+Text settings that reach javascript are escaped rather than written in
+raw.  page_update_pwd is the one that mattered: the documentation asks
+every user to choose their own, and an apostrophe in it -- don't-sleep,
+say -- ended the javascript string early and threw before the updater had
+defined anything, so nothing polled and the board sat on its report-cycle
+numbers with no live label and no clock.  loop_data_file and the two
+Google Analytics ids had the same shape.  All four are now written as
+properly escaped literals, with < escaped besides, so a value containing
+</script> cannot end the script element either.  Values reach javascript
+as typed -- quote a value containing a comma, which weewx.conf otherwise
+splits and rejoins without its surrounding whitespace -- and nothing is
+silently altered.
+
+A default install no longer loads Google Analytics with an empty id.  The
+installer's stanza ships googleAnalyticsId and analytics_host as empty
+strings, and the template tested for the settings' presence rather than
+their value, so every page load of an unconfigured board fetched Google's
+tag loader with id= and no id.  The block now renders only for a non-empty
+id.  The same presence test hid a second fault: a station that set an id
+but left analytics_host at its shipped empty value got its gtag call
+wrapped in a host check against "", which no page ever matches, so its
+analytics never ran at all.  An empty analytics_host now means no host
+restriction, as it was always meant to.
+
+Two more things a user could type no longer stop the board.  A password
+with a lone % in it -- 100%, say -- put on the URL as typed made the
+browser's URL decoding throw before the updater had defined anything, the
+same total failure as the unescaped apostrophe; the raw value is now used
+when it does not decode.  And an empty page_update_pwd in weewx.conf
+matched the empty string every visitor without a password presents, so no
+page ever expired for anyone; empty now means the shipped default.
+
+An expired board no longer shows CLICK-ME in the disconnected blue.  A page
+that expired while it was already disconnected -- a failing fetch, or loop
+data further behind than clock_max_age -- painted CLICK-ME in the fault
+color and left the corner blue after the click, until the first successful
+poll repainted it.  It read as a fault rather than as a board waiting to
+start again.  The expiry paint now clears the color, and a poll that lands
+after expiry -- a late failure or a late success -- no longer paints over
+Expired / CLICK-ME: a late success used to replace it with LIVE and a clock
+time on a board that had stopped polling, leaving no visible way to start
+it again.
+
+4.0 08/25/2026
 --------------
 Action required:
 1. WeatherBoard 4.0 requires WeeWX 4.6 or later.  WeeWX 4.5 and earlier are

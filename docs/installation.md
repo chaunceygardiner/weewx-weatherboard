@@ -117,22 +117,24 @@ already there — so a `fields` line LoopData just created is left exactly as
 it is, without any of the fields the board reads, and the board comes up
 showing question marks everywhere.  Installing the board again fixes it.
 
-With `show_purple` set, four more fields are needed for the air quality
+With `show_purple` set, two more fields are needed for the air quality
 reading:
 
 ```
-current.pm2_5_1m_aqi.formatted, current.pm2_5_1m_aqi_color.raw,
 current.pm2_5_aqi.formatted, current.pm2_5_aqi_color.raw
 ```
 
 The installer adds those too when it finds `show_purple = True` already in
-your configuration.  If you turn `show_purple` on later, either add the
-four fields by hand or simply install the extension again — it will notice
-they are missing.  (The `1m` pair is
-[purple-proxy](https://github.com/chaunceygardiner/purple-proxy)'s
-one-minute average, which the board prefers when it is there; LoopData
-omits any field your station cannot supply, so listing all four costs a
-station without the proxy nothing.)
+your configuration.  If you turn `show_purple` on later, either add the two
+fields by hand or simply install the extension again — it will notice they
+are missing.
+
+{: .note }
+Running [purple-proxy](https://github.com/chaunceygardiner/purple-proxy)
+needs nothing extra here: the board reads the AQI of the `pm2_5`
+observation the WeeWX database carries, and with the proxy that reading is
+already a two-minute average; weewx-purple averages the sensor's two
+channels besides.
 
 ## 4. Restart WeeWX
 

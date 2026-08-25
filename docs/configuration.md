@@ -38,8 +38,18 @@ The four numeric settings — `refresh_rate`, `expiration_time`, `max_age` and
 `clock_max_age` — are checked by the page itself, in the browser, as it
 loads.  Anything that is not a number greater than zero, an empty value
 included, falls back to that setting's default rather than stopping the
-board.  Nothing is reported at report-generation time, so a mistyped value
-leaves no trace in the WeeWX log — the board simply runs on the default.
+board.  `refresh_rate` is also never armed faster than once a second,
+whatever fraction is set.  `refresh_rate` and `expiration_time` have an
+upper limit as well,
+because they are handed to browser timers and a timer keeps its delay in a
+signed 32-bit integer: a value whose milliseconds exceed 2147483647 — about
+596 hours for `expiration_time`, 24 days for `refresh_rate` — would wrap to
+an arbitrary shorter delay, so it is clamped to that ceiling instead.
+`max_age` and `clock_max_age` have no such limit; they are compared against
+an age rather than handed to a timer, and a slow station may legitimately
+want a large one.  Nothing is reported at report-generation time, so a
+mistyped value leaves no trace in the WeeWX log — the board simply runs on
+the default.
 
 ### `loop_data_file`
 
@@ -93,7 +103,7 @@ is no time to show at all.
 
 Default `2`.  Seconds between polls.  A good choice is the rate at which
 your station's driver emits loop packets: polling faster than the data
-arrives just re-reads the same record.
+arrives just re-reads the same record.  Values below 1 poll once a second.
 
 ### `title`, `subtitle`, `meta_title`
 
@@ -121,7 +131,10 @@ it, so a bare filename must name a file in this report's `HTML_ROOT`.
 Default `foobar` — change it.  When it appears on the URL as
 `?page_update_pwd=...`, the page never expires.  This is what keeps a
 wall-mounted tablet updating indefinitely.  The legacy spelling
-`?pageUpdate=...` still works.
+`?pageUpdate=...` still works.  An empty setting means the default, not
+"no password": with an empty one every visitor's absent password would
+match it, and no page would ever expire.  Quote it in `weewx.conf` if it
+contains a comma.
 
 {: .note }
 This password is visible to anyone who views the page source, by design.
@@ -134,11 +147,16 @@ The board then shows `Expired` and `CLICK-ME`; a click starts it again.
 The point is to keep a forgotten browser tab from polling your server for
 days.
 
+Values above about 596 hours are clamped to 596 — see the note under
+[The Extras](#the-extras) above.  Even so, a large value is not the way to make a board
+that never expires: set `page_update_pwd` and put it on the URL, which is
+what the wall-tablet case wants.
+
 ### `show_purple`
 
 A boolean, `False` by default.  Set it to `True` to show the air quality
 index, which requires
-[weewx-purple](https://github.com/chaunceygardiner/weewx-purple) and four
+[weewx-purple](https://github.com/chaunceygardiner/weewx-purple) and two
 more LoopData fields — see
 [Installation](installation.html#3-what-the-installer-added).  With it off,
 the AQI cell stays empty and the footer legend names one fewer reading.

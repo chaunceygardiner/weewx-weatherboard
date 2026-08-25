@@ -11,7 +11,9 @@ show_purple settings) and validates the output:
   - no unrendered $Extras/$current/... placeholders leak into the output
   - no inline style= attributes (all CSS belongs in weatherboard.css)
   - every <script> parses as valid JavaScript (needs the pure-Python
-    'esprima' package; that check is skipped with a warning if absent)
+    'esprima' package; the ordinary renders skip this with a warning if it
+    is absent, but the hostile-Extras render FAILS without it -- parsing is
+    the whole point of that check, so esprima is required for a pass)
 
 It also checks that install.py's LOOP_DATA_FIELDS/PURPLE_FIELDS -- the
 fields the installer adds to weewx.conf -- are exactly the loopdata fields
@@ -19,9 +21,11 @@ the updaters read.  A field the updaters read but the installer does not
 add arrives as question marks on a fresh install; a field the installer
 adds that nothing reads is dead weight on the user's fields line.
 
-Run with a Python that has Cheetah installed, e.g. the WeeWX venv:
+Run with a Python that has Cheetah installed, e.g. the WeeWX venv, with
+esprima somewhere on PYTHONPATH (never installed into the venv itself):
 
-  PYTHONDONTWRITEBYTECODE=1 /home/weewx/weewx-venv/bin/python3 tests/check_templates.py
+  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/path/with/esprima \\
+      /home/weewx/weewx-venv/bin/python3 tests/check_templates.py
 
 This is a static check only: it proves the templates generate well-formed
 pages, not that the updater behaves.  Behavior is verified by loading the
@@ -72,8 +76,8 @@ class Extras(dict):
         return k in self
 
 
-def make_extras(show_purple):
-    return Extras({
+def make_extras(show_purple, analytics=True, overrides=None):
+    extras = {
         'meta_title': 'Test WeatherBoard',
         'title': 'Test WeatherBoard&trade;',
         'subtitle': 'Updated continuously.',
@@ -85,12 +89,22 @@ def make_extras(show_purple):
         'expiration_time': 4,
         'page_update_pwd': 'testpwd',
         'show_purple': 'True' if show_purple else 'False',
-    })
+    }
+    # analytics.inc renders its body only when both keys are present, and
+    # the escaping there is exercised only then; the render without them is
+    # the one every station without Google Analytics gets.  Both paths are
+    # checked (see main).
+    if analytics:
+        extras['googleAnalyticsId'] = 'G-TESTID0001'
+        extras['analytics_host'] = 'example.com'
+    if overrides:
+        extras.update(overrides)
+    return Extras(extras)
 
 
-def render(tmpl, show_purple):
+def render(tmpl, show_purple, analytics=True, overrides=None):
     ns = {
-        'Extras': make_extras(show_purple),
+        'Extras': make_extras(show_purple, analytics, overrides),
         'current': Tag(),
         'day': Tag(),
         'station': Tag('Test Station'),
@@ -121,7 +135,7 @@ def check(html, show_purple):
     # $24h... is included deliberately: it is NOT a valid Cheetah placeholder
     # (digit start) and renders as literal text if put in a template.
     leaks = re.findall(
-        r'\$Extras[.\w]*|\$current[.\w]*|\$day[.\w]*|\$obs[.\w]*|\$24h[.\w]*|\$station[.\w]*',
+        r'\$Extras[.\w]*|\$current[.\w]*|\$day[.\w]*|\$obs[.\w]*|\$24h[.\w]*|\$station[.\w]*|\$jsstr\(',
         html)
     if leaks:
         failures.append('unrendered placeholders: %s' % sorted(set(leaks)))
@@ -238,6 +252,78 @@ def main():
             for f in failures:
                 print('       - %s' % f)
             ok = ok and not failures
+    # The no-analytics render, once: the #if in analytics.inc is the only
+    # thing it changes, so one template at one show_purple setting covers it.
+    name = '%s analytics absent' % templates[0]
+    try:
+        html = render(templates[0], False, analytics=False)
+        failures = check(html, False)
+        if 'googletagmanager' in html:
+            failures.append('analytics block rendered with no googleAnalyticsId set')
+        # The installer's stanza ships both analytics settings as EMPTY
+        # strings; that must gate the block off exactly as absence does.
+        html = render(templates[0], False, analytics=False,
+                      overrides={'googleAnalyticsId': '', 'analytics_host': '',
+                                 'page_update_pwd': ''})
+        failures += check(html, False)
+        if 'googletagmanager' in html:
+            failures.append('analytics block rendered with an empty googleAnalyticsId')
+        # An empty password would match every visitor's absent one and the
+        # page would never expire; it must fall back to the default.
+        if 'var page_update_pwd = "foobar";' not in html:
+            failures.append('an empty page_update_pwd did not fall back to the default')
+        # An id with an empty host must configure gtag with no host check:
+        # 4.0 wrapped it in a check against "", which no page ever matches.
+        html = render(templates[0], False, analytics=False,
+                      overrides={'googleAnalyticsId': 'G-HOSTLESS', 'analytics_host': ''})
+        failures += check(html, False)
+        if ('googletagmanager' not in html or 'host == ""' in html
+                or 'gtag(\'config\', "G-HOSTLESS")' not in html):
+            failures.append('an id with an empty analytics_host did not configure gtag unconditionally')
+    except Exception as e:
+        failures = ['render error: %s' % e]
+    print('%s %s' % ('FAIL' if failures else 'ok  ', name))
+    for f in failures:
+        print('       - %s' % f)
+    ok = ok and not failures
+    # Every Extras value that reaches a <script> goes through jsstr().  This
+    # render feeds each one the characters that used to kill the updater --
+    # a quote of each kind, a backslash, a newline, a </script> -- and
+    # demands that every script still parses and that no script element
+    # ends early.  With benign stub values the escaping is exercised by
+    # nothing: remove it and the ordinary renders still pass.
+    HOSTILE = {
+        'page_update_pwd': "don't</script><x>\\ \"sleep\"",
+        'loop_data_file': 'a"b\\c</script>.txt',
+        # A list here too: the src URL and the gtag literal must agree.
+        'googleAnalyticsId': ["G-1'&2\"3<x", 'y'],
+        # A list: what ConfigObj hands over for an unquoted comma.  jsstr
+        # joins it back, so the value reaches the page as typed.
+        'analytics_host': ["h'", '</script>'],
+        'refresh_rate': '2"',
+        'expiration_time': "4'",
+        'max_age': 'ten\nseconds',
+        'clock_max_age': '</script>',
+    }
+    name = '%s hostile Extras' % templates[0]
+    try:
+        html = render(templates[0], True, overrides=HOSTILE)
+        failures = check(html, True)
+        if not esprima:
+            failures.append('esprima not importable: the hostile render cannot be parse-checked')
+        if 'if (host == "h\',\\u003c/script>")' not in html:
+            failures.append('a list-valued setting was not joined back with commas')
+        if 'gtag/js?id=G-1%27%262%223%3Cx%2Cy"' not in html or 'gtag(\'config\', "G-1\'&2\\"3\\u003cx,y")' not in html:
+            failures.append('the analytics src and literal disagree on a list-valued id')
+        if html.count('</script') != html.count('<script'):
+            failures.append('a script element ended early: %d <script vs %d </script'
+                            % (html.count('<script'), html.count('</script')))
+    except Exception as e:
+        failures = ['render error: %s' % e]
+    print('%s %s' % ('FAIL' if failures else 'ok  ', name))
+    for f in failures:
+        print('       - %s' % f)
+    ok = ok and not failures
     failures = check_installer_fields()
     print('%s install.py loopdata fields match the updaters'
           % ('FAIL' if failures else 'ok  '))

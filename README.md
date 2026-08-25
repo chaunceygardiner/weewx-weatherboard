@@ -61,7 +61,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 ## Additional Requirements for the Air Quality Index (AQI) Reading
 * [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
 * Optionally [purple-proxy](https://github.com/chaunceygardiner/purple-proxy), which
-  returns averages over the archive period (as opposed to one shot readings) and
+  returns averages over two minutes (as opposed to one shot readings) and
   catches up on AQI readings when WeeWX starts.
 
 ## Installation Instructions
@@ -104,12 +104,12 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    overwrites a setting that already exists, so the board's fields would be
    left out entirely.
 
-   With `show_purple` set, four more fields are added for the AQI reading:
-   `current.pm2_5_1m_aqi.formatted`, `current.pm2_5_1m_aqi_color.raw`,
-   `current.pm2_5_aqi.formatted` and `current.pm2_5_aqi_color.raw`.  (The
-   `1m` pair is purple-proxy's one minute average, preferred when present.)
-   Turning `show_purple` on later means either adding those four by hand or
-   simply installing the extension again.
+   With `show_purple` set, two more fields are added for the AQI reading:
+   `current.pm2_5_aqi.formatted` and `current.pm2_5_aqi_color.raw`.  Running
+   purple-proxy needs nothing extra: the proxy averages over two minutes and
+   weewx-purple averages the sensor's two channels, so that field already
+   carries the smoothed value.  Turning `show_purple` on later means either
+   adding those two by hand or simply installing the extension again.
 
 1. The install creates the following section in `weewx.conf`:
 
