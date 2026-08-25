@@ -196,7 +196,10 @@ body {
     border-bottom: 1px solid;
 }
 
-/* Colored blue by the updaters while the loop data fetch is failing. */
+/* The clock's disconnected color.  The updaters apply this class on a
+   failing fetch, on loop data further behind than clock_max_age, and on
+   a fields line carrying no time field -- so a blue clock is not by
+   itself evidence that the fetch is failing. */
 #activity-string.disconnected {
     color: blue;
 }

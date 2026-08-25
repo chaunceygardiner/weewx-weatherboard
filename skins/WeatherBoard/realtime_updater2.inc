@@ -38,26 +38,14 @@
   ## delayed by the better part of a minute.  Measured against the real
   ## site, worst observed ages were inTemp 28s, inCO2 34s, inAQI 58s and
   ## solar 73s, so each limit leaves room for a missed write or two.
-  #if $Extras.has_key('in_temp_max_age')
-    var in_temp_max_age = $Extras.in_temp_max_age;
-  #else
-    var in_temp_max_age = 120;
-  #end if
-  #if $Extras.has_key('in_co2_max_age')
-    var in_co2_max_age = $Extras.in_co2_max_age;
-  #else
-    var in_co2_max_age = 120;
-  #end if
-  #if $Extras.has_key('in_aqi_max_age')
-    var in_aqi_max_age = $Extras.in_aqi_max_age;
-  #else
-    var in_aqi_max_age = 120;
-  #end if
-  #if $Extras.has_key('solar_array_max_age')
-    var solar_array_max_age = $Extras.solar_array_max_age;
-  #else
-    var solar_array_max_age = 150;
-  #end if
+#set $_in_temp_max_age = str($Extras.get('in_temp_max_age', 120)).replace('\\', '').replace('"', '')
+  var in_temp_max_age = numExtra("$_in_temp_max_age", 120, 1000);
+#set $_in_co2_max_age = str($Extras.get('in_co2_max_age', 120)).replace('\\', '').replace('"', '')
+  var in_co2_max_age = numExtra("$_in_co2_max_age", 120, 1000);
+#set $_in_aqi_max_age = str($Extras.get('in_aqi_max_age', 120)).replace('\\', '').replace('"', '')
+  var in_aqi_max_age = numExtra("$_in_aqi_max_age", 120, 1000);
+#set $_solar_array_max_age = str($Extras.get('solar_array_max_age', 150)).replace('\\', '').replace('"', '')
+  var solar_array_max_age = numExtra("$_solar_array_max_age", 150, 1000);
 
   // Per-file staleness backstop, keyed by element id: how long each file's
   // own timestamp has sat unchanged.  Same role as lastChangeAt in
@@ -191,14 +179,14 @@
 
   function updateReadings(result, age) {
     // temp
-    if (age < 10 && result.hasOwnProperty("current.outTemp.formatted")) {
+    if (age < max_age && result.hasOwnProperty("current.outTemp.formatted")) {
       setReading("current.outTemp.formatted", padLeft(result["current.outTemp.formatted"], 5));
     } else {
       setReading("current.outTemp.formatted", '&nbsp;??.?');
     }
 
     // dew point
-    if (age < 10 && result.hasOwnProperty("current.dewpoint.formatted")) {
+    if (age < max_age && result.hasOwnProperty("current.dewpoint.formatted")) {
       setReading("current.dewpoint.formatted", padLeft(result["current.dewpoint.formatted"], 5));
     } else {
       setReading("current.dewpoint.formatted", '&nbsp;??.?');
@@ -208,28 +196,28 @@
     updateWind(result, age);
 
     // wind gust (10m gust)
-    if (age < 10 && result.hasOwnProperty("10m.windGust.max.formatted")) {
+    if (age < max_age && result.hasOwnProperty("10m.windGust.max.formatted")) {
       setReading("10m.windGust.max.formatted", padLeft(result["10m.windGust.max.formatted"], 2));
     } else {
       setReading("10m.windGust.max.formatted", '&nbsp;?');
     }
 
     // wind gust (today)
-    if (age < 10 && result.hasOwnProperty("day.windGust.max.formatted")) {
+    if (age < max_age && result.hasOwnProperty("day.windGust.max.formatted")) {
       setReading("day.windGust.max.formatted", padLeft(result["day.windGust.max.formatted"], 2));
     } else {
       setReading("day.windGust.max.formatted", '&nbsp;?');
     }
 
     // radiation
-    if (age < 10 && result.hasOwnProperty("current.radiation.formatted")) {
+    if (age < max_age && result.hasOwnProperty("current.radiation.formatted")) {
       setReading("current.radiation.formatted", padLeft(result["current.radiation.formatted"], 4));
     } else {
       setReading("current.radiation.formatted", '????');
     }
 
     // rain rate
-    if (age < 10 && result.hasOwnProperty("current.rainRate.formatted")) {
+    if (age < max_age && result.hasOwnProperty("current.rainRate.formatted")) {
       setReading("current.rainRate.formatted", result["current.rainRate.formatted"]);
     } else {
       setReading("current.rainRate.formatted", '?.??');
@@ -242,20 +230,30 @@
     updateRain(result, age);
 
     // aqi
-    #if $Extras.has_key('show_purple') and ($Extras.show_purple == 'true' or $Extras.show_purple == 'True')
+#from weeutil.weeutil import to_bool
+## show_purple is a boolean -- read as one rather than compared against two
+## particular spellings of true, exactly as the outdoor board reads it.  A
+## value that is not a boolean at all turns the reading off rather than
+## failing the report.
+#try
+#set $show_aqi = $to_bool($Extras.get('show_purple', False))
+#except
+#set $show_aqi = False
+#end try
+    #if $show_aqi
       // Age-gated like every other reading, as on the outdoor board.
       // Clearing the inline color returns the cell to the footer's red.
-      if (age < 10 && result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
+      if (age < max_age && result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
         setReading("aqi", padLeft(result["current.pm2_5_1m_aqi.formatted"], 3));
-      } else if (age < 10 && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+      } else if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
         setReading("aqi", padLeft(result["current.pm2_5_aqi.formatted"], 3));
       } else {
         // Three wide: the AQI never runs to four digits -- we would be dead.
         setReading("aqi", '???');
       }
-      if (age < 10 && result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
+      if (age < max_age && result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
-      } else if (age < 10 && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+      } else if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
       } else {
         document.getElementById("aqi").style.color = '';

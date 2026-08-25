@@ -159,7 +159,8 @@ var pawLogo = (function() {
       }
       // Waxing iff the next full moon precedes the next new moon (exact,
       // same rule as the Sun & Moon widget); phase-index fallback.
-      var nf = r['almanac.next_full_moon.raw'], nn = r['almanac.next_new_moon.raw'];
+      var nf = r['almanac.next_full_moon.unix_epoch.raw'],
+          nn = r['almanac.next_new_moon.unix_epoch.raw'];
       if (typeof nf === 'number' && typeof nn === 'number') {
         state.moonWaxing = nf < nn;
       } else if (typeof r['almanac.moon_index'] === 'number') {
