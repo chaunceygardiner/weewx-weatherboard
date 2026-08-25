@@ -31,7 +31,7 @@ Top to bottom, with the LoopData field behind each one:
 | Rain today | `day.rain.sum.formatted` |
 | Rain in the last 24 hours | `24h.rain.sum.formatted` |
 | Rain rate | `current.rainRate` |
-| Air quality index | `current.pm2_5_1m_aqi.formatted` or `current.pm2_5_aqi.formatted`, with the matching `_color.raw` |
+| Air quality index | `current.pm2_5_aqi.formatted`, with `current.pm2_5_aqi_color.raw` |
 
 The wind direction is left blank when the wind speed is zero: a compass
 point for a dead calm is noise, not information.
@@ -63,9 +63,12 @@ LoopData computes the trend; the board only draws it.
 
 With `show_purple` set, the AQI appears in the footer in the color the EPA
 assigns to its range — green through maroon — which comes from
-weewx-purple as a field of its own.  The board prefers
-purple-proxy's one-minute average when it is present, and falls back to the
-plain reading otherwise.
+weewx-purple as a field of its own.
+
+That reading is already smoothed: weewx-purple averages the sensor's two
+channels, and where
+[purple-proxy](https://github.com/chaunceygardiner/purple-proxy) is the
+source it averages over two minutes as well.
 
 Like every other reading it is age-checked: once the data is older than
 [`max_age`](configuration.html#max_age) seconds it shows `???` in the

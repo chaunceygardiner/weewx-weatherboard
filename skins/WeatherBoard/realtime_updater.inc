@@ -69,17 +69,13 @@
       // around it had fallen back to question marks.  Clearing the inline
       // color returns the cell to the footer's red, which is what the rest
       // of the placeholders wear.
-      if (age < max_age && result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
-        setReading("aqi", result["current.pm2_5_1m_aqi.formatted"]);
-      } else if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+      if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
         setReading("aqi", result["current.pm2_5_aqi.formatted"]);
       } else {
         // Three wide: the AQI never runs to four digits -- we would be dead.
         setReading("aqi", '???');
       }
-      if (age < max_age && result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
-        document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
-      } else if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+      if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
       } else {
         document.getElementById("aqi").style.color = '';

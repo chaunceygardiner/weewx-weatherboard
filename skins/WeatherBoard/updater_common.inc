@@ -5,28 +5,23 @@
 ## Shared scaffolding for the realtime updater(s).  Must be #included inside
 ## a <script> element.  The including updater must define
 ## updateReadings(result, age), which is called on every successful poll of
-## the loop data file.
+## the loop data file.  jsstr(), from jsstr.inc, writes an Extras value as
+## an escaped javascript string literal.
 
 #errorCatcher Echo
+#include "jsstr.inc"
 ## The keep-alive password is whatever the user typed, and both the README
 ## and the manual tell everyone to change it from the shipped placeholder.
 ## Interpolated bare into a quoted javascript string, an apostrophe -- a
-## password like don't-sleep -- closes the literal early and throws at the
-## top of this script, which aborts the WHOLE updater: nothing polls, no
-## live label, no clock.  json.dumps writes a correctly escaped literal, so
-## the value reaches javascript exactly as typed and still matches what the
-## user puts on the URL.  (Escaped, not stripped: changing the password
-## silently would be its own bug.)
-##
-## json.dumps alone is not enough: it leaves < untouched, so a password
-## containing </script> ends the script ELEMENT even though the javascript
-## literal is well formed -- the HTML parser gets there first, and the
-## board dies exactly as it would on an unescaped apostrophe.  Escaping <
-## as \u003c keeps the value identical to javascript while leaving no
-## closing tag for the parser to find.
-#from json import dumps
-#set $_pwd = $dumps($str($Extras.get('page_update_pwd', 'foo'))).replace('<', '\\u003c')
-  var page_update_pwd = $_pwd;
+## password like don't-sleep -- closed the literal early and threw at the
+## top of this script, which aborted the WHOLE updater: nothing polled, no
+## live label, no clock.  jsstr (see jsstr.inc) writes it as an
+## escaped literal, so it reaches javascript exactly as typed and still
+## matches what the user puts on the URL.
+## An empty setting would match the empty string every visitor without a
+## password on the URL presents, and the page would never expire for anyone,
+## so empty means the shipped default -- the same foobar skin.conf carries.
+  var page_update_pwd = $jsstr($Extras.get('page_update_pwd', 'foobar') or 'foobar');
   // Every numeric Extra below is whatever the user typed in weewx.conf.
   // Interpolated bare, a non-numeric value renders as a javascript
   // identifier rather than a number (the word ten, not 10) and throws a
@@ -37,51 +32,50 @@
   // worst failure this file has.  A typo in a knob the manual invites you
   // to tune must not be able to do that, so each value is passed through
   // as a string and parsed here, falling back to the default it would have
-  // had if the setting were absent.
+  // had if the setting were absent.  (The two that feed a timer are also
+  // bounded, at the timer: see clampDelay.)
   // A blank setting is treated as absent rather than as a number, because
   // Number("") is 0, not NaN -- so an empty max_age would mean every
   // reading is always stale, and an empty refresh_rate would poll as fast
   // as the browser could schedule it.  Zero and negatives are rejected for
   // the same reason: every one of these knobs is a count of seconds or
   // hours, and none of them has a meaningful value at or below zero.
-  // The ceiling is the timer's, not ours.  setTimeout and setInterval keep
-  // their delay in a signed 32-bit int, so a value whose milliseconds pass
-  // 2147483647 wraps: expiration_time = 8760, a year, comes out around
-  // twenty-five minutes, and values just over the edge fire at once.  A
-  // station reaching for "never expire" would get the opposite of what it
-  // asked for, silently.  Anything past the ceiling falls back to the
-  // default, like any other value this cannot honour.  MAX_DELAY_MS is
-  // divided by the caller's own multiplier, so each knob is bounded in its
-  // own units -- hours for expiration_time, seconds for the rest.
-  function numExtra(raw, dflt, multiplier) {
+  function numExtra(raw, dflt) {
     if (typeof raw !== "string" || raw.trim() === "") {
       return dflt;
     }
     var n = Number(raw);
-    if (!isFinite(n) || n <= 0) {
-      return dflt;
-    }
-    if (multiplier && n * multiplier > 2147483647) {
-      return dflt;
-    }
-    return n;
+    return (isFinite(n) && n > 0) ? n : dflt;
   }
-## Strip any quote or backslash so the javascript string literal below stays
-## well formed whatever the setting contains.
-#set $_refresh_rate = str($Extras.get('refresh_rate', 2)).replace('\\', '').replace('"', '')
-#set $_expiration_time = str($Extras.get('expiration_time', 4)).replace('\\', '').replace('"', '')
-  var refresh_rate = numExtra("$_refresh_rate", 2, 1000);
-  var expiration_time = numExtra("$_expiration_time", 4, 1000 * 60 * 60);
+  // A browser timer keeps its delay in a signed 32-bit int, so a delay
+  // past 2147483647 ms wraps: expiration_time = 8760, a year, came out
+  // near seventeen days, and values just over the edge fired at once -- a
+  // station reaching for "never expire" got the opposite, silently.  The
+  // delay is clamped to the ceiling where the timer is armed, so the
+  // seconds-or-hours-to-milliseconds conversion is written exactly once.
+  // Clamped, not dropped to the default: a station that typed 8760 asked
+  // for a very long time, and 596 hours honours that where four would
+  // not.  max_age and clock_max_age are never handed to a timer, so they
+  // are not bounded; a station emitting slowly may legitimately want a
+  // very large one.
+  function clampDelay(ms) {
+    return Math.min(ms, 2147483647);
+  }
+## Each value is written by jsstr, like page_update_pwd above: however a
+## setting is malformed -- a quote, a backslash, a newline from a
+## triple-quoted weewx.conf value, a < that would end the script element --
+## it reaches numExtra as a well formed string literal, fails Number(), and
+## falls back to the default.
+  var refresh_rate = numExtra($jsstr($Extras.get('refresh_rate', 2)), 2);
+  var expiration_time = numExtra($jsstr($Extras.get('expiration_time', 4)), 4);
   // How old a loop record may be before the readings it feeds show
   // question marks instead.  The default suits a station emitting loop
   // packets every couple of seconds; raise it for a slower one.
-#set $_max_age = str($Extras.get('max_age', 10)).replace('\\', '').replace('"', '')
-  var max_age = numExtra("$_max_age", 10);
+  var max_age = numExtra($jsstr($Extras.get('max_age', 10)), 10);
   // The clock gets its own, longer threshold, because it is answering a
   // different question than the readings are.  A temperature a minute old
   // is a stale reading; a clock a minute slow is still a clock.
-#set $_clock_max_age = str($Extras.get('clock_max_age', 120)).replace('\\', '').replace('"', '')
-  var clock_max_age = numExtra("$_clock_max_age", 120);
+  var clock_max_age = numExtra($jsstr($Extras.get('clock_max_age', 120)), 120);
   // The clock's threshold never sits below the readings'.  The two are
   // configured independently, and a station that raised max_age alone --
   // which the docs invite, for a slow emitter -- would otherwise show a
@@ -145,8 +139,15 @@
       results = regex.exec(window.location.href);
       if (results === null) {
           return '';
-      } else {
+      }
+      // decodeURIComponent throws on a lone % -- a password like 100% put
+      // on the URL as typed -- and this runs at the top of the script, so
+      // the throw would abort the whole updater.  The raw value is the
+      // best reading of a string that does not decode.
+      try {
           return decodeURIComponent(results[1]);
+      } catch (e) {
+          return results[1];
       }
   }
 
@@ -171,6 +172,11 @@
     var activityElement = document.getElementById("activity-string");
     activityElement.removeEventListener('click', clickListener);
     activityElement.innerHTML = "";
+    // Belt and braces: the expiry paint in updateCurrent already cleared
+    // the disconnected color before attaching this listener, and nothing
+    // repaints the corner after expiry, so this is a no-op unless that
+    // changes.
+    activityElement.classList.remove("disconnected");
     document.getElementById("live-label").innerHTML = "";
     // restart everything
     pageTimedOut = false;
@@ -186,7 +192,7 @@
     }
     if (pwd !== page_update_pwd) {
       // expire in N hours
-      setTimeout(expirePage, 1000 * 60 * 60 * expiration_time);
+      setTimeout(expirePage, clampDelay(1000 * 60 * 60 * expiration_time));
     }
   }
 
@@ -372,16 +378,30 @@
     // transient) the label blanks and the clock keeps its last time.
     // Either way the clock wears the disconnected color, and a later
     // successful poll restores everything.
+    //
+    //
+    // Except once the page has expired.  A request issued just before
+    // expiry can fail just after it -- the 1800 ms XHR timeout outlives a
+    // short poll interval -- and painting the disconnected look over
+    // Expired / CLICK-ME would hide the one affordance the expired state
+    // exists to show.  The corner is left alone; the failure is still
+    // counted and logged, and the ageing block below still runs -- though
+    // for the request or two that can still be in flight it adds only a
+    // couple of seconds to the last known age, so it changes nothing unless
+    // the board was already within a couple of seconds of max_age when it
+    // expired.
     errorCount += 1;
     console.log('loop data fetch failed; consecutive failures: ' + errorCount);
-    document.getElementById("live-label").innerHTML =
-        code ? "&nbsp;" + code + "&nbsp;" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-    setLiveLabelClass(code ? "failed" : "");
-    var activityElement = document.getElementById("activity-string");
-    if (hint) {
-      activityElement.innerHTML = hint;
+    if (!pageTimedOut) {
+      document.getElementById("live-label").innerHTML =
+          code ? "&nbsp;" + code + "&nbsp;" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+      setLiveLabelClass(code ? "failed" : "");
+      var activityElement = document.getElementById("activity-string");
+      if (hint) {
+        activityElement.innerHTML = hint;
+      }
+      activityElement.classList.add("disconnected");
     }
-    activityElement.classList.add("disconnected");
 
     // The readings age out through an outage too.  A failed poll never
     // reaches updateReadings, so without this every number would sit at
@@ -429,6 +449,10 @@
         setLiveLabelClass("");
         var activityElement = document.getElementById("activity-string");
         activityElement.innerHTML = "CLICK-ME";
+        // As in clickListener: a board can reach its expiry while already
+        // disconnected, and CLICK-ME in the fault blue reads as a failure
+        // rather than as a board waiting to be started again.
+        activityElement.classList.remove("disconnected");
         // set an onclick event to restart
         activityElement.addEventListener("click", clickListener);
       }
@@ -437,6 +461,13 @@
     var xhttp = new XMLHttpRequest();
     xhttp.timeout = 1800;
     xhttp.onload = function() {
+      // A response issued before the page expired can land after it.
+      // Painting LIVE and a clock over Expired / CLICK-ME would leave a
+      // board that looks alive, has stopped polling, and shows no way to
+      // start again.  The mirror of markDisconnected's guard.
+      if (pageTimedOut) {
+        return;
+      }
       // onload also fires for HTTP error statuses (404/500/...); only a
       // 2xx response carries loop data.  A persistent HTTP error is
       // almost always loop_data_file not resolving to where loopdata
@@ -575,7 +606,11 @@
       // so browsers fall back on heuristic freshness -- and that window
       // widens as the file goes stale, which is exactly when a cached copy
       // would report itself as live.
-      var url = "$Extras.loop_data_file";
+## Escaped like page_update_pwd above, and for the same reason: this value
+## is a URL the user types, and a quote, a backslash or a </script> in it
+## would end the literal -- or the script element -- and abort the whole
+## updater rather than producing a bad fetch.
+      var url = $jsstr($Extras.get('loop_data_file', 'loop-data.txt'));
       url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + (cacheBuster++);
       xhttp.open("GET", url, true);
       // The unique URL misses a cache that keys on path alone, so ask for
@@ -603,5 +638,10 @@
 
   // Set page expiration timer and start polling.
   setPageExpirationTimer();
-  setInterval(updateCurrent, refresh_rate * 1000);
+  // Floored at one second: numExtra accepts any positive number, and a
+  // refresh_rate of 0.01 would arm a 10 ms interval with no in-flight
+  // guard, piling up overlapping requests against the server.  The floor
+  // caps the overlap rather than removing it: the XHR timeout is 1800 ms,
+  // so at a one second rate a slow server can still have two in flight.
+  setInterval(updateCurrent, clampDelay(Math.max(refresh_rate, 1) * 1000));
   addLoadEvent(updateCurrent);

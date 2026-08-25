@@ -137,7 +137,7 @@ it is behind, but not so far behind that it has stopped being a clock.
 ## The air quality reading is missing
 
 It needs `show_purple = True`, a working
-[weewx-purple](https://github.com/chaunceygardiner/weewx-purple), and four
+[weewx-purple](https://github.com/chaunceygardiner/weewx-purple), and two
 LoopData fields.  If the cell shows `???`, the fields are not arriving; if
 it is simply empty and the footer legend does not mention air quality,
 `show_purple` is off.

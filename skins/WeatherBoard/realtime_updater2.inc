@@ -11,26 +11,10 @@
 <script>
 #include "updater_common.inc"
 
-  #if $Extras.has_key('in_temp_file')
-    var default_in_temp_file = '$Extras.in_temp_file';
-  #else
-    var default_in_temp_file = 'inTemp.txt';
-  #end if
-  #if $Extras.has_key('in_co2_file')
-    var default_in_co2_file = '$Extras.in_co2_file';
-  #else
-    var default_in_co2_file = 'inCO2.txt';
-  #end if
-  #if $Extras.has_key('in_aqi_file')
-    var default_in_aqi_file = '$Extras.in_aqi_file';
-  #else
-    var default_in_aqi_file = 'inAQI.txt';
-  #end if
-  #if $Extras.has_key('solar_array_file')
-    var default_solar_array_file = '$Extras.solar_array_file';
-  #else
-    var default_solar_array_file = 'solar-array.json';
-  #end if
+    var default_in_temp_file = $jsstr($Extras.get('in_temp_file', 'inTemp.txt'));
+    var default_in_co2_file = $jsstr($Extras.get('in_co2_file', 'inCO2.txt'));
+    var default_in_aqi_file = $jsstr($Extras.get('in_aqi_file', 'inAQI.txt'));
+    var default_solar_array_file = $jsstr($Extras.get('solar_array_file', 'solar-array.json'));
   ## Maximum age (seconds) of each sidecar file before its reading falls
   ## back to placeholders.  One limit per file, because they are written on
   ## different schedules: the AirGradient trio on a ~30s cron, the solar
@@ -38,14 +22,10 @@
   ## delayed by the better part of a minute.  Measured against the real
   ## site, worst observed ages were inTemp 28s, inCO2 34s, inAQI 58s and
   ## solar 73s, so each limit leaves room for a missed write or two.
-#set $_in_temp_max_age = str($Extras.get('in_temp_max_age', 120)).replace('\\', '').replace('"', '')
-  var in_temp_max_age = numExtra("$_in_temp_max_age", 120, 1000);
-#set $_in_co2_max_age = str($Extras.get('in_co2_max_age', 120)).replace('\\', '').replace('"', '')
-  var in_co2_max_age = numExtra("$_in_co2_max_age", 120, 1000);
-#set $_in_aqi_max_age = str($Extras.get('in_aqi_max_age', 120)).replace('\\', '').replace('"', '')
-  var in_aqi_max_age = numExtra("$_in_aqi_max_age", 120, 1000);
-#set $_solar_array_max_age = str($Extras.get('solar_array_max_age', 150)).replace('\\', '').replace('"', '')
-  var solar_array_max_age = numExtra("$_solar_array_max_age", 150, 1000);
+  var in_temp_max_age = numExtra($jsstr($Extras.get('in_temp_max_age', 120)), 120);
+  var in_co2_max_age = numExtra($jsstr($Extras.get('in_co2_max_age', 120)), 120);
+  var in_aqi_max_age = numExtra($jsstr($Extras.get('in_aqi_max_age', 120)), 120);
+  var solar_array_max_age = numExtra($jsstr($Extras.get('solar_array_max_age', 150)), 150);
 
   // Per-file staleness backstop, keyed by element id: how long each file's
   // own timestamp has sat unchanged.  Same role as lastChangeAt in
@@ -243,17 +223,13 @@
     #if $show_aqi
       // Age-gated like every other reading, as on the outdoor board.
       // Clearing the inline color returns the cell to the footer's red.
-      if (age < max_age && result.hasOwnProperty("current.pm2_5_1m_aqi.formatted")) {
-        setReading("aqi", padLeft(result["current.pm2_5_1m_aqi.formatted"], 3));
-      } else if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
+      if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi.formatted")) {
         setReading("aqi", padLeft(result["current.pm2_5_aqi.formatted"], 3));
       } else {
         // Three wide: the AQI never runs to four digits -- we would be dead.
         setReading("aqi", '???');
       }
-      if (age < max_age && result.hasOwnProperty("current.pm2_5_1m_aqi_color.raw")) {
-        document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_1m_aqi_color.raw"]);
-      } else if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
+      if (age < max_age && result.hasOwnProperty("current.pm2_5_aqi_color.raw")) {
         document.getElementById("aqi").style.color = decode_rgb(result["current.pm2_5_aqi_color.raw"]);
       } else {
         document.getElementById("aqi").style.color = '';
