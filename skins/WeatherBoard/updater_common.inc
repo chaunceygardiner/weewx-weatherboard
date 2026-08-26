@@ -217,8 +217,6 @@
     return 'rgb(' + red + ',' + green + ',' + blue + ')';
   }
 
-  // Pad a reading on the left to `width` characters using no-break spaces
-  // so the monospace columns don't shift as values change length.
   // True for a json object proper: not null, not an array, not a
   // primitive.  loopdata's file is one, and so is each report's entry in
   // it; anything else that parses is some other server's json.
@@ -226,6 +224,9 @@
     return value !== null && typeof value === 'object'
         && !Array.isArray(value);
   }
+
+  // Pad a reading on the left to `width` characters using no-break spaces
+  // so the monospace columns don't shift as values change length.
 
   function padLeft(value, width) {
     return value.padStart(width).replaceAll(' ', '&nbsp;');

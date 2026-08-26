@@ -286,10 +286,18 @@ def loader_result(module, loop_data_version, argv=INSTALL_ARGV):
     """What loader() does, run as the given command line, on a station
     whose weewx-loopdata is the given version, or absent (None): the
     installer, or the SystemExit message.  A None in sys.modules makes the
-    import raise ImportError, which is what an uninstalled loopdata looks
-    like from inside weectl."""
+    import raise ModuleNotFoundError, which is what an uninstalled loopdata
+    looks like from inside weectl.  The string 'broken' stands for a
+    loopdata that IS installed but whose import fails -- a module with no
+    LOOP_DATA_VERSION, as every loopdata before 2020 was, which raises a
+    plain ImportError rather than a ModuleNotFoundError."""
     if loop_data_version is None:
         modules = {'user': None, 'user.loopdata': None}
+    elif loop_data_version == 'broken':
+        user = types.ModuleType('user')
+        loopdata = types.ModuleType('user.loopdata')
+        user.loopdata = loopdata
+        modules = {'user': user, 'user.loopdata': loopdata}
     else:
         user = types.ModuleType('user')
         loopdata = types.ModuleType('user.loopdata')
@@ -333,6 +341,13 @@ def check_installer():
             if not isinstance(result, str):
                 failures.append('loader() accepted weewx-loopdata %s under `%s`'
                                 % (version or 'absent', ' '.join(argv)))
+    # An installed loopdata whose import fails is not an absent one: saying
+    # "not installed" would tell the user to install what they have.
+    result = loader_result(module, 'broken')
+    if not isinstance(result, str):
+        failures.append('loader() accepted a loopdata with no LOOP_DATA_VERSION')
+    elif 'not installed' in result or 'is installed' not in result:
+        failures.append('a broken loopdata was reported as not installed: %r' % result)
     # 10.0 pins a tuple compare over a string one; a bare 7 pins that the
     # tuple is padded, since (7,) sorts before (7, 0).
     installer = None

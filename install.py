@@ -38,8 +38,18 @@ def loader():
         try:
             from user.loopdata import LOOP_DATA_VERSION
         except ImportError as e:
-            sys.exit("weewx-weatherboard requires weewx-loopdata %s or later, which is not installed"
-                     " (%s).  Install weewx-loopdata first, then install weewx-weatherboard."
+            # Only a missing module means loopdata is not installed.  An
+            # ImportError raised from INSIDE an installed loopdata -- a
+            # dependency of its own it cannot find, a half-finished upgrade
+            # -- would otherwise be reported as "not installed", telling
+            # the user to install what they already have.
+            if isinstance(e, ModuleNotFoundError) and e.name in ('user', 'user.loopdata'):
+                sys.exit("weewx-weatherboard requires weewx-loopdata %s or later, which is not"
+                         " installed (%s).  Install weewx-loopdata first, then install"
+                         " weewx-weatherboard."
+                         % ('.'.join(str(n) for n in LOOP_DATA_REQUIRED), e))
+            sys.exit("weewx-weatherboard requires weewx-loopdata %s or later.  It is installed,"
+                     " but importing it failed: %s.  Fix that, then install weewx-weatherboard."
                      % ('.'.join(str(n) for n in LOOP_DATA_REQUIRED), e))
         if version_tuple(LOOP_DATA_VERSION) < LOOP_DATA_REQUIRED:
             sys.exit("weewx-weatherboard requires weewx-loopdata %s or later, found %s."
