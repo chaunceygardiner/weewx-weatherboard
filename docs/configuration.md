@@ -53,10 +53,13 @@ the default.
 
 ### `loop_data_file`
 
-Default `loop-data.txt`.  Where the page fetches loop data from, as a URL
-the *browser* resolves.  A bare filename therefore means "in this report's
-`HTML_ROOT`", which is where LoopData writes if you leave its
-`loop_data_dir` at the default.
+Default `../loopdata/loop-data.txt`.  Where the page fetches loop data
+from, as a URL the *browser* resolves, relative to this report's
+`HTML_ROOT`.  The default is where a stock LoopData writes: its
+`loop_data_dir` default is its own sample report's `HTML_ROOT`,
+`loopdata`, beside this one.  Either side can move — LoopData's
+`loop_data_dir` or this setting — as long as the browser can fetch the
+result.
 
 Pointing this at another host works, with two conditions.  That server must
 send `Access-Control-Allow-Origin`, or the browser refuses the fetch and
@@ -96,7 +99,7 @@ the readings beside it are still live would be nonsense, so raising
 set to.
 
 Two things still turn the clock blue immediately, whatever this is set to: a
-fetch that fails, and a `fields` line with no time field in it, where there
+fetch that fails, and a report entry with no time field in it, where there
 is no time to show at all.
 
 ### `refresh_rate`
@@ -156,10 +159,11 @@ what the wall-tablet case wants.
 
 A boolean, `False` by default.  Set it to `True` to show the air quality
 index, which requires
-[weewx-purple](https://github.com/chaunceygardiner/weewx-purple) and two
-more LoopData fields — see
-[Installation](installation.html#3-what-the-installer-added).  With it off,
-the AQI cell stays empty and the footer legend names one fewer reading.
+[weewx-purple](https://github.com/chaunceygardiner/weewx-purple).  The two
+LoopData fields it reads are declared whether or not this is set — see
+[The fields the board reads](installation.html#the-fields-the-board-reads).
+With it off, the AQI cell stays empty and the footer legend names one fewer
+reading.
 
 ### `googleAnalyticsId`, `analytics_host`
 
@@ -186,20 +190,22 @@ Override any of them in `weewx.conf` to change the legend's wording.
 
 ## Units and number formats
 
-The board's *numbers* are formatted by LoopData, using the report named by
-LoopData's own `target_report`, not by this skin.  The
-`[[[Units]]] [[[[StringFormats]]]]` entries in the WeatherBoard stanza —
-`%.0f` for wind speeds, `%.1f` for temperatures — apply to the values this
-skin renders itself at generation time.
+The board's numbers are formatted by LoopData with *this report's* own
+converter and formatter — since LoopData 7.0 every declaring report is its
+own target — so the `[[[Units]]] [[[[StringFormats]]]]` entries in the
+WeatherBoard stanza, `%.0f` for wind speeds and `%.1f` for temperatures,
+apply to the live readings as well as to the values the page renders at
+generation time.  The two never disagree.
 
-To change how a live reading is formatted, change it in the report LoopData
-formats against.  The same is true of units: the board shows whatever units
-that report is configured for.
+To change a format, change it there.  To change units, set them in the
+same stanza the way you would for any WeeWX report — `unit_system = metric`
+on the stanza, or `[[[Units]]] [[[[Groups]]]]` for one group — and the
+board shows them, whatever the station's other reports do.
 
 ## The time format
 
-The clock in the lower right is one of the LoopData fields, and its format
-travels with the field name:
+The clock in the lower right is one of the LoopData fields the skin
+declares, and its format travels with the field name:
 
 ```
 current.dateTime.format("%X")
@@ -222,10 +228,11 @@ One locale effect is worth knowing before you go looking for a css bug: a
 locales, among others — is too many characters for the corner it sits in and
 wraps onto a second line.  The clock is set in 95px monospace, in a footer
 cell 65% of the board's width.  The lever there is `LANG` too — not the
-`fields` line, for the reason below.
+declaration, for the reason below.
 
-The format cannot be pinned from the `fields` line.  The board looks for the
-`%X` spelling specifically, so putting a different strftime string there —
+The format cannot be pinned by editing the declaration.  The board looks
+for the `%X` spelling specifically, so putting a different strftime string
+there —
 `current.dateTime.format("%H:%M:%S")`, say — does not reformat the clock: it
 removes the field the board reads, and the corner falls back to `??:??:??`
 until you put `%X` back.  `LANG` is the only lever on the format.

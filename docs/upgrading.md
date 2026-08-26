@@ -31,6 +31,48 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 4.1
+
+**LoopData 7.0 or later is now required, and must be installed first.**
+The installer checks for it and refuses to run if LoopData is absent, or
+older — naming the version it found.  Restart WeeWX after installing,
+as always; that restart matters more than it used to (below).
+
+Since LoopData 7.0 a report declares the fields it needs in its own skin,
+and LoopData writes them into `loop-data.txt` under the report's name, in
+that report's own units and formats.  The board now does exactly that:
+`skins/WeatherBoard/skin.conf` declares every field the page reads, and
+the page takes the `WeatherBoardReport` entry out of the file rather than
+the flat keys the station-wide `[LoopData] [[Include]] fields` line
+produces.  The declaration ships with the skin, so there is nothing for
+you to edit.
+
+**Your `fields` line is left alone.**  4.0's installer added the board's
+fields to `[LoopData] [[Include]] fields`; 4.1's does not touch that line
+at all.  LoopData 7.0 deprecates it and warns at startup while it is
+present, and a later LoopData release removes it, along with
+`target_report`.  Do not edit it by hand in the meantime — other pages may
+still read it — and do not worry about the warning: it is LoopData's to
+resolve.
+
+**The live numbers are now formatted by the WeatherBoard report itself.**
+Before 7.0 LoopData rendered every field through the one report named by
+its `target_report`, so the `[[[Units]]] [[[[StringFormats]]]]` entries
+the installer has always put in the WeatherBoard stanza — `%.0f` for wind
+speeds, `%.1f` for temperatures — applied only to the values the page
+rendered at generation time, not to the ones that replaced them two
+seconds later.  Now they apply to both, and so does the report's unit
+system.  If your `target_report` rendered in the same units and formats
+as the WeatherBoard report, nothing changes on screen; if it did not, the
+board now shows its own — see
+[Units and number formats](configuration.html#units-and-number-formats).
+
+**The restart.**  LoopData reads each report's declaration when weewxd
+starts.  The report engine reads the skin afresh every cycle, so after
+installing 4.1 it builds the new page while the LoopData service inside
+weewxd is still running on what it read at startup — and that page reads
+`NO ENTRY`, with `restart WeeWX` in the corner, until you do.
+
 ## Upgrading to 4.0.1
 
 Nothing is required of you.  One thing changes for a board whose
@@ -78,11 +120,13 @@ renders with your report's own WeeWX formatter, which is a 6.0 feature.
 current.dateTime.format("%X")
 ```
 
-The installer adds it to `[LoopData] [[Include]] fields` for you, along
+4.0's installer adds it to `[LoopData] [[Include]] fields` for you, along
 with any other field the board reads that your fields line happens to be
-missing, so the ordinary upgrade needs no hand-editing.  If your fields
-line does not have it — you edited the line afterwards, or LoopData was not
-installed when the board was — the corner reads `??:??:??` until it does.
+missing, so the ordinary upgrade needs no hand-editing.  (From 4.1 the
+skin declares its fields instead and the line is left alone — see
+[above](#upgrading-to-41).)  If your fields line does not have it — you
+edited the line afterwards, or LoopData was not installed when the board
+was — the corner reads `??:??:??` until it does.
 
 Also new in 4.0, needing nothing from you:
 
@@ -137,8 +181,9 @@ unchanged.  See [When data goes missing](missing-data.html).
 ## Upgrading to 3.0
 
 1. WeatherBoard 3.0 reads more fields from `loop-data.txt` than 2.x did.
-   Since 4.0 the installer adds them, so installing 4.0 or later fixes this
-   for you.
+   Since 4.0 the install takes care of them — 4.0's installer added them to
+   the `fields` line, and 4.1 declares them in the skin — so installing 4.0
+   or later fixes this for you.
 2. The default `loop_data_file` became `loop-data.txt`, relative to the
    report's `HTML_ROOT`.  If your `loop-data.txt` lives elsewhere, set
    `loop_data_file` in `[[[Extras]]]`.

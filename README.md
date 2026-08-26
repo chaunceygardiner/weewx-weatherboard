@@ -21,7 +21,7 @@ across the room.
 
 Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
 
-**WeatherBoard 4.x requires LoopData 6.0 or later.**
+**WeatherBoard 4.1 and later require LoopData 7.0 or later.**
 
 The WeatherBoard&trade; skin provides a simple one page report that shows:
 * Current Outside Temperature
@@ -56,7 +56,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
 * [WeeWX](https://weewx.com) 4.6 or later (WeeWX 5 recommended)
 * Python 3.7 or later
-* [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 6.0 or later
+* [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 7.0 or later
 
 ## Additional Requirements for the Air Quality Index (AQI) Reading
 * [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
@@ -67,7 +67,8 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 ## Installation Instructions
 
 1. Install [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
-   per the installation instructions in the weewx-loopdata README.
+   7.0 or later, per the installation instructions in the weewx-loopdata README.
+   The WeatherBoard installer refuses to run without it.
 
 1. Download the latest release, weewx-weatherboard.zip, from the
    [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard/releases).
@@ -84,8 +85,12 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
    (Adjust the path of wee_extension if WeeWX is installed elsewhere.)
 
-1. The install adds the fields WeatherBoard reads to the `fields` line of the
-   `[LoopData]` section of `weewx.conf`:
+1. The skin declares the LoopData fields it reads, in
+   `skins/WeatherBoard/skin.conf`, and LoopData writes them into
+   `loop-data.txt` under the report's name, in this report's own units and
+   formats.  There is nothing to add to `weewx.conf` for this, and the
+   installer does not touch the deprecated `[LoopData] [[Include]] fields`
+   line; a later LoopData release removes it.  The fields, for reference:
 
    ```
    current.dateTime.raw, current.dateTime.format("%X"), current.outTemp,
@@ -93,23 +98,15 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    current.windDir.ordinal_compass, 10m.windGust.max.formatted,
    day.windGust.max, current.UV.formatted, current.barometer.formatted,
    trend.barometer.code, day.rain.sum.formatted, 24h.rain.sum.formatted,
-   current.rainRate
+   current.rainRate, current.pm2_5_aqi.formatted, current.pm2_5_aqi_color.raw
    ```
 
-   Fields already in the list are left alone, and nothing is removed or
-   reordered.  If `[LoopData]` is not in `weewx.conf` yet, the install prints
-   the list and says to install loopdata and then install WeatherBoard again;
-   the second run adds the fields.  Do not skip that second run: loopdata's
-   own installer writes a `fields` line for its sample page, and WeeWX never
-   overwrites a setting that already exists, so the board's fields would be
-   left out entirely.
-
-   With `show_purple` set, two more fields are added for the AQI reading:
-   `current.pm2_5_aqi.formatted` and `current.pm2_5_aqi_color.raw`.  Running
-   purple-proxy needs nothing extra: the proxy averages over two minutes and
-   weewx-purple averages the sensor's two channels, so that field already
-   carries the smoothed value.  Turning `show_purple` on later means either
-   adding those two by hand or simply installing the extension again.
+   The last two are the AQI reading, shown with `show_purple` set.  They are
+   declared regardless — LoopData omits a field whose observation the station
+   does not report — so turning `show_purple` on later needs nothing but the
+   setting.  Running purple-proxy needs nothing extra either: the proxy
+   averages over two minutes and weewx-purple averages the sensor's two
+   channels, so that field already carries the smoothed value.
 
 1. The install creates the following section in `weewx.conf`:
 
@@ -123,7 +120,7 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
            title = Acme Weather WeatherBoard&trade;
            subtitle = Updated continuously.
            logo = weatherboard_logo.png
-           loop_data_file = loop-data.txt
+           loop_data_file = ../loopdata/loop-data.txt
            max_age = 10
            clock_max_age = 120
            expiration_time = 4
@@ -138,7 +135,10 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    * `title`, `meta_title`, `subtitle`: your site's branding.  Acme Weather is a
      placeholder; put your own site's name here.
    * `loop_data_file`: where the updater fetches loop data from.  If not a full
-     path, it is interpreted as relative to this report's HTML_ROOT.  Pointing it
+     path, it is interpreted as relative to this report's HTML_ROOT.  The
+     shipped value is where a stock LoopData writes — its own sample report's
+     directory, `loopdata`, beside this one — so with both extensions at their
+     defaults it needs nothing.  Pointing it
      at another host needs that server to send `Access-Control-Allow-Origin`, or
      the fetch fails and the board sits permanently disconnected; and even then
      the staleness check described below is weakened, because the `Date` header
@@ -167,7 +167,9 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
      Analytics.
    * `show_purple`: set to `True` if weewx-purple is installed to show the AQI.
 
-1. Restart WeeWX.
+1. Restart WeeWX.  LoopData reads each report's declaration when weewxd
+   starts, so until the restart the board's entry is not in `loop-data.txt`
+   and the live label reads `NO ENTRY`.
 
 ## About the missing-data behavior
 
@@ -192,18 +194,18 @@ understate the age, so it is a backstop rather than a substitute.
 
 The clock in the lower right corner shows the time of the reading currently on
 the board, on the *station's* clock.  The string comes from loopdata, rendered
-through the target report's own WeeWX formatter, so it carries the station's
+through this report's own WeeWX formatter, so it carries the station's
 timezone and time format -- not the tablet's, which on a wall-mounted display
 can be another timezone entirely, or simply set wrong.
 
-The format travels with the field name in `weewx.conf`:
+The format travels with the field name in the skin's declaration:
 `current.dateTime.format("%X")`.  `%X` is the station's own time of day format:
 `09:44:14 PM` where the station runs a US locale, `21:44:14` under most others.
 That locale comes from weewxd's environment (`LANG`), not from a report's
 `lang` setting, and a weewxd started with no `LANG` at all -- common in
 containers -- falls back to the C locale and renders 24 hour times; setting
-`LANG` is the way to change that.  The format cannot be pinned from the
-`fields` line: the board looks for the `%X` spelling specifically, so a
+`LANG` is the way to change that.  The format cannot be pinned by editing
+the declaration: the board looks for the `%X` spelling specifically, so a
 different strftime string there does not reformat the clock, it removes the
 field the board reads and the corner falls back to `??:??:??`.
 

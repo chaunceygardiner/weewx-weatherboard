@@ -5,50 +5,14 @@
 import sys
 import weewx
 from setup import ExtensionInstaller
-from weeutil.weeutil import to_bool
 
-# The loopdata fields WeatherBoard reads.  configure() below adds any that
-# are missing from [LoopData][[Include]] fields; it never removes or
-# reorders what is already there.
-#
-# current.dateTime.raw is the epoch the age/LIVE math reads;
-# current.dateTime.format("%X") is the clock shown in the lower right,
-# rendered by loopdata through the target report's WeeWX formatter so it
-# is the STATION's time, not the tablet's.  The board looks for this exact
-# field name, so a different strftime string is not a substitute for it:
-# pin one and the corner reads ??:??:?? instead.  A locale whose %X carries
-# a timezone (the Indian subcontinent and Arabic locales, among others)
-# renders wide enough to wrap onto a second line; the lever there is
-# weewxd's LANG, not the fields line.
-LOOP_DATA_FIELDS = [
-    'current.dateTime.raw',
-    'current.dateTime.format("%X")',
-    'current.outTemp',
-    'current.dewpoint',
-    'current.windSpeed.formatted',
-    'current.windSpeed.raw',
-    'current.windDir.ordinal_compass',
-    '10m.windGust.max.formatted',
-    'day.windGust.max',
-    'current.UV.formatted',
-    'current.barometer.formatted',
-    'trend.barometer.code',
-    'day.rain.sum.formatted',
-    '24h.rain.sum.formatted',
-    'current.rainRate',
-]
-
-# Read only when show_purple is set.  One AQI reading: the AQI of the
-# pm2_5 observation the WeeWX database carries.  4.0's installer also named
-# current.pm2_5_1m_aqi.formatted and current.pm2_5_1m_aqi_color.raw, a
-# one-minute pair the updater had asked for since 2020 and preferred when
-# present.  The board reads the database's observations -- pm1_0, pm2_5,
-# pm10_0 -- not whatever else a sensor's driver adds to the loop packet, so
-# it no longer asks for them.
-PURPLE_FIELDS = [
-    'current.pm2_5_aqi.formatted',
-    'current.pm2_5_aqi_color.raw',
-]
+# The oldest weewx-loopdata whose loop-data.txt carries this report's own
+# entry: since 7.0 a report declares the fields it needs in its skin.conf
+# ([LoopData] [[fields]] there) and loopdata writes them under the report's
+# name.  The pages read that entry and nothing else, so an older loopdata
+# -- which writes only the flat keys of the [[Include]] fields line -- would
+# leave every reading at question marks.  Refuse to install instead.
+LOOP_DATA_REQUIRED = (7, 0)
 
 def loader():
     if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 7):
@@ -57,12 +21,46 @@ def loader():
 
     if version_tuple(weewx.__version__) < (4, 6):
         sys.exit("weewx-weatherboard requires WeeWX 4.6 or later, found %s" % weewx.__version__)
+
+    # Only an INSTALL is gated on loopdata.  WeeWX runs an installed
+    # extension's loader() again for `weectl extension list` and `weectl
+    # extension uninstall` (wee_extension's --list and --uninstall), from
+    # the copy of this file it keeps under user/installer/, and catches
+    # only its own ExtensionError -- so a refusal there would leave the
+    # board unlistable and unremovable once loopdata had been removed or
+    # downgraded.  The two checks above cannot regress after an install
+    # (the same Python and WeeWX run weectl afterwards); this one can.
+    if installing():
+        # weectl (WeeWX 5) and wee_extension (WeeWX 4) both have the
+        # station's user directory on sys.path by the time they call
+        # loader(), so user.loopdata is importable exactly when loopdata is
+        # installed.
+        try:
+            from user.loopdata import LOOP_DATA_VERSION
+        except ImportError as e:
+            sys.exit("weewx-weatherboard requires weewx-loopdata %s or later, which is not installed"
+                     " (%s).  Install weewx-loopdata first, then install weewx-weatherboard."
+                     % ('.'.join(str(n) for n in LOOP_DATA_REQUIRED), e))
+        if version_tuple(LOOP_DATA_VERSION) < LOOP_DATA_REQUIRED:
+            sys.exit("weewx-weatherboard requires weewx-loopdata %s or later, found %s."
+                     "  Upgrade weewx-loopdata first, then install weewx-weatherboard."
+                     % ('.'.join(str(n) for n in LOOP_DATA_REQUIRED), LOOP_DATA_VERSION))
     return WeatherBoardInstaller()
 
+def installing():
+    """True when the command line is installing an extension.  weectl spells
+    it `extension install`; wee_extension (optparse) takes `--install FILE`,
+    `--install=FILE`, and any unambiguous prefix of the option, `--inst`
+    included -- so anything starting with `--i` counts, there being no other
+    wee_extension option that starts that way."""
+    return any(arg == 'install' or arg.startswith('--i') for arg in sys.argv)
+
 def version_tuple(version):
-    """(4, 6), (4, 10), (5, 0) -- for comparing.  Not a string compare:
-    "4.10" sorts BEFORE "4.5" that way.  Trailing non-digits are dropped so
-    a pre-release such as 5.0.0b7 compares as (5, 0, 0)."""
+    """(4, 6, 0), (4, 10, 0), (5, 0, 0) -- for comparing.  Not a string
+    compare: "4.10" sorts BEFORE "4.5" that way.  Trailing non-digits are
+    dropped so a pre-release such as 5.0.0b7 compares as (5, 0, 0), and the
+    tuple is always three long so that a bare "7" is (7, 0, 0), which is
+    not less than (7, 0) -- (7,) would be."""
     parts = []
     for chunk in version.split('.')[:3]:
         digits = ''
@@ -71,12 +69,14 @@ def version_tuple(version):
                 break
             digits += ch
         parts.append(int(digits) if digits else 0)
+    while len(parts) < 3:
+        parts.append(0)
     return tuple(parts)
 
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "4.0.1",
+            version = "4.1",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -92,7 +92,9 @@ class WeatherBoardInstaller(ExtensionInstaller):
                             'title'            : 'Acme Weather WeatherBoard&trade;',
                             'subtitle'         : 'Updated continuously.',
                             'logo'             : 'weatherboard_logo.png',
-                            'loop_data_file'   : 'loop-data.txt',
+                            # Where a stock weewx-loopdata writes: its own sample
+                            # report's HTML_ROOT, loopdata, beside this board's.
+                            'loop_data_file'   : '../loopdata/loop-data.txt',
                             'max_age'          : 10,
                             'clock_max_age'    : 120,
                             'expiration_time'  : 4,
@@ -138,85 +140,3 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/weatherboard_logo.png',
             ])]
         )
-
-    def configure(self, engine):
-        """Add the loopdata fields the board reads to [LoopData][[Include]]
-        fields, leaving whatever is already there untouched.
-
-        weectl (WeeWX 5) and wee_extension (WeeWX 4) both call this before
-        merging this extension's own stanza, and save weewx.conf only if it
-        returns True.  Fields are added, never removed or reordered: the
-        fields line is the user's, shared with every other page loopdata
-        feeds."""
-        config_dict = engine.config_dict
-        wanted = self.loop_data_fields(config_dict)
-        if 'LoopData' not in config_dict:
-            # loopdata isn't installed.  Nothing to add to, so say what the
-            # board will need once it is.
-            print('weatherboard: [LoopData] not found in weewx.conf.')
-            print('weatherboard: Install weewx-loopdata 6.0 or later, then install')
-            print('weatherboard: weatherboard again -- this step adds the fields the')
-            print('weatherboard: board reads.  Installing loopdata SECOND matters:')
-            print('weatherboard: its installer writes a fields line of its own, and')
-            print('weatherboard: weectl will not overwrite one that already exists,')
-            print('weatherboard: so the board\'s fields would be left out.')
-            print('weatherboard: The fields, should you prefer to add them by hand:')
-            print('weatherboard:     %s' % ', '.join(wanted))
-            return False
-        loop_data_dict = config_dict['LoopData']
-        include_dict = loop_data_dict.get('Include')
-        if not isinstance(include_dict, dict):
-            # [LoopData] is there but [[Include]] is missing -- or, absurdly,
-            # is a scalar.  A scalar is not something to guess at: say so and
-            # leave it alone rather than overwriting whatever it means.  The
-            # guard is here because weectl copies the skin files before it
-            # calls configure(), so raising would leave the extension
-            # installed and weewx.conf untouched.  Config shapes absurd
-            # enough to be unreachable in practice (a scalar [LoopData], a
-            # scalar Extras) are not guarded.
-            if include_dict is not None:
-                print('weatherboard: [LoopData] Include is not a section; leaving it alone.')
-                print('weatherboard: Add these fields to [LoopData] [[Include]] fields:')
-                print('weatherboard:     %s' % ', '.join(wanted))
-                return False
-            if engine.dry_run:
-                print('weatherboard: Would create [LoopData] [[Include]] in'
-                      ' weewx.conf with fields: %s' % ', '.join(wanted))
-                return False
-            print('weatherboard: Creating [LoopData] [[Include]] in weewx.conf.')
-            loop_data_dict['Include'] = {'fields': list(wanted)}
-            print('weatherboard: Added to [LoopData] [[Include]] fields: %s' % ', '.join(wanted))
-            return True
-        fields = include_dict.get('fields', [])
-        if not isinstance(fields, list):
-            # ConfigObj hands back a plain string for a one-entry list.
-            fields = [fields] if fields else []
-        missing = [f for f in wanted if f not in fields]
-        if not missing:
-            return False
-        if engine.dry_run:
-            print('weatherboard: Would add to [LoopData] [[Include]] fields: %s'
-                  % ', '.join(missing))
-            return False
-        include_dict['fields'] = fields + missing
-        print('weatherboard: Added to [LoopData] [[Include]] fields: %s' % ', '.join(missing))
-        return True
-
-    @staticmethod
-    def loop_data_fields(config_dict):
-        """The fields to require of loopdata.  The AQI fields are included
-        only for a station that has already turned show_purple on: on a
-        fresh install this extension's own stanza has not been merged yet,
-        and its show_purple default is False."""
-        fields = list(LOOP_DATA_FIELDS)
-        try:
-            show_purple = config_dict['StdReport']['WeatherBoardReport']['Extras']['show_purple']
-        except KeyError:
-            show_purple = False
-        try:
-            show_purple = to_bool(show_purple)
-        except ValueError:
-            show_purple = False
-        if show_purple:
-            fields += PURPLE_FIELDS
-        return fields

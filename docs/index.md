@@ -24,7 +24,7 @@ wall.
 ![WeatherBoard, with the air quality reading](images/WeatherBoard.png)
 
 **Requirements:** WeeWX 4.6 or later, Python 3.7 or later, and
-[weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 6.0 or
+[weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 7.0 or
 later.  The air quality reading additionally needs
 [weewx-purple](https://github.com/chaunceygardiner/weewx-purple).
 
@@ -58,9 +58,9 @@ written by [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
 station emits a loop packet — and rewrite the numbers in place.
 
 That makes LoopData a hard requirement rather than a nicety: the board
-displays what LoopData puts in that file, named by the fields you list in
-`weewx.conf`.  The installer adds the fields the board reads, so an
-ordinary install has nothing to edit.  See
+displays what LoopData puts in that file.  The skin declares the fields it
+reads, and LoopData writes them under the report's name in the report's
+own units and formats, so an ordinary install has nothing to edit.  See
 [Installation](installation.html).
 
 Everything on the board is age-checked.  If the loop data stops advancing —

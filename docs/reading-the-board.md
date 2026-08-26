@@ -84,9 +84,10 @@ At the right of the title bar, in red:
 | `12s ago` | How old the record actually is — seconds for the first minute, then `1.5m ago`, `2.3h ago`, `1.2d ago` |
 | `HTTP 404` | The fetch came back with an error status — almost always `loop_data_file` pointing where nothing is served |
 | `BAD DATA` | The fetch succeeded but the body is not LoopData's json |
+| `NO ENTRY` | LoopData's json, but with no entry for this report — WeeWX has not been restarted since the board was installed |
 | `BAD URL` | `loop_data_file` is not a usable URL, so the fetch never left the browser |
 | `Expired` | Polling stopped after `expiration_time` hours; click the clock to restart |
-| `??` | The loop record carried no usable timestamp, so its age cannot be known — the `fields` line is missing `current.dateTime.raw` |
+| `??` | The loop record carried no usable timestamp, so its age cannot be known — the report's entry is missing `current.dateTime.raw` |
 | (blank) | A network-level failure, presumed transient — the clock turns blue |
 
 The label and the readings share one threshold.  At `max_age`, `LIVE`
@@ -106,7 +107,7 @@ the station's timezone and time format.  That matters on a wall display: a
 tablet in another timezone, or with its clock simply set wrong, used to show
 a confident time that had nothing to do with when the reading was taken.
 
-The format lives in the field name, in `weewx.conf`:
+The format lives in the field name, in the skin's declaration:
 
 ```
 current.dateTime.format("%X")
@@ -114,7 +115,7 @@ current.dateTime.format("%X")
 
 `%X` is the station's own time-of-day format: `09:44:14 PM` where the
 station runs a US locale, `21:44:14` under most others.  It cannot be pinned
-from the `fields` line — the board looks for the `%X` spelling specifically,
+by editing the declaration — the board looks for the `%X` spelling specifically,
 so anything else blanks the corner rather than reformatting it.  The lever is
 `LANG` in weewxd's environment; see
 [the time format](configuration.html#the-time-format).
@@ -130,8 +131,9 @@ The threshold is longer than the readings' because the clock is answering a
 different question.  A temperature fifteen seconds old has stopped being
 true; a clock fifteen seconds slow is still a good clock.  The blue means
 this is not a clock any more, and it is worth keeping that warning for a
-time that would genuinely mislead you.  A field missing from your `fields`
-line is the exception and goes blue at once — there is no time to show.
+time that would genuinely mislead you.  A time field missing from the
+report's entry is the exception and goes blue at once — there is no time
+to show.
 
 Clicking the clock restarts an expired page.
 
@@ -142,4 +144,4 @@ legible across a room and unobtrusive at night.  The exceptions carry
 meaning — the AQI in its EPA color, and the clock turning blue, which it
 does when the fetch is failing, when the data has fallen further behind
 than [`clock_max_age`](configuration.html#clock_max_age), or when the time
-field is missing from your `fields` line.
+field is missing from the report's entry.

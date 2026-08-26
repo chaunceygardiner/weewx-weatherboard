@@ -1,6 +1,77 @@
 weatherboard change history
 ---------------------------
 
+4.1 08/25/2026
+--------------
+Action required: upgrade weewx-loopdata to 7.0 or later BEFORE installing
+this release.  The installer refuses to run without it, saying whether
+loopdata is missing or which older version it found.  Restart WeeWX
+afterwards, as always.
+
+The board reads its own report's entry in loop-data.txt.  Since loopdata
+7.0 a report declares the fields it needs in its own skin.conf, and
+loopdata writes them into the file under the report's name, rendered
+with that report's own units and formats.  skins/WeatherBoard/skin.conf
+now carries a [LoopData] [[fields]] declaration of every field the page
+reads, and the page takes the WeatherBoardReport entry out of the file
+rather than the flat keys the station-wide [LoopData] [[Include]] fields
+line produced.  The declaration ships with the skin, so an upgrading
+station has nothing to edit.
+
+The installer no longer touches the [LoopData] [[Include]] fields line.
+4.0 added the board's fields to it; loopdata 7.0 deprecates the line and
+a later loopdata release removes it, along with target_report.  Leave it
+alone in the meantime -- loopdata warns at startup while it is there, and
+that is loopdata's to resolve, not this board's.  Installing is one step
+again: loopdata, then the board, with no second run of the board's
+installer to pick up a fields line that was not there the first time.
+
+The live numbers are formatted by the WeatherBoard report itself.  Before
+7.0 loopdata rendered every field through the one report named by its
+target_report, so the [[[Units]]] [[[[StringFormats]]]] entries the
+installer has always put in the WeatherBoard stanza -- %.0f for wind
+speeds, %.1f for temperatures -- applied to the values the page rendered
+at generation time and not to the ones that replaced them two seconds
+later.  Now they apply to both, and so does the report's unit system: a
+board can show metric on a station whose other reports are US, by setting
+unit_system in its own stanza.  On a station whose target_report rendered
+in the same units and formats as the WeatherBoard report, nothing changes
+on screen.
+
+A new live label, NO ENTRY, with "restart WeeWX" in place of the clock.
+It means loop-data.txt is there and is json, but carries no entry for this
+report.  That is the state between installing the board and restarting
+weewxd: the report engine reads the skin's declaration afresh every cycle
+and builds the new page, while the loopdata service inside weewxd is still
+running on the declarations it read at startup and does not know this
+report yet.  The cure is the restart the installation instructions ask for
+anyway.
+
+The installer requires weewx-loopdata 7.0 or later, and says so.
+install.py imports user.loopdata and compares its LOOP_DATA_VERSION as a
+version tuple -- 10.0 is newer than 7.0 -- and refuses, naming 7.0, when
+loopdata is absent or older.  Until now the board could be installed on a
+station with no loopdata at all and come up all question marks; it cannot
+any more.  Only an install is checked: WeeWX runs an installed extension's
+loader for `weectl extension list` and `uninstall` too, and a board has to
+stay listable and removable after loopdata is gone.
+
+A fresh install finds loop-data.txt.  The shipped loop_data_file was
+loop-data.txt, a file in the board's own directory, while a stock
+weewx-loopdata writes into its own sample report's directory, loopdata,
+beside it -- so two default installs came up HTTP 404 until the user
+changed one side, and the manual had been saying the opposite since
+loopdata moved its file.  The default is now ../loopdata/loop-data.txt,
+which is where loopdata writes.  Fresh installs only: WeeWX never
+overwrites a setting already in weewx.conf, so an upgraded station keeps
+whatever it has.
+
+The offline check (tests/check_templates.py) holds skin.conf's
+declaration, rather than the installer's field lists, in step with what
+the updaters read; loads install.py against a stubbed user.loopdata to pin
+the refusal and the acceptance; and pins install.py's version to the
+newest heading here.
+
 4.0.1 08/25/2026
 ----------------
 The board reads one air quality field: the AQI of the pm2_5 observation
