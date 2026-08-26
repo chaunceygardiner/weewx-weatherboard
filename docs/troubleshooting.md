@@ -29,9 +29,8 @@ likelihood:
 2. **The board cannot fetch the file.**  Open the browser's developer
    console on the board page.  A 404 there means `loop_data_file` does not
    point at a URL your web server actually serves; see below.
-3. **The fields are missing.**  A field the board reads that is not in
-   `[LoopData] [[Include]] fields` never arrives.  Installing the extension
-   again adds any that are missing.
+3. **LoopData does not know the report yet.**  The live label reads
+   `NO ENTRY` — see below.
 
 The clock in the lower right may still be showing a time in red while this
 is going on; that is deliberate, not a leftover.  It has a longer threshold
@@ -40,10 +39,32 @@ of its own — see [`clock_max_age`](configuration.html#clock_max_age).
 ## The live label reads `HTTP 404`, and the clock says `check loop_data_file`
 
 `loop_data_file` is a URL as the *browser* resolves it, not a path on the
-server.  A bare filename means "in this report's `HTML_ROOT`".  If LoopData
+server, relative to this report's `HTML_ROOT`.  As shipped,
+`../loopdata/loop-data.txt`, it points where a stock LoopData writes — its
+own sample report's directory, `loopdata`, beside this one.  If LoopData
 writes somewhere else — `/dev/shm` is a popular choice — that directory has
-to be reachable over HTTP, or LoopData has to write into `HTML_ROOT`
-instead.
+to be reachable over HTTP and this setting has to name it, or LoopData has
+to write somewhere under `public_html` instead.
+
+## The live label reads `NO ENTRY`, and the clock says `restart WeeWX`
+
+`loop-data.txt` is being served and is LoopData's json, but it has no
+`WeatherBoardReport` entry.  LoopData reads each report's declaration when
+weewxd starts, while the report engine reads the skin afresh every cycle
+— so between installing (or upgrading) the board and restarting WeeWX,
+the new page exists and its entry does not.  Restart WeeWX.
+
+If a restart does not clear it, LoopData is not writing this report's
+entry at all.  Check the WeeWX log at startup: LoopData logs one line per
+declaring report, and the board's should be among them.  (Renaming the
+`[[WeatherBoardReport]]` stanza is not the cause: the entry is keyed by
+the report name, and the page reads the name of the stanza that built it,
+so the two move together.)  Two things do get here: a `loop_data_file`
+pointing at a file some *other* station's LoopData writes, which carries
+that station's reports and not this one; and a LoopData older than 7.0,
+which writes no report entries at all, only the flat keys of the old
+`fields` line — the installer refuses that, but a downgrade afterwards
+lands here.
 
 ## The live label reads `BAD DATA`
 
@@ -73,20 +94,22 @@ by default.  The fetch is fine; the data behind it is not.
 If the label reads `??`, the loop record carries no usable
 `current.dateTime.raw`, so the board cannot work out how old it is and will
 not vouch for a time it cannot age.  The clock blanks even though
-`current.dateTime.format("%X")` is present and perfectly fresh — so check
-`current.dateTime.raw` on the `fields` line, not the `%X` field.
+`current.dateTime.format("%X")` is present and perfectly fresh — so look for
+`current.dateTime.raw` in the report's entry, not the `%X` field.
 
-Otherwise the `fields` line does not carry
-`current.dateTime.format("%X")` at all.  For either missing field, install
-the extension again (the installer adds it, along with any other field the
-board reads that is missing), or add it by hand and restart WeeWX.
+Otherwise the entry does not carry `current.dateTime.format("%X")` at all.
+Both fields ship in the skin's declaration, so either is missing only if
+the declaration was overridden — a `[[[LoopData]]] [[[[fields]]]]` group
+named `clock` under the report's stanza in `weewx.conf` replaces the
+skin's — or the shipped `skin.conf` was edited.  Put the field back and
+restart WeeWX.
 
 Note that the readings blank well before the clock does, at
 [`max_age`](configuration.html#max_age).  A board showing question marks
 everywhere with the time still in red is not a bug: a reading seconds old
 has stopped being true, while a clock seconds slow is still a clock.
 
-If you put a different strftime string in the `fields` line, that is the
+If you put a different strftime string in the declaration, that is the
 cause: the board looks for the `%X` spelling specifically, so anything else
 leaves it with no field to read.  Put `%X` back; see
 [the time format](configuration.html#the-time-format).
@@ -98,7 +121,7 @@ locale and `21:44:14` under most others.  That locale comes from weewxd's
 environment (`LANG`), not from a report's `lang` — a weewxd started with no
 `LANG`, which is usual in a container, renders 24-hour times.  Set `LANG` in
 the service environment.  Pinning a different strftime string in the
-`fields` line is not an alternative: the board looks for the `%X` spelling,
+declaration is not an alternative: the board looks for the `%X` spelling,
 so anything else leaves the corner reading `??:??:??` — see
 [the time format](configuration.html#the-time-format).
 
@@ -111,7 +134,7 @@ so what you are seeing is what the station believes.
 The clock is set in 95px monospace, in a footer cell 65% of the board's
 width, and some locales' `%X` includes a timezone — more characters than
 that cell can hold.  This is a locale effect rather than a styling one: the
-lever is weewxd's `LANG`, not the `fields` line and not the stylesheet.  See
+lever is weewxd's `LANG`, not the declaration and not the stylesheet.  See
 [the time format](configuration.html#the-time-format).
 
 ## The board says `Expired`, with `CLICK-ME` in the corner
@@ -136,17 +159,19 @@ it is behind, but not so far behind that it has stopped being a clock.
 
 ## The air quality reading is missing
 
-It needs `show_purple = True`, a working
-[weewx-purple](https://github.com/chaunceygardiner/weewx-purple), and two
-LoopData fields.  If the cell shows `???`, the fields are not arriving; if
-it is simply empty and the footer legend does not mention air quality,
-`show_purple` is off.
+It needs `show_purple = True` and a working
+[weewx-purple](https://github.com/chaunceygardiner/weewx-purple).  If the
+cell shows `???`, the two AQI fields are not arriving — the skin declares
+them, so LoopData is omitting them because the station reports no
+`pm2_5`; if it is simply empty and the footer legend does not mention air
+quality, `show_purple` is off.
 
 ## One reading shows question marks and the rest are fine
 
-Either your station does not report that observation, or that one field is
-missing from the `fields` line.  Look in `loop-data.txt` for the field named
-on the [Reading the board](reading-the-board.html#the-readings) page.
+Your station does not report that observation: LoopData omits a field
+whose observation is not in the loop packet.  Look in the
+`WeatherBoardReport` entry of `loop-data.txt` for the field named on the
+[Reading the board](reading-the-board.html#the-readings) page.
 
 ## A CSS change has not taken effect
 

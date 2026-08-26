@@ -11,7 +11,7 @@ nav_order: 2
 ---
 
 **Requirements:** WeeWX 4.6 or later, Python 3.7 or later, and
-[weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 6.0 or
+[weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 7.0 or
 later.  There is no Python in this skin beyond its installer: the board is
 Cheetah templates and vanilla javascript.
 
@@ -24,13 +24,17 @@ then shows question marks forever.  Install it first.
 
 Follow the
 [LoopData installation instructions](https://chaunceygardiner.github.io/weewx-loopdata/installation.html).
-Version 6.0 or later is required: the board asks LoopData for a
-report-formatted timestamp, which is a 6.0 feature.
+Version 7.0 or later is required, and the board's installer refuses to run
+without it.  Since 7.0 a report declares the fields it needs in its own
+skin, and LoopData writes them into `loop-data.txt` under the report's
+name; the board reads that entry and nothing else.
 
 Note where LoopData writes `loop-data.txt` — its `loop_data_dir` — because
-the board has to be able to fetch that file over HTTP.  The simplest
-arrangement, and the default, is to let LoopData write into this report's
-own `HTML_ROOT`.
+the board has to be able to fetch that file over HTTP.  LoopData's default
+is its own sample report's directory, `loopdata`, which sits beside this
+board's `weatherboard` under `public_html`, and the board's shipped
+`loop_data_file` points exactly there; if you move LoopData's file, move
+that setting with it (step 3).
 
 ## 2. Install the skin
 
@@ -51,9 +55,10 @@ sudo /home/weewx/bin/wee_extension --install weewx-weatherboard.zip
 
 (Adjust the path if WeeWX is installed elsewhere.)
 
-The installer does two things: it adds a `[[WeatherBoardReport]]` stanza to
-`[StdReport]` in `weewx.conf`, and it adds the LoopData fields the board
-reads to your `[LoopData] [[Include]] fields` line.
+The installer checks that LoopData 7.0 or later is installed — if not it
+stops, saying whether LoopData is missing or which older version it found
+— and adds a `[[WeatherBoardReport]]` stanza to `[StdReport]` in
+`weewx.conf`.  That is all it does.
 
 ## 3. What the installer added
 
@@ -69,7 +74,7 @@ The report stanza:
         title = Acme Weather WeatherBoard&trade;
         subtitle = Updated continuously.
         logo = weatherboard_logo.png
-        loop_data_file = loop-data.txt
+        loop_data_file = ../loopdata/loop-data.txt
         max_age = 10
         clock_max_age = 120
         expiration_time = 4
@@ -83,14 +88,27 @@ The report stanza:
 Every one of those is described on the
 [Configuration](configuration.html) page.  At minimum, replace the Acme
 Weather placeholders with your own site's name and choose your own
-`page_update_pwd`.
+`page_update_pwd`.  `loop_data_file` as shipped points at where a stock
+LoopData writes — its own sample report's `HTML_ROOT`, `loopdata`, beside
+the board's — so with both extensions at their defaults it needs nothing;
+if LoopData writes somewhere else, point it there (a URL relative to the
+board's page).  A board pointed where nothing is written reads `HTTP 404`
+with `check loop_data_file` in the corner.
 
 {: .note }
 WeeWX merges settings that are missing but never overwrites ones already
 there, so on an upgrade your edits survive and only genuinely new settings
 appear.
 
-The fields the installer adds to `[LoopData] [[Include]]`:
+### The fields the board reads
+
+Nothing in `weewx.conf` lists them.  The skin declares them itself, in
+`skins/WeatherBoard/skin.conf`, as a `[LoopData] [[fields]]` section of
+named groups — LoopData's
+[declaration](https://chaunceygardiner.github.io/weewx-loopdata/declaring-fields.html)
+— and LoopData writes them into `loop-data.txt` under the report's name,
+`WeatherBoardReport`, converted and formatted the way this report would
+render them:
 
 ```
 current.dateTime.raw, current.dateTime.format("%X"), current.outTemp,
@@ -98,36 +116,20 @@ current.dewpoint, current.windSpeed.formatted, current.windSpeed.raw,
 current.windDir.ordinal_compass, 10m.windGust.max.formatted,
 day.windGust.max, current.UV.formatted, current.barometer.formatted,
 trend.barometer.code, day.rain.sum.formatted, 24h.rain.sum.formatted,
-current.rainRate
+current.rainRate, current.pm2_5_aqi.formatted, current.pm2_5_aqi_color.raw
 ```
 
-Fields already in your list are left alone, and nothing is removed or
-reordered: that line is yours, and it usually feeds other pages too.
+The last two are the air quality reading, shown with `show_purple` set.
+They are declared whether or not it is: LoopData omits a field whose
+observation the station does not report, so on a station without
+weewx-purple they simply never appear, and turning `show_purple` on later
+needs nothing but the setting.
 
-If `[LoopData]` is not in `weewx.conf` yet — you installed the board before
-LoopData — the installer cannot add anything.  It prints the list and tells
-you what to do about it.
-
-The simplest cure is to install LoopData and then **install the board
-again**; the second run finds `[LoopData]` and adds the fields for you.  Do
-not skip that second run on the grounds that both extensions are now
-installed.  LoopData's own installer writes a `fields` line for its sample
-page, and WeeWX adds settings that are missing but never overwrites ones
-already there — so a `fields` line LoopData just created is left exactly as
-it is, without any of the fields the board reads, and the board comes up
-showing question marks everywhere.  Installing the board again fixes it.
-
-With `show_purple` set, two more fields are needed for the air quality
-reading:
-
-```
-current.pm2_5_aqi.formatted, current.pm2_5_aqi_color.raw
-```
-
-The installer adds those too when it finds `show_purple = True` already in
-your configuration.  If you turn `show_purple` on later, either add the two
-fields by hand or simply install the extension again — it will notice they
-are missing.
+The installer does not touch the older `[LoopData] [[Include]] fields`
+line in `weewx.conf`.  If you upgraded from 4.0, that line still carries
+the board's fields, and LoopData warns at startup that the line is
+deprecated; leave it alone — a later LoopData release removes it.  See
+[Upgrading](upgrading.html#upgrading-to-41).
 
 {: .note }
 Running [purple-proxy](https://github.com/chaunceygardiner/purple-proxy)
@@ -144,6 +146,11 @@ sudo systemctl restart weewx
 
 The board appears at `<your weewx url>/weatherboard/` after the next report
 cycle — typically within five minutes.
+
+The restart is not optional.  LoopData reads each report's declaration
+when weewxd starts, so until then there is no `WeatherBoardReport` entry
+in `loop-data.txt`, and a board page that is somehow already there reads
+`NO ENTRY` with `restart WeeWX` in the corner.
 
 ## 5. Point the tablet at it, and keep it awake
 

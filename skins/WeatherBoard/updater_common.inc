@@ -238,8 +238,17 @@
     return 'rgb(' + red + ',' + green + ',' + blue + ')';
   }
 
+  // True for a json object proper: not null, not an array, not a
+  // primitive.  loopdata's file is one, and so is each report's entry in
+  // it; anything else that parses is some other server's json.
+  function isJsonObject(value) {
+    return value !== null && typeof value === 'object'
+        && !Array.isArray(value);
+  }
+
   // Pad a reading on the left to `width` characters using no-break spaces
   // so the monospace columns don't shift as values change length.
+
   function padLeft(value, width) {
     return value.padStart(width).replaceAll(' ', '&nbsp;');
   }
@@ -480,12 +489,42 @@
       }
       var result;
       try {
-        result = JSON.parse(this.responseText);
+        // Since loopdata 7.0 the file carries each declaring report's
+        // fields under the report's name -- the [StdReport] section name,
+        // not the skin's: one skin can be listed under two reports -- so
+        // this page takes its own entry and reads nothing else.  The name
+        // goes through jsstr like every other string Cheetah hands this
+        // script: a report name is any [StdReport] section name, quotes
+        // and non-ASCII included.
+        var file = JSON.parse(this.responseText);
+        // Anything that parses but is not a json object -- an array, a
+        // string, a number, null -- is some other server's json, and
+        // belongs with the non-json case below rather than with a file of
+        // loopdata's that lacks this report.
+        if (!isJsonObject(file)) {
+          throw new Error('loop_data_file is json, but not a json object');
+        }
+        result = file[$jsstr($REPORT_NAME)];
       } catch (e) {
-        // A 2xx whose body isn't json: loop_data_file points at
-        // something, but not at loopdata's output.
+        // A 2xx whose body isn't json, or isn't a json object:
+        // loop_data_file points at something, but not at loopdata's
+        // output.
         markDisconnected("BAD DATA", "check loop_data_file");
         console.log(e);
+        return;
+      }
+      if (!isJsonObject(result)) {
+        // json, but with no entry for this report -- or, from some file
+        // that is not loopdata's, an entry that is not an object.  Almost
+        // always weewxd not restarted since the board was installed: the
+        // report engine reads the skin's declaration afresh every cycle,
+        // so it built this page, but the loopdata service inside weewxd
+        // is still running on the declarations it read at startup, and
+        // does not know this report yet.  Or loop_data_file points at a
+        // file some other station's loopdata writes.  Either way the file
+        // is there and this page's data is not; a label of its own, so
+        // the manual can name the cure.
+        markDisconnected("NO ENTRY", "restart WeeWX");
         return;
       }
       errorCount = 0;
@@ -551,7 +590,7 @@
         setLiveLabelClass(getActivityClass(age));
 
         // The time of the last update, on the STATION's clock.  loopdata
-        // renders this field through the target report's WeeWX formatter,
+        // renders this field through this report's own WeeWX formatter,
         // so it carries the station's timezone, locale and time format.
         // The browser's own formatting showed the TABLET's instead, and a
         // wall display can sit in another timezone -- or simply have its
@@ -568,9 +607,9 @@
         // seconds slow is still the best clock in the room, and blueing
         // it there would spend the warning on something that does not
         // need warning about.  A missing field is different again and
-        // goes blue at once: the weewx.conf fields line does not list it,
-        // so there is no time to show, and a time this page cannot vouch
-        // for is worse than none.
+        // goes blue at once: the skin's declaration does not list it, so
+        // there is no time to show, and a time this page cannot vouch for
+        // is worse than none.
         var activityElement = document.getElementById("activity-string");
         var clockKey = 'current.dateTime.format("%X")';
         if (age < clock_max_age && result.hasOwnProperty(clockKey)) {

@@ -42,12 +42,12 @@ at different speeds.  A temperature fifteen seconds old has stopped being
 true, while a clock fifteen seconds slow still tells you what time it is, so
 blueing it there would spend the warning on something that does not need
 warning about.  The clock reads `??:??:??` immediately, whatever the age,
-when its field is missing from your `fields` line altogether.
+when its field is missing from the report's entry altogether.
 
 The board itself keeps working the whole time.  A reading whose field is
-missing from `loop-data.txt` — an observation your station does not report,
-or a field left out of the `fields` line — blanks only itself; everything
-else goes on updating.
+missing from `loop-data.txt` — an observation your station does not
+report, which LoopData omits — blanks only itself; everything else goes on
+updating.
 
 ## How age is measured
 
@@ -92,6 +92,11 @@ depends on how it failed:
   — the classic being a file in `/dev/shm` with nothing serving it.
 * A response that is not json shows `BAD DATA`, with the same hint:
   something is being served at that URL, but it is not LoopData's output.
+* LoopData's json with no entry for this report shows `NO ENTRY`, with
+  `restart WeeWX` in place of the clock.  LoopData reads each report's
+  declaration when weewxd starts, so this is what a freshly installed or
+  upgraded board shows until the restart — see
+  [Troubleshooting](troubleshooting.html#the-live-label-reads-no-entry-and-the-clock-says-restart-weewx).
 * A `loop_data_file` that is not a usable URL shows `BAD URL`, again with
   the same hint.  Nothing was ever sent: the browser rejected the address
   itself.
