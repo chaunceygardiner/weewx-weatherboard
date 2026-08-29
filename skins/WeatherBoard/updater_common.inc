@@ -21,7 +21,7 @@
 ## An empty setting would match the empty string every visitor without a
 ## password on the URL presents, and the page would never expire for anyone,
 ## so empty means the shipped default -- the same foobar skin.conf carries.
-  var page_update_pwd = $jsstr($Extras.get('page_update_pwd', 'foobar') or 'foobar');
+  var page_update_pwd = $jsstr($Extras.get('page_update_pwd', '') or 'foobar');
   // Every numeric Extra below is whatever the user typed in weewx.conf.
   // Interpolated bare, a non-numeric value renders as a javascript
   // identifier rather than a number (the word ten, not 10) and throws a
@@ -66,16 +66,16 @@
 ## triple-quoted weewx.conf value, a < that would end the script element --
 ## it reaches numExtra as a well formed string literal, fails Number(), and
 ## falls back to the default.
-  var refresh_rate = numExtra($jsstr($Extras.get('refresh_rate', 2)), 2);
-  var expiration_time = numExtra($jsstr($Extras.get('expiration_time', 4)), 4);
+  var refresh_rate = numExtra($jsstr($Extras.get('refresh_rate', '')), 2);
+  var expiration_time = numExtra($jsstr($Extras.get('expiration_time', '')), 4);
   // How old a loop record may be before the readings it feeds show
   // question marks instead.  The default suits a station emitting loop
   // packets every couple of seconds; raise it for a slower one.
-  var max_age = numExtra($jsstr($Extras.get('max_age', 10)), 10);
+  var max_age = numExtra($jsstr($Extras.get('max_age', '')), 10);
   // The clock gets its own, longer threshold, because it is answering a
   // different question than the readings are.  A temperature a minute old
   // is a stale reading; a clock a minute slow is still a clock.
-  var clock_max_age = numExtra($jsstr($Extras.get('clock_max_age', 120)), 120);
+  var clock_max_age = numExtra($jsstr($Extras.get('clock_max_age', '')), 120);
   // The clock's threshold never sits below the readings'.  The two are
   // configured independently, and a station that raised max_age alone --
   // which the docs invite, for a slow emitter -- would otherwise show a
@@ -87,7 +87,6 @@
   }
 
   var pageTimedOut = false;
-  var expiredShown = false;
   var errorCount = 0;
 
   // Staleness tracking.  lastDateTime/lastChangeAt record how long the loop
@@ -116,20 +115,6 @@
   var lastResult = null;
   var lastGoodAge = 0;
   var lastSuccessAt = performance.now();
-
-  function addLoadEvent(func) {
-    var oldonload = window.onload;
-    if (typeof window.onload != 'function') {
-      window.onload = func;
-    } else {
-      window.onload = function() {
-        if (oldonload) {
-          oldonload();
-        }
-        func();
-      }
-    }
-  }
 
   function getUrlParam(paramName) {
       var name, regexS, regex, results;
@@ -164,7 +149,21 @@
   }
 
   function expirePage() {
+    // The corner is painted here rather than on the next poll.  The flag
+    // alone left the board reading LIVE, with a ticking clock, for as long
+    // as one refresh_rate after it had in fact stopped polling -- the one
+    // state in which the numbers on screen are going nowhere and nothing
+    // says so.  Expiry and the look of expiry now happen together.
     pageTimedOut = true;
+    document.getElementById("live-label").innerHTML = "Expired";
+    var activityElement = document.getElementById("activity-string");
+    activityElement.innerHTML = "CLICK-ME";
+    // A board can reach its expiry while already disconnected, and CLICK-ME
+    // in the fault blue reads as a failure rather than as a board waiting to
+    // be started again.
+    activityElement.classList.remove("disconnected");
+    // set an onclick event to restart
+    activityElement.addEventListener("click", clickListener);
   }
 
   function clickListener() {
@@ -172,15 +171,14 @@
     var activityElement = document.getElementById("activity-string");
     activityElement.removeEventListener('click', clickListener);
     activityElement.innerHTML = "";
-    // Belt and braces: the expiry paint in updateCurrent already cleared
-    // the disconnected color before attaching this listener, and nothing
+    // Belt and braces: the expiry paint in expirePage already cleared the
+    // disconnected color before attaching this listener, and nothing
     // repaints the corner after expiry, so this is a no-op unless that
     // changes.
     activityElement.classList.remove("disconnected");
     document.getElementById("live-label").innerHTML = "";
     // restart everything
     pageTimedOut = false;
-    expiredShown = false;
     setPageExpirationTimer();
   }
 
@@ -331,35 +329,32 @@
   }
 
   function markDisconnected(code, hint) {
+    // An expired page does nothing at all.  A request issued just before
+    // expiry can fail just after it -- the 1800 ms XHR timeout outlives a
+    // short poll interval -- and none of what follows is wanted then:
+    // painting over Expired / CLICK-ME would hide the one affordance the
+    // expired state exists to show, and the ageing block calls
+    // updateReadings, which is the including updater's and free to fetch
+    // files of its own.  A board that has stopped polling must not still be
+    // reaching the network.  The mirror of the guard in onload.
+    if (pageTimedOut) {
+      return;
+    }
     // With a code and hint (the config-shaped failures: an HTTP error
     // status, a body that isn't json) the label and clock name the
     // problem; without them (a network-level failure, presumed
     // transient) the label blanks and the clock keeps its last time.
     // Either way the clock wears the disconnected color, and a later
     // successful poll restores everything.
-    //
-    //
-    // Except once the page has expired.  A request issued just before
-    // expiry can fail just after it -- the 1800 ms XHR timeout outlives a
-    // short poll interval -- and painting the disconnected look over
-    // Expired / CLICK-ME would hide the one affordance the expired state
-    // exists to show.  The corner is left alone; the failure is still
-    // counted and logged, and the ageing block below still runs -- though
-    // for the request or two that can still be in flight it adds only a
-    // couple of seconds to the last known age, so it changes nothing unless
-    // the board was already within a couple of seconds of max_age when it
-    // expired.
     errorCount += 1;
     console.log('loop data fetch failed; consecutive failures: ' + errorCount);
-    if (!pageTimedOut) {
-      document.getElementById("live-label").innerHTML =
-          code ? "&nbsp;" + code + "&nbsp;" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-      var activityElement = document.getElementById("activity-string");
-      if (hint) {
-        activityElement.innerHTML = hint;
-      }
-      activityElement.classList.add("disconnected");
+    document.getElementById("live-label").innerHTML =
+        code ? "&nbsp;" + code + "&nbsp;" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+    var activityElement = document.getElementById("activity-string");
+    if (hint) {
+      activityElement.innerHTML = hint;
     }
+    activityElement.classList.add("disconnected");
 
     // The readings age out through an outage too.  A failed poll never
     // reaches updateReadings, so without this every number would sit at
@@ -394,18 +389,6 @@
 
   function updateCurrent() {
     if (pageTimedOut) {
-      if (!expiredShown) {
-        expiredShown = true;
-        document.getElementById("live-label").innerHTML = "Expired";
-        var activityElement = document.getElementById("activity-string");
-        activityElement.innerHTML = "CLICK-ME";
-        // As in clickListener: a board can reach its expiry while already
-        // disconnected, and CLICK-ME in the fault blue reads as a failure
-        // rather than as a board waiting to be started again.
-        activityElement.classList.remove("disconnected");
-        // set an onclick event to restart
-        activityElement.addEventListener("click", clickListener);
-      }
       return;
     }
     var xhttp = new XMLHttpRequest();
@@ -575,7 +558,17 @@
 ## is a URL the user types, and a quote, a backslash or a </script> in it
 ## would end the literal -- or the script element -- and abort the whole
 ## updater rather than producing a bad fetch.
-      var url = $jsstr($Extras.get('loop_data_file', 'loop-data.txt'));
+      // Empty means the default, as page_update_pwd does and for the same
+      // reason: an empty setting resolves against the page's own URL, so the
+      // board polled ITSELF, parsed its own html as json, and sat on BAD
+      // DATA for ever.  The literal here is a backstop, not the usual
+      // answer: skin.conf ships loop_data_file and is merged before the
+      // report's stanza, so an ABSENT setting is answered there and never
+      // reaches this.  Only a setting present and blank gets this far.  Both
+      // spell the same place -- where a stock weewx-loopdata writes, its own
+      // sample report's HTML_ROOT beside this board's -- and the guard in
+      // tests/check_templates.py holds the two in step.
+      var url = $jsstr($Extras.get('loop_data_file', '') or '../loopdata/loop-data.txt');
       url += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + (cacheBuster++);
       xhttp.open("GET", url, true);
       // The unique URL misses a cache that keys on path alone, so ask for
@@ -601,12 +594,38 @@
     }
   }
 
-  // Set page expiration timer and start polling.
-  setPageExpirationTimer();
-  // Floored at one second: numExtra accepts any positive number, and a
-  // refresh_rate of 0.01 would arm a 10 ms interval with no in-flight
-  // guard, piling up overlapping requests against the server.  The floor
-  // caps the overlap rather than removing it: the XHR timeout is 1800 ms,
-  // so at a one second rate a slow server can still have two in flight.
-  setInterval(updateCurrent, clampDelay(Math.max(refresh_rate, 1) * 1000));
-  addLoadEvent(updateCurrent);
+  function startUpdating() {
+    // Set page expiration timer and start polling.
+    setPageExpirationTimer();
+    // Floored at one second: numExtra accepts any positive number, and a
+    // refresh_rate of 0.01 would arm a 10 ms interval with no in-flight
+    // guard, piling up overlapping requests against the server.  The floor
+    // caps the overlap rather than removing it: the XHR timeout is 1800 ms,
+    // so at a one second rate a slow server can still have two in flight.
+    setInterval(updateCurrent, clampDelay(Math.max(refresh_rate, 1) * 1000));
+    updateCurrent();
+  }
+
+  // Armed once the document has been parsed -- not while this script is still
+  // being parsed, and not at window load.  The updater is included at the top
+  // of the body, so the elements it paints -- live-label, activity-string,
+  // every reading -- do not exist yet at this point in the file, and a timer
+  // that fired before the rest of the body was parsed would find
+  // getElementById returning null and throw inside the timer.
+  // expiration_time is in hours, but nothing stops a station setting a
+  // fraction of one, and the poll interval is a second, so neither timer is
+  // too slow for that to be reachable.
+  //
+  // DOMContentLoaded rather than load, which waits for every subresource: the
+  // analytics include puts an async script element, fetched from a
+  // third-party host, in the head, and on a wall tablet that has lost its
+  // route out -- or behind a resolver that blackholes rather than refuses --
+  // that connect hangs for the OS timeout and the load event hangs with it.  Nothing would be armed
+  // for that whole window: no poll, no live label, no expiry, the board
+  // frozen on its report-cycle numbers with nothing saying so.  What this
+  // needs is the elements, and DOMContentLoaded is when they exist.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startUpdating);
+  } else {
+    startUpdating();
+  }

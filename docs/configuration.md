@@ -31,6 +31,42 @@ survives upgrades, and the shipped skin does not.
 Writing `public_html/weatherboard` here would install the board to
 `public_html/public_html/weatherboard`.
 
+## Settings that are commented out
+
+Some settings appear in `weewx.conf` with a `#` in front of them, and a
+comment above saying what they do:
+
+```
+            # Seconds between polls.  A good choice is the rate at which
+            # your station's driver emits loop packets.  Never armed faster
+            # than once a second, whatever is set.
+            #refresh_rate = 2
+```
+
+That is not a setting that has been turned off.  A commented line does
+nothing, so the value the skin itself ships — in
+`skins/WeatherBoard/skin.conf` — is the one that applies, and the line in
+`weewx.conf` is there to tell you what that value is and give you something
+to edit.  Leaving it commented is what lets a later release improve a
+default: an upgrade replaces the skin, and never rewrites `weewx.conf`.
+
+Go by what you see in your own file, not by which release you installed:
+
+* Where it reads `#refresh_rate = 2`, remove the `#` and change the value.
+* Where it reads `refresh_rate = 2`, with no `#`, just change the value.
+* Where the setting is not there at all, add it inside `[[[Extras]]]`.
+
+All three are correct configurations, and which one you have depends only on
+when the stanza was written.  WeeWX never rewrites a setting that is already
+in `weewx.conf`, so an upgrade leaves yours exactly as it is — including the
+comments, which an upgrade will not add to a stanza that already exists.
+
+{: .important }
+Keep an uncommented setting inside `[[[Extras]]]`, at the same indentation as
+the settings around it.  A setting that ends up one level out — directly
+under `[[WeatherBoardReport]]` — is read by nothing, and nothing will warn
+you.
+
 ## The Extras
 
 {: .note }
@@ -59,7 +95,9 @@ from, as a URL the *browser* resolves, relative to this report's
 `loop_data_dir` default is its own sample report's `HTML_ROOT`,
 `loopdata`, beside this one.  Either side can move — LoopData's
 `loop_data_dir` or this setting — as long as the browser can fetch the
-result.
+result.  An empty setting means the default, not "this page": an empty URL
+resolves to the page itself, so the board would fetch its own HTML,
+find no loop data in it and show `BAD DATA` for ever.
 
 Pointing this at another host works, with two conditions.  That server must
 send `Access-Control-Allow-Origin`, or the browser refuses the fetch and
@@ -139,6 +177,14 @@ wall-mounted tablet updating indefinitely.  The legacy spelling
 match it, and no page would ever expire.  Quote it in `weewx.conf` if it
 contains a comma.
 
+Percent-encode it when you put it on the URL.  The value there is
+URL-decoded before it is compared, so a `%` followed by two hexadecimal
+digits decodes to something else and stops matching: a password of
+`rain%20or%20shine` has to be written `rain%2520or%2520shine` on the URL.
+Write every `%` as `%25` and it is right in every case.  `&` and `#` need
+the same treatment -- `%26` and `%23` -- because both end the parameter
+where they stand.
+
 {: .note }
 This password is visible to anyone who views the page source, by design.
 It is a keep-alive gate, not a secret.
@@ -173,8 +219,8 @@ copy of the page out of your statistics.
 
 ## Labels
 
-The wording in the footer legend, and the AQI heading, come from
-`[[[Labels]]] [[[[Generic]]]]`:
+The wording in the footer legend, and the AQI heading, come from the skin's
+own `[Labels] [[Generic]]`, in `skins/WeatherBoard/skin.conf`:
 
 | Label | Default |
 |---|---|
@@ -186,7 +232,12 @@ The wording in the footer legend, and the AQI heading, come from
 | `time_of_day` | Time |
 | `high_gust_today` | Today's High Gust |
 
-Override any of them in `weewx.conf` to change the legend's wording.
+To change any of them, add a `[[[Labels]]] [[[[Generic]]]]` section to the
+report's stanza in `weewx.conf` with just the labels you want to reword —
+the stanza outranks the skin, and unlike the skin it survives an upgrade.
+A station configured under an earlier release may already have that section,
+carrying all seven at their defaults; there is no need to remove it, and
+editing it works the same way.
 
 ## Units and number formats
 

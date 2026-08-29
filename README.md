@@ -121,15 +121,34 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
            subtitle = Updated continuously.
            logo = weatherboard_logo.png
            loop_data_file = ../loopdata/loop-data.txt
-           max_age = 10
-           clock_max_age = 120
-           expiration_time = 4
-           page_update_pwd = foobar
+           #max_age = 10
+           #clock_max_age = 120
+           #expiration_time = 4
+           #refresh_rate = 2
+           #show_purple = False
            googleAnalyticsId = ""
            analytics_host = ""
-           show_purple = False
-           refresh_rate = 2
+           page_update_pwd = foobar
+       [[[Units]]]
+           [[[[StringFormats]]]]
+               mile_per_hour = %.0f
+               degree_C = %.1f
+               km_per_hour = %.0f
+               degree_F = %.1f
    ```
+
+   Explanatory comments are written above each setting; they are left out
+   here for brevity.  The settings with a `#` in front of them are not
+   turned off — they are the board's own defaults, written down where you
+   can see them, so that a later release can improve a default instead of
+   the value being frozen in your `weewx.conf` for ever.  To change one,
+   remove the `#` and edit the value.
+
+   Go by what your own file shows rather than by which release you
+   installed: a station configured under an earlier release has these
+   settings live, with no `#` to remove, and one older still may not have
+   them at all — in which case add them inside `[[[Extras]]]`.  All three
+   are correct; WeeWX never rewrites a setting that is already there.
 
 1. Edit the `Extras` section to suit your site.
    * `title`, `meta_title`, `subtitle`: your site's branding.  Acme Weather is a

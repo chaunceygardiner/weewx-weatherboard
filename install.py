@@ -2,7 +2,11 @@
 # Distributed under the terms of the GNU Public License (GPLv3)
 # See LICENSE for your rights.
 
+import io
 import sys
+
+import configobj
+
 import weewx
 from setup import ExtensionInstaller
 
@@ -83,59 +87,106 @@ def version_tuple(version):
         parts.append(0)
     return tuple(parts)
 
+# The stanza weectl merges into weewx.conf, as text rather than a dict so
+# that these comments travel with it.  weectl's merge fills in absent keys
+# and never rewrites a present one, so an option written LIVE here freezes
+# every fresh install on today's default for ever, while one written
+# COMMENTED OUT leaves the skin's own value -- skin.conf, which an upgrade
+# replaces -- to answer, so a later release can improve a default and have
+# it reach every station.  The options that stay live are HTML_ROOT, enable
+# and skin (weectl needs them), the branding and the two analytics keys
+# (placeholders to fill in), loop_data_file and page_update_pwd.
+#
+# A commented option needs a live key after it in the same section: weectl
+# attaches a comment block to the NEXT key and drops it entirely if the
+# target already has that key.  page_update_pwd anchors [[[Extras]]].
+CONFIG = """
+[StdReport]
+    [[WeatherBoardReport]]
+        HTML_ROOT = weatherboard
+        enable = true
+        skin = WeatherBoard
+        [[[Extras]]]
+            # The branding across the top of the board and in the browser's
+            # title bar.  Acme Weather is a placeholder; put your own site's
+            # name here.  HTML entities are allowed.
+            meta_title = Acme Weather at a Glance WeatherBoard&trade;
+            title = Acme Weather WeatherBoard&trade;
+            subtitle = Updated continuously.
+            # The mark at the left of the title bar, as a URL the browser
+            # resolves.  A generic weather icon ships with the skin; point
+            # this at your own image, or set it to "" for no mark at all.
+            logo = weatherboard_logo.png
+            # Where the page fetches loop data from, as a URL the browser
+            # resolves, relative to this report's HTML_ROOT.  This is where
+            # a stock weewx-loopdata writes: its own sample report's
+            # HTML_ROOT, loopdata, beside this board's.  Either side can
+            # move, as long as the browser can fetch the result.
+            loop_data_file = ../loopdata/loop-data.txt
+            # The five settings below only select the value skin.conf
+            # already ships, so they ship commented out with that value
+            # shown.  Uncomment one and change it to override it.
+            #
+            # How old the loop record may be, in seconds, before the
+            # readings it feeds show question marks instead.  The default
+            # suits a station emitting loop packets every couple of
+            # seconds; raise it for a slower one.
+            #max_age = 10
+            # The clock's own, longer threshold, in seconds: a temperature
+            # a minute old is a stale reading, while a clock a minute slow
+            # is still a clock.  Never sits below max_age.
+            #clock_max_age = 120
+            # Hours before a page WITHOUT the keep-alive password on its
+            # URL stops polling.  It then shows Expired, and a click starts
+            # it again.
+            #expiration_time = 4
+            # Seconds between polls.  A good choice is the rate at which
+            # your station's driver emits loop packets.  Never armed faster
+            # than once a second, whatever is set.
+            #refresh_rate = 2
+            # Set to True to show the air quality index, which requires
+            # weewx-purple.
+            #show_purple = False
+            # With an ID set, the board loads Google Analytics.
+            # analytics_host restricts that to one hostname, which keeps a
+            # development copy of the page out of your statistics.
+            googleAnalyticsId = ""
+            analytics_host = ""
+            # Put this on the URL as ?page_update_pwd=... and the page
+            # never expires -- what a wall-mounted tablet wants.  Change it
+            # from the shipped placeholder.  It is visible in the page
+            # source by design: a keep-alive gate, not a secret.
+            page_update_pwd = foobar
+        # These four are the formats the board's fixed-width columns are
+        # built around, and they are pinned HERE, live, on purpose.  They
+        # match WeeWX's own defaults, so on an ordinary station they change
+        # nothing; what they do is keep a station that set different
+        # formats site-wide in [[Defaults]] from widening a column past the
+        # room the layout gives it.  A report's own stanza is the only
+        # place that can hold that pin -- skin.conf loses to [[Defaults]].
+        [[[Units]]]
+            [[[[StringFormats]]]]
+                mile_per_hour = %.0f
+                degree_C = %.1f
+                km_per_hour = %.0f
+                degree_F = %.1f
+"""
+
+
+def installer_config():
+    """The stanza as weectl wants it: a ConfigObj, comments and all."""
+    return configobj.ConfigObj(io.StringIO(CONFIG), encoding='utf-8')
+
+
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "4.1",
+            version = "4.2",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
             author_email = "john@johnkline.com",
-            config = {
-                'StdReport': {
-                    'WeatherBoardReport': {
-                        'HTML_ROOT':'weatherboard',
-                        'enable': 'true',
-                        'skin':'WeatherBoard',
-                        'Extras': {
-                            'meta_title'       : 'Acme Weather at a Glance WeatherBoard&trade;',
-                            'title'            : 'Acme Weather WeatherBoard&trade;',
-                            'subtitle'         : 'Updated continuously.',
-                            'logo'             : 'weatherboard_logo.png',
-                            # Where a stock weewx-loopdata writes: its own sample
-                            # report's HTML_ROOT, loopdata, beside this board's.
-                            'loop_data_file'   : '../loopdata/loop-data.txt',
-                            'max_age'          : 10,
-                            'clock_max_age'    : 120,
-                            'expiration_time'  : 4,
-                            'page_update_pwd'  : 'foobar',
-                            'googleAnalyticsId': '',
-                            'analytics_host'   : '',
-                            'show_purple'      : False,
-                            'refresh_rate'     : 2,
-                        },
-                        'Labels': {
-                            'Generic': {
-                                'air_quality_index': 'Air Quality Index',
-                                'legend'           : 'Legend',
-                                'rainToday'        : 'Rain Today',
-                                'rain24h'          : 'Rain 24h',
-                                'ten_min_max_gust' : '10m Gust',
-                                'time_of_day'      : 'Time',
-                                'high_gust_today'  : "Today's High Gust",
-                            },
-                        },
-                        'Units' : {
-                            'StringFormats': {
-                                'mile_per_hour': '%.0f',
-                                'degree_C': '%.1f',
-                                'km_per_hour': '%.0f',
-                                'degree_F': '%.1f',
-                            },
-                        },
-                    },
-                },
-            },
+            config = installer_config(),
             files = [('skins/WeatherBoard', [
                 'skins/WeatherBoard/analytics.inc',
                 'skins/WeatherBoard/apple-touch-icon-180x180.png',
