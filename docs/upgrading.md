@@ -31,6 +31,21 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 4.2
+
+Nothing is required, and nothing on a working board changes.  One entry
+here, and only because it is a case of new code reading an old
+`weewx.conf`.
+
+**If your `loop_data_file` is present but empty**, it now means the
+default — `../loopdata/loop-data.txt`, what the skin itself ships — rather
+than the page.  An empty setting used to make the board fetch its own HTML
+and sit on `BAD DATA` for ever.
+
+An expired board also now says `Expired` the moment it stops polling,
+rather than at what would have been its next poll, and stops fetching
+anything at all until it is clicked.  Neither needs anything from you.
+
 ## Upgrading to 4.1
 
 **LoopData 7.0 or later is now required, and must be installed first.**
@@ -186,5 +201,6 @@ unchanged.  See [When data goes missing](missing-data.html).
    or later fixes this for you.
 2. The default `loop_data_file` became `loop-data.txt`, relative to the
    report's `HTML_ROOT`.  If your `loop-data.txt` lives elsewhere, set
-   `loop_data_file` in `[[[Extras]]]`.
+   `loop_data_file` in `[[[Extras]]]`.  (That default moved again in 4.2,
+   to `../loopdata/loop-data.txt` — see above.)
 3. `contact_email` and `contact.inc` were removed.

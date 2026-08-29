@@ -135,9 +135,11 @@ def make_extras(show_purple, title_theme, analytics=True, overrides=None):
         'page_update_pwd': 'testpwd',
         'show_purple': 'True' if show_purple else 'False',
     }
-    # analytics.inc renders its body only when both keys are present, and
-    # the escaping there is exercised only then; the render without them is
-    # the one every station without Google Analytics gets.  Both paths are
+    # googleAnalyticsId ALONE gates analytics.inc's body; analytics_host
+    # only decides whether the gtag calls are wrapped in a host test, and an
+    # id with no host is a working configuration.  The escaping there is
+    # exercised only when the body renders; the render without an id is the
+    # one every station without Google Analytics gets.  All three paths are
     # checked (see main).
     if analytics:
         extras['googleAnalyticsId'] = 'G-TESTID0001'
@@ -429,6 +431,246 @@ def check_installer():
     return failures
 
 
+
+# ---------------------------------------------------------------------------
+# The installer's config stanza.
+#
+# weectl's merge fills in absent keys and never rewrites a present one, so an
+# option written LIVE in the stanza freezes every fresh install on today's
+# default for ever.  Options that only select a default are therefore written
+# COMMENTED OUT, and these guards hold that arrangement in place.  The live
+# set is NAMED here rather than derived: every attempt to state a rule for it
+# has mis-sorted at least one key.
+STANZA_LIVE = (
+    # weectl needs these.
+    'HTML_ROOT', 'enable', 'skin',
+    # Branding: read bare as $Extras.title, with no fallback at all -- a
+    # commented one is a render error, not a default.
+    'meta_title', 'title', 'subtitle',
+    # This branch has no logo Extra at all -- index.html.tmpl includes
+    # logo.inc unconditionally -- so master's entry is deliberately absent.
+    #
+    # This site's own paths and ids, and the settings most likely to be
+    # edited.  The four sidecar files are the indoor board's, and their
+    # staleness limits sit beside them: skin.conf ships neither in_co2_file
+    # nor in_co2_max_age, so those two have nothing behind them but the
+    # updater's own fallback and must stay live here.
+    'loop_data_file', 'in_temp_file', 'in_co2_file', 'in_aqi_file',
+    'solar_array_file', 'in_temp_max_age', 'in_co2_max_age', 'in_aqi_max_age',
+    'solar_array_max_age', 'title_theme',
+    # skin.conf ships show_purple = False and this site's boards want the AQI
+    # reading, so demoting it here would switch it off.  Rule 1 forbids it:
+    # the commented value would not be the one that governs.
+    'show_purple',
+    'googleAnalyticsId', 'analytics_host', 'page_update_pwd',
+    # Pinned deliberately: see the comment on [[[Units]]] in install.py.
+    'mile_per_hour', 'degree_C', 'km_per_hour', 'degree_F',
+)
+
+# Every option that ships commented out, with the value shown beside it.
+# Rule 1: each must equal the fallback that actually governs when the option
+# is absent, or a fresh install silently behaves differently from what the
+# line says.
+STANZA_COMMENTED = {
+    'max_age': '10',
+    'clock_max_age': '120',
+    'expiration_time': '4',
+    'refresh_rate': '2',
+}
+
+# A realistic merge target: a weewx.conf that ALREADY HAS [StdReport].  A
+# virgin file shows dedents; this one shows what a fresh install really does.
+MERGE_TARGET = """
+[Station]
+    station_type = Simulator
+
+[StdReport]
+    SKIN_ROOT = skins
+    HTML_ROOT = public_html
+    [[SeasonsReport]]
+        skin = Seasons
+        enable = true
+    [[Defaults]]
+        [[[Units]]]
+            [[[[Groups]]]]
+                group_temperature = degree_F
+
+[StdArchive]
+    archive_interval = 300
+"""
+
+
+def commented_assignments():
+    """The `#key = value` lines in install.py's CONFIG, as text.  Read from
+    the TEXT because a commented option is absent from the parsed ConfigObj:
+    anything that walks the parsed stanza stops covering these silently."""
+    module = load_installer()
+    found = {}
+    for line in module.CONFIG.split('\n'):
+        m = re.match(r'\s*#(\w+)\s*=\s*(\S.*?)\s*$', line)
+        if m:
+            found[m.group(1)] = m.group(2)
+    return found
+
+
+def skin_conf_defaults():
+    """The [Extras] values skin.conf ships.  These are what actually govern a
+    commented-out stanza option: build_skin_dict merges skin.conf BEFORE the
+    report's own stanza, so an absent stanza key is answered by the skin --
+    which is the point, since an upgrade replaces the skin and never rewrites
+    weewx.conf.  The updater's own fallback is one further link down the
+    chain, reached only if skin.conf drops the key too."""
+    text = io.open(SKIN_CONF, encoding='utf-8').read()
+    section = re.search(r'^\[Extras\]$(.*?)^\[', text, re.M | re.S)
+    if not section:
+        return {}
+    found = {}
+    for line in section.group(1).split('\n'):
+        m = re.match(r"\s*(\w+)\s*=\s*'?\"?([^'\"#]*?)'?\"?\s*$", line)
+        if m and not line.lstrip().startswith('#'):
+            found[m.group(1)] = m.group(2).strip()
+    return found
+
+
+def js_fallbacks():
+    """The default each numeric Extra falls back to, read out of the updater,
+    plus show_purple's, read out of the templates that consume it."""
+    found = {}
+    common = io.open(os.path.join(SKIN, 'updater_common.inc'), encoding='utf-8').read()
+    for key, dflt in re.findall(
+            r"numExtra\(\$jsstr\(\$Extras\.get\('(\w+)',\s*''\)\),\s*([\d.]+)\)", common):
+        found[key] = dflt
+    for name in sorted(os.listdir(SKIN)):
+        if not name.endswith(('.inc', '.tmpl')):
+            continue
+        text = io.open(os.path.join(SKIN, name), encoding='utf-8').read()
+        for key, dflt in re.findall(
+                r"to_bool\(\$Extras\.get\('(\w+)',\s*(\w+)\)\)", text):
+            found.setdefault(key, dflt)
+    return found
+
+
+def check_stanza():
+    """Rule 1 (commented value == the fallback that governs), rule 3 (every
+    comment block lands in its own section at its key's indent), and the count
+    -- which is the only thing that catches a block dropped outright, since a
+    dropped block leaves no line whose indent could be measured."""
+    failures = []
+    try:
+        module = load_installer()
+    except Exception as e:
+        return ['install.py failed to load: %s' % e]
+
+    # No live option may have been demoted, and nothing demoted may be live.
+    parsed = module.installer_config()
+    live = set()
+
+    def walk(section):
+        for k in section.scalars:
+            live.add(k)
+        for k in section.sections:
+            walk(section[k])
+    walk(parsed)
+    for key in STANZA_LIVE:
+        if key not in live:
+            failures.append('%s must stay live in the stanza, and is not' % key)
+    for key in STANZA_COMMENTED:
+        if key in live:
+            failures.append('%s is live in the stanza but is meant to be commented out' % key)
+
+    # Rule 1.
+    found = commented_assignments()
+    if set(found) != set(STANZA_COMMENTED):
+        failures.append('commented options are %s, expected %s'
+                        % (sorted(found), sorted(STANZA_COMMENTED)))
+    for key, want in sorted(STANZA_COMMENTED.items()):
+        if found.get(key) != want:
+            failures.append('#%s reads %r in install.py, expected %r'
+                            % (key, found.get(key), want))
+    # Rule 1, along the whole chain.  skin.conf answers first; the updater's
+    # own fallback answers only if skin.conf has dropped the key as well.  A
+    # commented value that disagrees with EITHER is a fresh install quietly
+    # behaving differently from the line it shipped with.
+    shipped = skin_conf_defaults()
+    fallbacks = js_fallbacks()
+    for key, shown in sorted(found.items()):
+        governs = shipped.get(key)
+        if governs is None:
+            failures.append('#%s = %s is commented out and skin.conf does not ship %s'
+                            ' either, so nothing between them answers -- the option falls'
+                            " all the way through to the updater's own default"
+                            % (key, shown, key))
+        elif governs != shown:
+            failures.append('#%s = %s but skin.conf ships %s = %s, and skin.conf is what'
+                            ' answers an absent stanza key -- move whichever of the two is'
+                            ' wrong, remembering the live value is what fresh installs'
+                            ' were running' % (key, shown, key, governs))
+        backstop = fallbacks.get(key)
+        if backstop is not None and governs is not None and backstop != governs:
+            failures.append("skin.conf ships %s = %s but the updater falls back to %s;"
+                            ' they must agree, or a station whose skin.conf lost the key'
+                            ' behaves differently again' % (key, governs, backstop))
+
+    # Rule 3, and the count, through the real conditional_merge.
+    try:
+        import configobj
+        import weeutil.config
+        merged = configobj.ConfigObj(io.StringIO(MERGE_TARGET), encoding='utf-8')
+        weeutil.config.conditional_merge(merged, module.installer_config())
+        buf = io.BytesIO()
+        merged.write(buf)
+        out = buf.getvalue().decode('utf-8')
+    except Exception as e:
+        failures.append('the merge could not be measured: %s' % e)
+        return failures
+
+    seen = 0
+    pending = []
+    for line in out.split('\n'):
+        stripped = line.strip()
+        if not stripped:
+            pending = []
+            continue
+        indent = len(line) - len(line.lstrip())
+        if stripped.startswith('#'):
+            pending.append((indent, stripped))
+            m = re.match(r'#(\w+)\s*=', stripped)
+            if m and m.group(1) in STANZA_COMMENTED:
+                seen += 1
+            continue
+        is_section = stripped.startswith('[')
+        for c_indent, text in pending:
+            # A comment block is written at the indent of whatever key comes
+            # next, so prose need only agree with that.
+            if c_indent != indent:
+                failures.append('a comment landed at column %d beside a key at column %d:'
+                                ' %s' % (c_indent, indent, text))
+            # A commented ASSIGNMENT is held to more than that.  Uncommenting
+            # one has to put the option in the section it documents, and a
+            # comment block that lands in front of a SECTION HEADER is written
+            # at the header's indent -- one level out from the scalars it
+            # belongs with.  #show_purple left last in [[[Extras]]] comes out
+            # at [[[Units]]]'s column, and uncommenting it there sets
+            # show_purple on [[WeatherBoardReport]], where nothing reads it.
+            # So every commented option needs a LIVE SCALAR after it, in its
+            # own section.
+            elif is_section and re.match(r'#\w+\s*=', text):
+                failures.append('%s is the last thing in its section, so it is written at'
+                                " the following section header's column (%d) -- uncommenting"
+                                ' it would put the option in the parent section.  Order a'
+                                ' live scalar after it.' % (text, indent))
+        pending = []
+    if seen != len(STANZA_COMMENTED):
+        failures.append('%d of %d commented options reached the merged config -- a comment'
+                        ' block attached to a key the target already has is DROPPED, and'
+                        ' no indentation check can see that' % (seen, len(STANZA_COMMENTED)))
+    # The stanza must not carry what skin.conf already governs.
+    if 'Labels' in parsed['StdReport']['WeatherBoardReport']:
+        failures.append('the stanza writes a [[[Labels]]] section, which skin.conf already'
+                        ' carries -- writing it here freezes every fresh install on it')
+    return failures
+
+
 def main():
     if esprima is None:
         print('WARNING: esprima not importable; skipping JS syntax checks.')
@@ -454,34 +696,48 @@ def main():
             ok = ok and not failures
     # The no-analytics render, once: the #if in analytics.inc is the only
     # thing it changes, so one template at one show_purple setting covers it.
+    # Three renders share one line, so every failure names the render it came
+    # from -- an unattributed 'render error' among three was not enough to
+    # say which configuration had broken.
+    def analytics_render(what, overrides, assertions):
+        try:
+            html = render(templates[0], False, 'color', analytics=False,
+                          overrides=overrides)
+        except Exception as e:
+            return ['%s: render error: %s' % (what, e)]
+        found = ['%s: %s' % (what, f) for f in check(html, False, False)]
+        for complaint, broken in assertions:
+            if broken(html):
+                found.append('%s: %s' % (what, complaint))
+        return found
+
     name = '%s analytics absent' % templates[0]
-    try:
-        html = render(templates[0], False, 'color', analytics=False)
-        failures = check(html, False, False)
-        if 'googletagmanager' in html:
-            failures.append('analytics block rendered with no googleAnalyticsId set')
-        # The installer's stanza ships both analytics settings as EMPTY
-        # strings; that must gate the block off exactly as absence does.
-        html = render(templates[0], False, 'color', analytics=False,
-                      overrides={'googleAnalyticsId': '', 'analytics_host': '',
-                                 'page_update_pwd': ''})
-        failures += check(html, False, False)
-        if 'googletagmanager' in html:
-            failures.append('analytics block rendered with an empty googleAnalyticsId')
-        # An empty password would match every visitor's absent one and the
-        # page would never expire; it must fall back to the default.
-        if 'var page_update_pwd = "foobar";' not in html:
-            failures.append('an empty page_update_pwd did not fall back to the default')
-        # An id with an empty host must configure gtag with no host check:
-        # 4.0 wrapped it in a check against "", which no page ever matches.
-        html = render(templates[0], False, 'color', analytics=False,
-                      overrides={'googleAnalyticsId': 'G-HOSTLESS', 'analytics_host': ''})
-        failures += check(html, False, False)
-        if ('googletagmanager' not in html or 'host == ""' in html
-                or 'gtag(\'config\', "G-HOSTLESS")' not in html):
-            failures.append('an id with an empty analytics_host did not configure gtag unconditionally')
-    except Exception as e:
-        failures = ['render error: %s' % e]
+    failures = analytics_render(
+        'no analytics keys', None,
+        [('analytics block rendered with no googleAnalyticsId set',
+          lambda html: 'googletagmanager' in html)])
+    # The installer's stanza ships both analytics settings as EMPTY strings;
+    # that must gate the block off exactly as absence does.  An empty
+    # password would match every visitor's absent one and the page would
+    # never expire, so it must fall back to the default too.
+    failures += analytics_render(
+        'empty analytics keys and password',
+        {'googleAnalyticsId': '', 'analytics_host': '', 'page_update_pwd': ''},
+        [('analytics block rendered with an empty googleAnalyticsId',
+          lambda html: 'googletagmanager' in html),
+         ('an empty page_update_pwd did not fall back to the default',
+          lambda html: 'var page_update_pwd = "foobar";' not in html)])
+    # An id with an empty host must configure gtag with no host check: 4.0
+    # wrapped it in a check against "", which no page ever matches.
+    failures += analytics_render(
+        'id with an empty analytics_host',
+        {'googleAnalyticsId': 'G-HOSTLESS', 'analytics_host': ''},
+        [('the analytics block did not render',
+          lambda html: 'googletagmanager' not in html),
+         ('the gtag calls were wrapped in a test against the empty host',
+          lambda html: 'host == ""' in html),
+         ('gtag was not configured with the id',
+          lambda html: 'gtag(\'config\', "G-HOSTLESS")' not in html)])
     print('%s %s' % ('FAIL' if failures else 'ok  ', name))
     for f in failures:
         print('       - %s' % f)
@@ -524,10 +780,19 @@ def main():
                 failures.append('the report name did not reach the updater as an escaped literal')
             if not esprima:
                 failures.append('esprima not importable: the hostile render cannot be parse-checked')
-            if 'if (host == "h\',\\u003c/script>")' not in html:
-                failures.append('a list-valued setting was not joined back with commas')
-            if 'gtag/js?id=G-1%27%262%223%3Cx%2Cy"' not in html or 'gtag(\'config\', "G-1\'&2\\"3\\u003cx,y")' not in html:
-                failures.append('the analytics src and literal disagree on a list-valued id')
+            # Exact bytes, deliberately: these pin how jsstr escapes, and a
+            # near-miss is a real failure.  One assertion per condition, each
+            # naming the literal it wanted, so a failure says which escaping
+            # moved rather than which pair of them disagreed.
+            for wanted, what in (
+                    ('if (host == "h\',\\u003c/script>")',
+                     'a list-valued analytics_host was not joined back with commas'),
+                    ('gtag/js?id=G-1%27%262%223%3Cx%2Cy"',
+                     'the analytics src URL is not the percent-encoded list-valued id'),
+                    ('gtag(\'config\', "G-1\'&2\\"3\\u003cx,y")',
+                     'the gtag literal is not the escaped list-valued id')):
+                if wanted not in html:
+                    failures.append('%s; wanted %r' % (what, wanted))
             if html.count('</script') != html.count('<script'):
                 failures.append('a script element ended early: %d <script vs %d </script'
                                 % (html.count('<script'), html.count('</script')))
@@ -545,6 +810,12 @@ def main():
     ok = ok and not failures
     failures = check_installer()
     print('%s install.py requires weewx-loopdata 7.0 and is the release changes.txt names'
+          % ('FAIL' if failures else 'ok  '))
+    for f in failures:
+        print('       - %s' % f)
+    ok = ok and not failures
+    failures = check_stanza()
+    print("%s the installer's stanza writes its defaults commented out, and they survive the merge"
           % ('FAIL' if failures else 'ok  '))
     for f in failures:
         print('       - %s' % f)

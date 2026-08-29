@@ -1,7 +1,36 @@
 weatherboard change history
 ---------------------------
 
-4.1 08/26/2026
+4.2 08/29/2026
+--------------
+An expired board says so at once, instead of at what would have been its
+next poll, and then stops fetching anything at all until it is clicked.
+
+Both browser timers are armed once the page has been parsed.  They were
+armed while it was still parsing, before the elements they paint existed.
+
+An empty loop_data_file means the default, ../loopdata/loop-data.txt,
+rather than the page itself -- which the board used to fetch, and then sit
+on BAD DATA for ever.
+
+A fresh install writes the settings that only select a default commented
+out, with the default shown: max_age, clock_max_age, expiration_time,
+refresh_rate and show_purple.  A commented line does nothing, so the value
+skin.conf ships applies -- and since an upgrade replaces the skin but never
+rewrites weewx.conf, a later release can improve one of those defaults and
+have it reach every station.  Existing installs are untouched.  The
+installer no longer writes a [[[Labels]]] section either; it duplicated the
+skin's own labels and froze them.  [[[Units]]] is still written: the board's
+columns are laid out around those formats.
+
+The manual says how to put a password containing % , & or # on the URL:
+write them %25, %26 and %23, since the value there is decoded before it is
+compared.
+
+Noted late, from 4.0.1: refresh_rate has been floored at one second since
+that release.
+
+4.1 08/25/2026
 --------------
 Action required: upgrade weewx-loopdata to 7.0 or later BEFORE installing
 this release.  The installer refuses to run without it, saying whether

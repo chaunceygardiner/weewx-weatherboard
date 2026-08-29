@@ -18,18 +18,21 @@
 ## and fail the html validator.
 #from urllib.parse import quote
 #set $_ga_id_url = $quote($extra_str($Extras.googleAnalyticsId), safe='')
+## The host is optional and is read once: it decides both halves of one
+## brace, and asking twice invited the two answers to differ.
+#set $_ga_host = $Extras.get('analytics_host', '')
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=$_ga_id_url"></script>
 <script>
   var host = location.host;
-#if $Extras.get('analytics_host', '')
-  if (host == $jsstr($Extras.analytics_host)) {
+#if $_ga_host
+  if (host == $jsstr($_ga_host)) {
 #end if
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', $jsstr($Extras.googleAnalyticsId));
-#if $Extras.get('analytics_host', '')
+#if $_ga_host
   }
 #end if
 </script>
