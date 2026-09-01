@@ -75,9 +75,24 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
 1. Install the extension.
 
-   WeeWX 5:
+   WeeWX 5, pip install (`weectl` lives in the virtual environment, so
+   activate it first; yours may sit elsewhere, `~/weewx-venv` is the usual
+   place):
 
-   `weectl extension install weewx-weatherboard.zip`
+   ```
+   source ~/weewx-venv/bin/activate
+   weectl extension install weewx-weatherboard.zip
+   ```
+
+   WeeWX 5, Debian or Red Hat package install (`weectl` is already on the
+   path).  No `sudo`: that install put your account in the `weewx` group,
+   which owns the files -- if you installed WeeWX in this same login
+   session, log out and back in first so the group membership takes
+   effect.
+
+   ```
+   weectl extension install weewx-weatherboard.zip
+   ```
 
    WeeWX 4:
 
