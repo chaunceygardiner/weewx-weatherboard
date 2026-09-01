@@ -17,7 +17,8 @@ skin and leaves your settings alone:
 weectl extension install weewx-weatherboard.zip
 ```
 
-(WeeWX 4: `sudo /home/weewx/bin/wee_extension --install weewx-weatherboard.zip`.)
+(WeeWX 4: `sudo wee_extension --install weewx-weatherboard.zip`, or the full path on a
+setup.py install.)
 Restart WeeWX afterwards.  Full steps are on the
 [Installation](installation.html) page.
 

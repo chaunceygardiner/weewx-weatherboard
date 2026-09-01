@@ -96,9 +96,11 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 
    WeeWX 4:
 
-   `sudo /home/weewx/bin/wee_extension --install weewx-weatherboard.zip`
+   `sudo wee_extension --install weewx-weatherboard.zip`
 
-   (Adjust the path of wee_extension if WeeWX is installed elsewhere.)
+   (A package install has `wee_extension` on the path, as above.  On a
+   setup.py install use the full path, e.g.
+   `/home/weewx/bin/wee_extension`.)
 
 1. The skin declares the LoopData fields it reads, in
    `skins/WeatherBoard/skin.conf`, and LoopData writes them into

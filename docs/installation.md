@@ -63,10 +63,11 @@ weectl extension install weewx-weatherboard.zip
 WeeWX 4:
 
 ```
-sudo /home/weewx/bin/wee_extension --install weewx-weatherboard.zip
+sudo wee_extension --install weewx-weatherboard.zip
 ```
 
-(Adjust the path if WeeWX is installed elsewhere.)
+(A package install has `wee_extension` on the path, as above.  On a setup.py
+install use the full path, e.g. `/home/weewx/bin/wee_extension`.)
 
 The installer checks that LoopData 7.0 or later is installed — if not it
 stops, saying whether LoopData is missing or which older version it found
