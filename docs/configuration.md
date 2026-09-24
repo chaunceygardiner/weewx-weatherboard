@@ -259,17 +259,18 @@ readings have no such limit.
 
 The board's numbers are formatted by LoopData with *this report's* own
 converter and formatter — since LoopData 7.0 every declaring report is its
-own target — so the `[[[Units]]] [[[[StringFormats]]]]` entries in the
-WeatherBoard stanza, `%.0f` for wind speeds and `%.1f` for temperatures,
-apply to the live readings as well as to the unit labels the pages render
-at generation time.  The two never disagree.
+own target — so the live readings and the unit labels the pages render at
+generation time never disagree.  By default they follow the station's own
+formats, from `[StdReport] [[Defaults]]`.
 
-To change a format, change it there.  To change units, set them in the
-same stanza the way you would for any WeeWX report — `unit_system = metric`
-on the stanza, or `[[[Units]]] [[[[Groups]]]]` for one group — and the
-board shows them, whatever the station's other reports do.  Metric
-readings run wider, and a reading too wide for its panel shrinks that row
-of the LED board to fit; nothing needs adjusting.
+To change a format or a unit for the board alone, set it in the
+WeatherBoard stanza the way you would for any WeeWX report: `[[[Units]]]
+[[[[StringFormats]]]]` for a format, `unit_system = metric` on the stanza,
+or `[[[Units]]] [[[[Groups]]]]` for one group.  A reading too wide for its
+panel shrinks that row of the LED board, and the split-flap board gives up
+a decimal before a figure runs off its row, so nothing needs adjusting.
+Earlier releases' installers wrote the wind and temperature formats into
+the stanza; that copy is harmless and can stay or go.
 
 ## Changing the styling
 

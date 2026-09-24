@@ -156,19 +156,6 @@ CONFIG = """
             # from the shipped placeholder.  It is visible in the page
             # source by design: a keep-alive gate, not a secret.
             page_update_pwd = foobar
-        # These four are the formats the board's fixed-width columns are
-        # built around, and they are pinned HERE, live, on purpose.  They
-        # match WeeWX's own defaults, so on an ordinary station they change
-        # nothing; what they do is keep a station that set different
-        # formats site-wide in [[Defaults]] from widening a column past the
-        # room the layout gives it.  A report's own stanza is the only
-        # place that can hold that pin -- skin.conf loses to [[Defaults]].
-        [[[Units]]]
-            [[[[StringFormats]]]]
-                mile_per_hour = %.0f
-                degree_C = %.1f
-                km_per_hour = %.0f
-                degree_F = %.1f
 """
 
 

@@ -532,8 +532,6 @@ STANZA_LIVE = (
     'HTML_ROOT', 'enable', 'skin',
     # Placeholders to fill in, and the one setting most likely to be edited.
     'loop_data_file', 'googleAnalyticsId', 'analytics_host', 'page_update_pwd',
-    # Pinned deliberately: see the comment on [[[Units]]] in install.py.
-    'mile_per_hour', 'degree_C', 'km_per_hour', 'degree_F',
 )
 
 # Every option that ships commented out, with the value shown beside it.
@@ -725,9 +723,10 @@ def check_stanza():
             # one has to put the option in the section it documents, and a
             # comment block that lands in front of a SECTION HEADER is written
             # at the header's indent -- one level out from the scalars it
-            # belongs with.  #show_aqi left last in [[[Extras]]] comes out
-            # at [[[Units]]]'s column, and uncommenting it there sets
-            # show_aqi on [[WeatherBoardReport]], where nothing reads it.
+            # belongs with.  #show_aqi left last in [[[Extras]]], before a
+            # following section, comes out at that section's column, and
+            # uncommenting it there sets show_aqi on [[WeatherBoardReport]],
+            # where nothing reads it.
             # So every commented option needs a LIVE SCALAR after it, in its
             # own section.
             elif is_section and re.match(r'#\w+\s*=', text):
@@ -744,6 +743,11 @@ def check_stanza():
     if 'Labels' in parsed['StdReport']['WeatherBoardReport']:
         failures.append('the stanza writes a [[[Labels]]] section, which skin.conf already'
                         ' carries -- writing it here freezes every fresh install on it')
+    # Nor pin number formats: the boards fit whatever width they are given,
+    # so a pin here would only freeze a fresh install on today's formats.
+    if 'Units' in parsed['StdReport']['WeatherBoardReport']:
+        failures.append('the stanza writes a [[[Units]]] section; the boards fit any format,'
+                        ' so it can only freeze a fresh install on today\'s formats')
     return failures
 
 
