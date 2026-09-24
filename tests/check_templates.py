@@ -79,6 +79,9 @@ SKIN = os.path.join(REPO, 'skins', 'WeatherBoard')
 INSTALL = os.path.join(REPO, 'install.py')
 SKIN_CONF = os.path.join(SKIN, 'skin.conf')
 CHANGES = os.path.join(REPO, 'changes.md')
+# The release, as install.py names it: the pages' stylesheet links carry it.
+RELEASE = re.search(r'^\s*version\s*=\s*"([^"]+)"', io.open(INSTALL, encoding='utf-8').read(),
+                    re.M).group(1)
 # The report name the ordinary renders use.  The updater reads this key
 # out of loop-data.txt, so it shows up in the rendered script.
 REPORT_NAME = 'WeatherBoardReport'
@@ -255,6 +258,13 @@ def check(html, tmpl, missing=ALL_PRESENT):
         html)
     if leaks:
         failures.append('unrendered placeholders: %s' % sorted(set(leaks)))
+    # Every stylesheet link carries the release, so an upgrade's pages never
+    # draw with a stylesheet a browser cached from the last one.
+    for href in re.findall(r'<link rel="stylesheet"[^>]*href="([^"]*)"', html):
+        if not href.endswith('?v=' + RELEASE):
+            failures.append('the stylesheet link %s does not carry ?v=%s, the release install.py'
+                            ' names: a browser may draw the page with a cached old stylesheet'
+                            % (href, RELEASE))
     inline = re.findall(r'style="[^"]*"', html)
     if inline:
         failures.append('inline styles (move to weatherboard.css): %s' % inline[:5])

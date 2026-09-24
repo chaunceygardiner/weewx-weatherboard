@@ -13,6 +13,12 @@
 ## Earlier releases' installers wrote an Acme Weather placeholder into both
 ## settings, live.  A station that never edited it gets its location, not
 ## the placeholder.
+##
+## $wb_version is the release, carried on each page's stylesheet link
+## (weatherboard.css?v=...), so an upgrade's pages ask for a URL no browser
+## has cached: a tablet holding the old stylesheet would otherwise draw the
+## new page with it, which can leave it blank.  It must match install.py's
+## version; tests/check_templates.py fails when it does not.
 #errorCatcher Echo
 #def wb_setting($name, $placeholders)
 #set $v = $Extras.get($name, '')
@@ -25,5 +31,6 @@
 #end if
 #return $v
 #end def
+#set global $wb_version = '5.0'
 #set global $wb_title = $wb_setting('title', ('Acme Weather WeatherBoard&trade;', 'Acme Weather WeatherBoard™')) or str($station.location)
 #set global $wb_tab = $wb_setting('meta_title', ('Acme Weather at a Glance WeatherBoard&trade;', 'Acme Weather at a Glance WeatherBoard™', 'Acme Weather at a Glance')) or $wb_title
