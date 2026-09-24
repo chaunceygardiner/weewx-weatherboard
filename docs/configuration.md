@@ -14,7 +14,9 @@ Everything about the board is configured in the `[[WeatherBoardReport]]`
 stanza the installer put in `weewx.conf`.  The skin ships the same settings
 in `skins/WeatherBoard/skin.conf`, but those are defaults only: a setting
 present in `weewx.conf` wins, and `weewx.conf` is the file to edit — it
-survives upgrades, and the shipped skin does not.
+survives upgrades, and the shipped skin does not.  Both boards,
+`index.html` and `splitflap.html`, come from this one report and share
+every setting.
 
 ```
 [StdReport]
@@ -70,26 +72,25 @@ you.
 ## The Extras
 
 {: .note }
-The four numeric settings — `refresh_rate`, `expiration_time`, `max_age` and
-`clock_max_age` — are checked by the page itself, in the browser, as it
-loads.  Anything that is not a number greater than zero, an empty value
-included, falls back to that setting's default rather than stopping the
-board.  `refresh_rate` is also never armed faster than once a second,
-whatever fraction is set.  `refresh_rate` and `expiration_time` have an
-upper limit as well,
-because they are handed to browser timers and a timer keeps its delay in a
-signed 32-bit integer: a value whose milliseconds exceed 2147483647 — about
-596 hours for `expiration_time`, 24 days for `refresh_rate` — would wrap to
-an arbitrary shorter delay, so it is clamped to that ceiling instead.
-`max_age` and `clock_max_age` have no such limit; they are compared against
-an age rather than handed to a timer, and a slow station may legitimately
-want a large one.  Nothing is reported at report-generation time, so a
-mistyped value leaves no trace in the WeeWX log — the board simply runs on
-the default.
+The three numeric settings — `refresh_rate`, `expiration_time` and
+`max_age` — are checked by the page itself, in the browser, as it loads.
+Anything that is not a number greater than zero, an empty value included,
+falls back to that setting's default rather than stopping the board.
+`refresh_rate` is also never armed faster than once a second, whatever
+fraction is set.  `refresh_rate` and `expiration_time` have an upper limit
+as well, because they are handed to browser timers and a timer keeps its
+delay in a signed 32-bit integer: a value whose milliseconds exceed
+2147483647 — about 596 hours for `expiration_time`, 24 days for
+`refresh_rate` — would wrap to an arbitrary shorter delay, so it is
+clamped to that ceiling instead.  `max_age` has no such limit; it is
+compared against an age rather than handed to a timer, and a slow station
+may legitimately want a large one.  Nothing is reported at
+report-generation time, so a mistyped value leaves no trace in the WeeWX
+log — the board simply runs on the default.
 
 ### `loop_data_file`
 
-Default `../loopdata/loop-data.txt`.  Where the page fetches loop data
+Default `../loopdata/loop-data.txt`.  Where the pages fetch loop data
 from, as a URL the *browser* resolves, relative to this report's
 `HTML_ROOT`.  The default is where a stock LoopData writes: its
 `loop_data_dir` default is its own sample report's `HTML_ROOT`,
@@ -100,45 +101,21 @@ resolves to the page itself, so the board would fetch its own HTML,
 find no loop data in it and show `BAD DATA` for ever.
 
 Pointing this at another host works, with two conditions.  That server must
-send `Access-Control-Allow-Origin`, or the browser refuses the fetch and
-the board sits permanently disconnected.  And it should also send
+send `Access-Control-Allow-Origin`, or the browser refuses every fetch and
+the clock reads `NO CONNECT`.  And it should also send
 `Access-Control-Expose-Headers: Date`, without which the age check falls
 back to a weaker measure — see
 [When data goes missing](missing-data.html#how-age-is-measured).
 
 ### `max_age`
 
-Default `10`.  How old, in seconds, a loop record may be before the readings
-it feeds show question marks instead — and the `LIVE` label starts reporting
-the record's age rather than claiming the board is current.  The default suits a
-station emitting loop packets every couple of seconds; raise it for a slower
-one.  It governs a failing fetch as well: the board keeps counting from the
-last age it knew, so an outage that outlasts this threshold blanks the
-readings just as stale data would.  See
-[When data goes missing](missing-data.html).
-
-### `clock_max_age`
-
-Default `120`.  How far behind, in seconds, the clock in the lower right may
-fall before it reads `??:??:??` in the disconnected blue.
-
-This is longer than [`max_age`](#max_age) on purpose, because the clock is
-answering a different question than the readings are.  A temperature fifteen
-seconds old has stopped being true and should show question marks; a clock
-fifteen seconds slow is still a good clock, and quite possibly the best one
-in the room.  The blue says the board is not a clock any more, so it is
-worth saving for a time that would actually mislead you.  Lower it if you
-read the corner to the second; raise it if you only want to be told when the
-board has plainly died.
-
-It is never allowed below [`max_age`](#max_age): a clock going blue while
-the readings beside it are still live would be nonsense, so raising
-`max_age` for a slow station carries the clock up with it, whatever this is
-set to.
-
-Two things still turn the clock blue immediately, whatever this is set to: a
-fetch that fails, and a report entry with no time field in it, where there
-is no time to show at all.
+Default `10`.  How old, in seconds, a loop record may be before every
+reading it feeds is shown as missing and the clock gives way to the
+record's age.  The default suits a station emitting loop packets every
+couple of seconds; raise it for a slower one.  It governs a failing fetch
+as well: the board keeps counting from the last age it knew, so an outage
+that outlasts this threshold blanks the readings just as stale data would.
+See [When data goes missing](missing-data.html).
 
 ### `refresh_rate`
 
@@ -146,26 +123,22 @@ Default `2`.  Seconds between polls.  A good choice is the rate at which
 your station's driver emits loop packets: polling faster than the data
 arrives just re-reads the same record.  Values below 1 poll once a second.
 
-### `title`, `subtitle`, `meta_title`
+### `title`
 
-The branding across the top of the board and in the browser's title bar.
-`Acme Weather` is a placeholder; put your own site's name here.  HTML
-entities are allowed (the shipped default carries a `&trade;`), and
-`subtitle` may contain links — a common use is a way back to a fuller site:
+The line across the top of both boards.  Without it the boards show the
+station's `location`, from `[Station]` in `weewx.conf`.  HTML entities are
+allowed (`&trade;`, `&amp;`).  A title too long for the screen is cut
+short with an ellipsis.
 
-```
-subtitle = '<a href="..">Full Site</a> | <a href="../about_us.html">About Us</a>'
-```
+The installer writes no `title`, because its default is your station, not
+a value.  Earlier releases wrote an Acme Weather placeholder, live; a
+station still carrying it gets its location, as if nothing were set.
 
-With no `meta_title` the browser tab reads
-`WeatherBoard&trade;—<your station location>`.
+### `meta_title`
 
-### `logo`
-
-Default `weatherboard_logo.png`.  The mark at the left of the title bar.  A
-generic weather icon ships with the skin; point this at your own image, or
-set it to `""` for no mark at all.  The value is a URL as the browser sees
-it, so a bare filename must name a file in this report's `HTML_ROOT`.
+The browser tab's title.  Without it the tab shows the board's
+[`title`](#title).  HTML entities are allowed, and the Acme Weather
+placeholder earlier installers wrote counts as unset.
 
 ### `page_update_pwd`
 
@@ -192,24 +165,43 @@ It is a keep-alive gate, not a secret.
 ### `expiration_time`
 
 Default `4`.  Hours before a page *without* the password stops polling.
-The board then shows `Expired` and `CLICK-ME`; a click starts it again.
-The point is to keep a forgotten browser tab from polling your server for
-days.
+The clock then reads `EXPIRED TAP`, in blue; a tap anywhere on the board
+starts it again.  The point is to keep a forgotten browser tab from
+polling your server for days.
 
 Values above about 596 hours are clamped to 596 — see the note under
-[The Extras](#the-extras) above.  Even so, a large value is not the way to make a board
-that never expires: set `page_update_pwd` and put it on the URL, which is
-what the wall-tablet case wants.
+[The Extras](#the-extras) above.  Even so, a large value is not the way to
+make a board that never expires: set `page_update_pwd` and put it on the
+URL, which is what the wall-tablet case wants.
 
-### `show_purple`
+### `clock_format`
 
-A boolean, `False` by default.  Set it to `True` to show the air quality
-index, which requires
-[weewx-purple](https://github.com/chaunceygardiner/weewx-purple).  The two
-LoopData fields it reads are declared whether or not this is set — see
+`12` or `24`.  Left unset, the report's language decides: English shows a
+12 hour clock (`2:36:52 PM`), and every other language a 24 hour one
+(`14:36:52`).  Either way it is the station's time — see
+[the clock](reading-the-board.html#the-clock).
+
+### `show_uv`, `show_radiation`, `show_aqi`
+
+Each defaults to `auto`, which shows the reading when the station's
+current record carries it at report time, so a station without the
+sensor never shows an empty panel.  `true` forces the reading on and
+`false` forces it off.  The pages are regenerated every archive interval,
+so a sensor that is added or goes quiet is picked up within one.
+
+For air quality, `auto` needs both the sensor's `pm2_5` and the index the
+board shows, `pm2_5_aqi`, which an extension such as
+[weewx-purple](https://github.com/chaunceygardiner/weewx-purple) computes
+from it: a station with the sensor but not the index would otherwise show
+a panel with nothing ever in it.
+
+`show_purple`, the setting earlier releases used, is still honored: while
+`show_aqi` is `auto`, a `show_purple` in `weewx.conf` decides instead.  A
+station configured under 4.0 or 4.1 may have `show_purple = False`
+written live; with an air quality sensor, delete it or set `show_aqi`.
+
+The fields these readings need are declared whatever the settings — see
 [The fields the board reads](installation.html#the-fields-the-board-reads).
-With it off, the AQI cell stays empty and the footer legend names one fewer
-reading.
 
 ### `googleAnalyticsId`, `analytics_host`
 
@@ -217,27 +209,51 @@ Both empty by default.  With an ID set, the board loads Google Analytics.
 `analytics_host` restricts that to one hostname, which keeps a development
 copy of the page out of your statistics.
 
-## Labels
+### Settings from earlier releases
 
-The wording in the footer legend, and the AQI heading, come from the skin's
-own `[Labels] [[Generic]]`, in `skins/WeatherBoard/skin.conf`:
+`subtitle`, `logo` and `clock_max_age` are no longer read.  The boards
+have one line of title and no band around it, and the clock gives way to
+the data's age at `max_age` like everything else.  They can be deleted
+from `weewx.conf`, or left: nothing reads them.
 
-| Label | Default |
-|---|---|
-| `air_quality_index` | Air Quality Index |
-| `legend` | Legend |
-| `rainToday` | Rain Today |
-| `rain24h` | Rain 24h |
-| `ten_min_max_gust` | 10m Gust |
-| `time_of_day` | Time |
-| `high_gust_today` | Today's High Gust |
+## Languages
 
-To change any of them, add a `[[[Labels]]] [[[[Generic]]]]` section to the
-report's stanza in `weewx.conf` with just the labels you want to reword —
-the stanza outranks the skin, and unlike the skin it survives an upgrade.
-A station configured under an earlier release may already have that section,
-carrying all seven at their defaults; there is no need to remove it, and
-editing it works the same way.
+The board speaks Danish (`da`), Dutch (`nl`), English (`en`), French
+(`fr`), German (`de`), Italian (`it`), Norwegian (`no`), Spanish (`es`)
+and Swedish (`sv`).  Choose one with the report's standard WeeWX `lang`
+setting:
+
+```
+[[WeatherBoardReport]]
+    lang = de
+```
+
+That translates every label and status word, the wind direction's compass
+points (`NNØ` in Danish, `ONO` in German), and sets the clock to 24 hour.
+Restart WeeWX after changing it: LoopData renders the wind direction in
+the report's language, and reads the report's settings only when weewxd
+starts.
+
+The translations live in `skins/WeatherBoard/lang/`, one file per
+language, with English the reference.  To reword a single string, add a
+`[[[Texts]]]` section to the report's stanza in `weewx.conf` with just
+the strings you want to change, keyed by their English:
+
+```
+[[WeatherBoardReport]]
+    [[[Texts]]]
+        "FEELS LIKE" = "APPARENT"
+```
+
+The stanza outranks the language file, and unlike the skin it survives an
+upgrade.
+
+{: .note }
+The LED board draws its status words in its own lettering, which has the
+capitals A to Z, the digits, and the accented capitals it draws itself —
+Ä, Ö, Ü, Å, Ø, Á, É, Í, Ó and Ú.  A status word reworded with any other
+letter shows a gap where that letter would be.  The labels under the
+readings have no such limit.
 
 ## Units and number formats
 
@@ -245,48 +261,15 @@ The board's numbers are formatted by LoopData with *this report's* own
 converter and formatter — since LoopData 7.0 every declaring report is its
 own target — so the `[[[Units]]] [[[[StringFormats]]]]` entries in the
 WeatherBoard stanza, `%.0f` for wind speeds and `%.1f` for temperatures,
-apply to the live readings as well as to the values the page renders at
-generation time.  The two never disagree.
+apply to the live readings as well as to the unit labels the pages render
+at generation time.  The two never disagree.
 
 To change a format, change it there.  To change units, set them in the
 same stanza the way you would for any WeeWX report — `unit_system = metric`
 on the stanza, or `[[[Units]]] [[[[Groups]]]]` for one group — and the
-board shows them, whatever the station's other reports do.
-
-## The time format
-
-The clock in the lower right is one of the LoopData fields the skin
-declares, and its format travels with the field name:
-
-```
-current.dateTime.format("%X")
-```
-
-`%X` is your station's own time-of-day format — `09:44:14 PM` where the
-station runs a US locale, `21:44:14` under most others.
-
-That locale is the one in weewxd's environment (`LANG`), not the `lang`
-setting on a report: LoopData formats loop packets in its own thread,
-outside the report cycle where WeeWX applies a report's `lang`.  Practically
-this is the same locale the rest of your WeeWX pages use, with one case
-worth knowing — a weewxd started with no `LANG` at all, which is common in
-containers and hand-written unit files, falls back to the C locale and
-renders 24-hour times everywhere, this board included.  Set `LANG` in the
-service environment if that is not what you want.
-
-One locale effect is worth knowing before you go looking for a css bug: a
-`%X` that carries a timezone — the Indian subcontinent and several Arabic
-locales, among others — is too many characters for the corner it sits in and
-wraps onto a second line.  The clock is set in 95px monospace, in a footer
-cell 65% of the board's width.  The lever there is `LANG` too — not the
-declaration, for the reason below.
-
-The format cannot be pinned by editing the declaration.  The board looks
-for the `%X` spelling specifically, so putting a different strftime string
-there —
-`current.dateTime.format("%H:%M:%S")`, say — does not reformat the clock: it
-removes the field the board reads, and the corner falls back to `??:??:??`
-until you put `%X` back.  `LANG` is the only lever on the format.
+board shows them, whatever the station's other reports do.  Metric
+readings run wider, and a reading too wide for its panel shrinks that row
+of the LED board to fit; nothing needs adjusting.
 
 ## Changing the styling
 

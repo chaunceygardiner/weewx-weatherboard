@@ -17,8 +17,6 @@ skin and leaves your settings alone:
 weectl extension install weewx-weatherboard.zip
 ```
 
-(WeeWX 4: `sudo wee_extension --install weewx-weatherboard.zip`, or the full path on a
-setup.py install.)
 Restart WeeWX afterwards.  Full steps are on the
 [Installation](installation.html) page.
 
@@ -31,6 +29,70 @@ matters.  Read the entries newer than the version you are coming from.
 upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
+
+## Upgrading to 5.0
+
+**WeeWX 5.2 or later is now required**, and the installer refuses to run
+on anything older.  A station staying on WeeWX 4, or on 5.0 or 5.1, can
+stay on WeatherBoard 4.2, which goes on working with LoopData 7.
+
+The board is new: an LED display at `index.html`, and a split-flap
+departure board beside it at `splitflap.html`.  A tablet already pointed
+at the board shows the LED board after the upgrade; point it at
+`splitflap.html` instead if you prefer that one.  See
+[Reading the board](reading-the-board.html).
+
+**Restart WeeWX after upgrading.**  The board reads different fields from
+`loop-data.txt` than 4.2 did — the humidity, feels like and solar
+radiation it now shows, the clock as digits, and every reading without
+its unit — and LoopData reads a report's field list only when weewxd
+starts.  Until the restart the new page shows most readings, and the
+clock, as missing.  The new stylesheet and the
+fonts reach the web server on the first report after the restart as well.
+
+**Settings that are no longer read.**  Nothing breaks if they stay, and
+each can be deleted from `[[[Extras]]]`:
+
+* `subtitle` and `logo`: the boards have no title band.
+* **`title` and `meta_title` are still read,** but the title is now one
+  line across the top of the board, and it defaults to the station's
+  location.  Earlier installers wrote an Acme Weather placeholder into
+  both; a station still carrying it gets its location instead.  See
+  [`title`](configuration.html#title).
+* `clock_max_age`: the clock no longer outlives the readings.  At
+  [`max_age`](configuration.html#max_age) it gives way to the data's age,
+  at the moment the readings are shown as missing.
+
+**Air quality, UV and solar radiation now show themselves.**  Each has a
+setting, `show_aqi`, `show_uv` and `show_radiation`, defaulting to `auto`:
+the reading shows when the station's current record carries it.
+`show_purple` is still honored while `show_aqi` is `auto` — which matters
+in one case.  A station configured under 4.0 or 4.1 was written
+`show_purple = False` live; if that station has an air quality sensor,
+the index now stays off until you delete that line or set
+`show_aqi = true`.  See
+[`show_uv`, `show_radiation`, `show_aqi`](configuration.html#show_uv-show_radiation-show_aqi).
+
+**Missing data looks different.**  The LED board lights only the middle
+segment of each missing digit, the split-flap board shows question marks,
+and the clock says how old the data is or names the failure — the codes
+the live label used to show, `HTTP 404`, `BAD DATA`, `NO ENTRY`,
+`BAD URL`, and `NO CONNECT` for a failure that has no code of its own.
+See [When data goes missing](missing-data.html).
+
+**An expired page reads `EXPIRED TAP`,** and a tap anywhere starts it
+again, where 4.2 showed `Expired` and waited for a click on the clock.
+
+**The clock is set by the board.**  It arrives as the station's time in
+digits and is laid out 12 or 24 hour by the report's language, or by the
+new [`clock_format`](configuration.html#clock_format).  The locale in
+weewxd's environment no longer changes it, and a locale that put a
+timezone in the time no longer runs it onto two lines.
+
+**The board can be translated.**  Nothing changes unless you set the
+report's `lang` — see [Languages](configuration.html#languages).  The
+`[[[Labels]]]` a stanza may carry from an earlier release are no longer
+read; the boards' wording is in the language files.
 
 ## Upgrading to 4.2
 
@@ -168,9 +230,8 @@ The clock change is worth having on a wall display: that clock used to be
 rendered from the tablet's own clock, timezone and locale.  A tablet in
 another timezone, or with its clock simply set wrong, showed a confident
 time that had nothing to do with when the reading was taken.  It now shows
-the station's time, in the station's format.  See
-[the clock](reading-the-board.html#the-clock) for how to change that
-format.
+the station's time.  (Since 5.0 the board lays that time out itself —
+see [the clock](reading-the-board.html#the-clock).)
 
 ## Upgrading to 3.3
 

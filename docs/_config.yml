@@ -1,8 +1,9 @@
 title: WeeWX WeatherBoard
 description: >-
-  A one-page WeeWX skin for a wall-mounted tablet — outside temperature,
-  dew point, wind, gusts, UV, barometer, rain and air quality in type you
-  can read across the room, updating every couple of seconds.
+  A WeeWX skin for a wall-mounted tablet — an LED board and a split-flap
+  board showing temperature, dew point, humidity, wind, gusts, barometer,
+  rain, UV, solar radiation and air quality in characters you can read
+  across the room, updating every couple of seconds.
 url: "https://chaunceygardiner.github.io"
 baseurl: "/weewx-weatherboard"
 

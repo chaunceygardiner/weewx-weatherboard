@@ -1,0 +1,43 @@
+## Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
+## Distributed under the terms of the GNU Public License (GPLv3)
+## See LICENSE for your rights.
+##
+## splitflap.html -- the split-flap board: the station as an airport
+## departure board, rows of flipping flaps with a lamp at the end of each.
+## Its sibling, index.html, is the LED board.  The data, the status line
+## and the expiry live in board.inc; the flaps, and the fit to the screen,
+## in splitflap.inc, included at the end so the rows it fills exist.
+#errorCatcher Echo
+#encoding UTF-8
+#include "title.inc"
+<!DOCTYPE html>
+<html lang="$gettext('en')">
+  <head>
+    #include "analytics.inc"
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon-180x180.png">
+    <link rel="stylesheet" type="text/css" href="weatherboard.css">
+    <title>$wb_tab</title>
+    <meta name="description" content="$gettext('Current weather conditions, on a board meant to be read across the room.')">
+  </head>
+  <body class="flapboard">
+    #include "board.inc"
+    <h1 class="flap-title" id="flap-title">$wb_title</h1>
+    <main id="flap-board">
+      <div class="flap-lab">$gettext("TIME")</div><div class="flap-row" id="flap-time"></div><div class="flap-lamp" id="flap-time-lamp"></div>
+      <div class="flap-lab">$gettext("TEMP")</div><div class="flap-row" id="flap-temp"></div><div class="flap-lamp" id="flap-temp-lamp"></div>
+      <div class="flap-lab">$gettext("DEW PT")</div><div class="flap-row" id="flap-dew"></div><div class="flap-lamp" id="flap-dew-lamp"></div>
+      <div class="flap-lab">$gettext("WIND")</div><div class="flap-row" id="flap-wind"></div><div class="flap-lamp" id="flap-wind-lamp"></div>
+      <div class="flap-lab">$gettext("BAROMETER")</div><div class="flap-row" id="flap-baro"></div><div class="flap-lamp" id="flap-baro-lamp"></div>
+      <div class="flap-lab">$gettext("RAIN")</div><div class="flap-row" id="flap-rain"></div><div class="flap-lamp" id="flap-rain-lamp"></div>
+      #if $wb_aqi
+      <div class="flap-lab">$gettext("AIR")</div><div class="flap-row" id="flap-air"></div><div class="flap-lamp" id="flap-air-lamp"></div>
+      #end if
+    </main>
+    <footer class="flap-foot" id="flap-foot">WeatherBoard &copy;2019-2026 by John A Kline.</footer>
+    #include "splitflap.inc"
+  </body>
+</html>

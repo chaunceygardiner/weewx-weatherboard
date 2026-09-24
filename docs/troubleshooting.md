@@ -10,7 +10,10 @@ nav_order: 7
 
 ---
 
-Symptoms below, roughly in the order they turn up.
+Symptoms below, roughly in the order they turn up.  Most of them start
+with the clock: when something is wrong, the clock says what — see
+[the status line](reading-the-board.html#the-status-line).  The failure
+codes are the same in every language.
 
 ## No page at `<weewx-url>/weatherboard/`
 
@@ -19,24 +22,30 @@ every five minutes.  Wait for a cycle after installing and restarting.  If
 it still is not there, check the WeeWX log for report errors, and confirm
 `enable = true` in the `[[WeatherBoardReport]]` stanza.
 
-## Every reading shows question marks
+## Every reading is missing, and the clock reads `WAITING`
 
-The page is rendering but the loop data is not reaching it.  In order of
-likelihood:
+The page has loaded but no poll has come back yet, successful or not.
+That lasts a second or two; if it lasts longer, the browser is not
+fetching at all — look in its developer console.
+
+## Every reading is missing, and the clock shows an age
+
+`47 S AGO`, `7 M AGO`: the fetch is fine, and the data behind it is not
+advancing.  In order of likelihood:
 
 1. **LoopData is not running.**  Check the WeeWX log at startup for its
    banner, and look at `loop-data.txt` itself — is its timestamp moving?
-2. **The board cannot fetch the file.**  Open the browser's developer
-   console on the board page.  A 404 there means `loop_data_file` does not
-   point at a URL your web server actually serves; see below.
-3. **LoopData does not know the report yet.**  The live label reads
-   `NO ENTRY` — see below.
+2. **weewxd has stopped.**  Its web server may still be handing out the
+   last file it wrote.
+3. **The station has stopped sending loop packets.**  LoopData writes what
+   it is given.
 
-The clock in the lower right may still be showing a time in red while this
-is going on; that is deliberate, not a leftover.  It has a longer threshold
-of its own — see [`clock_max_age`](configuration.html#clock_max_age).
+A station that emits loop packets less often than every
+[`max_age`](configuration.html#max_age) seconds — ten by default —
+flickers between its time and an age as each packet arrives and ages.
+Raise `max_age` for it.
 
-## The live label reads `HTTP 404`, and the clock says `check loop_data_file`
+## The clock reads `HTTP 404`
 
 `loop_data_file` is a URL as the *browser* resolves it, not a path on the
 server, relative to this report's `HTML_ROOT`.  As shipped,
@@ -46,7 +55,7 @@ writes somewhere else — `/dev/shm` is a popular choice — that directory has
 to be reachable over HTTP and this setting has to name it, or LoopData has
 to write somewhere under `public_html` instead.
 
-## The live label reads `NO ENTRY`, and the clock says `restart WeeWX`
+## The clock reads `NO ENTRY`
 
 `loop-data.txt` is being served and is LoopData's json, but it has no
 `WeatherBoardReport` entry.  LoopData reads each report's declaration when
@@ -66,13 +75,13 @@ which writes no report entries at all, only the flat keys of the old
 `fields` line — the installer refuses that, but a downgrade afterwards
 lands here.
 
-## The live label reads `BAD DATA`
+## The clock reads `BAD DATA`
 
 Something is being served at that URL, but it is not LoopData's json.  Fetch
 the URL yourself and look at what comes back; a directory listing or an
 error page is the usual answer.
 
-## The live label reads `BAD URL`
+## The clock reads `BAD URL`
 
 `loop_data_file` is not an address the browser can use at all — a bare
 `http://`, or a bracket that does not close, like `http://[bad` — so the
@@ -83,95 +92,79 @@ A value that is merely *wrong* — a path with a space in it, or one that
 points somewhere nothing is served — is a valid URL, so it is sent and
 comes back `HTTP 404` instead.
 
-## The clock reads `??:??:??`
+## The clock reads `NO CONNECT`
 
-There are three causes, and the live label beside the clock tells them apart.
+The request failed outright or timed out: the web server is down, the
+tablet's network is, or the file is on another host that does not allow
+the fetch — see [Cross-origin trouble](#cross-origin-trouble).  A
+passing `NO CONNECT` that clears on the next poll is a network hiccup,
+and the readings ride it out: they are shown as missing only once the
+data they hold passes `max_age`.
 
-If the label reads an age — `3.0m ago` — the loop data has fallen further
-behind than [`clock_max_age`](configuration.html#clock_max_age), two minutes
-by default.  The fetch is fine; the data behind it is not.
+## The clock reads `NO CLOCK`
 
-If the label reads `??`, the loop record carries no usable
-`current.dateTime.raw`, so the board cannot work out how old it is and will
-not vouch for a time it cannot age.  The clock blanks even though
-`current.dateTime.format("%X")` is present and perfectly fresh — so look for
-`current.dateTime.raw` in the report's entry, not the `%X` field.
-
-Otherwise the entry does not carry `current.dateTime.format("%X")` at all.
-Both fields ship in the skin's declaration, so either is missing only if
-the declaration was overridden — a `[[[LoopData]]] [[[[fields]]]]` group
-named `clock` under the report's stanza in `weewx.conf` replaces the
+The report's entry has no usable `current.dateTime.raw`, so the board
+cannot tell how old the data is, and will not vouch for data it cannot
+age.  Both clock fields ship in the skin's declaration, so one is missing
+only if the declaration was overridden — a `[[[LoopData]]] [[[[fields]]]]`
+group named `clock` under the report's stanza in `weewx.conf` replaces the
 skin's — or the shipped `skin.conf` was edited.  Put the field back and
 restart WeeWX.
 
-Note that the readings blank well before the clock does, at
-[`max_age`](configuration.html#max_age).  A board showing question marks
-everywhere with the time still in red is not a bug: a reading seconds old
-has stopped being true, while a clock seconds slow is still a clock.
-
-If you put a different strftime string in the declaration, that is the
-cause: the board looks for the `%X` spelling specifically, so anything else
-leaves it with no field to read.  Put `%X` back; see
-[the time format](configuration.html#the-time-format).
-
-## The time format is not the one I expected
-
-The clock is formatted by the station: `%X` gives `09:44:14 PM` under a US
-locale and `21:44:14` under most others.  That locale comes from weewxd's
-environment (`LANG`), not from a report's `lang` — a weewxd started with no
-`LANG`, which is usual in a container, renders 24-hour times.  Set `LANG` in
-the service environment.  Pinning a different strftime string in the
-declaration is not an alternative: the board looks for the `%X` spelling,
-so anything else leaves the corner reading `??:??:??` — see
-[the time format](configuration.html#the-time-format).
-
-If the time is off by hours rather than formatted differently, check the
-station's clock and timezone: as of 4.0 the board shows the station's time,
-so what you are seeing is what the station believes.
-
-## The clock wraps onto two lines
-
-The clock is set in 95px monospace, in a footer cell 65% of the board's
-width, and some locales' `%X` includes a timezone — more characters than
-that cell can hold.  This is a locale effect rather than a styling one: the
-lever is weewxd's `LANG`, not the declaration and not the stylesheet.  See
-[the time format](configuration.html#the-time-format).
-
-## The board says `Expired`, with `CLICK-ME` in the corner
+## The clock reads `EXPIRED TAP`
 
 The page polled for `expiration_time` hours without the keep-alive
-password, and stopped.  Click it to restart.  For a permanently mounted
+password, and stopped.  Tap it to restart.  For a permanently mounted
 tablet, set your own `page_update_pwd` and open the board as
 `...?page_update_pwd=yourpassword` — see
 [Installation](installation.html#5-point-the-tablet-at-it-and-keep-it-awake).
 
-## The clock is blue
+## The title is not the one I set
 
-Either the last fetch failed or the loop data has fallen more than
-[`clock_max_age`](configuration.html#clock_max_age) seconds behind.  Read the
-live label beside it: blank means a network-level failure, usually transient;
-`HTTP nnn`, `BAD DATA` and `BAD URL` are covered above; and an age past `clock_max_age` —
-`3.0m ago`, say — means the fetch is fine and the data behind it is not.  Look
-at whether weewxd is running and `loop-data.txt` is still being written.
+Without a `title` the boards show the station's `location`, from
+`[Station]` in `weewx.conf`, and a title still reading the Acme Weather
+placeholder earlier installers wrote counts as no title.  A `title` has to
+be inside `[[[Extras]]]` in the `[[WeatherBoardReport]]` stanza to be
+read, and it takes effect at the next report cycle — the title is set when
+the page is generated, not by the page's polling.
 
-A smaller age there, `12s ago` or `45s ago`, leaves the clock red on purpose:
-it is behind, but not so far behind that it has stopped being a clock.
+## The time is not the one I expected
 
-## The air quality reading is missing
+It is the station's time, not the tablet's, so a time off by hours means
+the station's clock or timezone is — what you are seeing is what the
+station believes.  12 or 24 hour comes from the report's language, or
+from [`clock_format`](configuration.html#clock_format) if it is set.
 
-It needs `show_purple = True` and a working
-[weewx-purple](https://github.com/chaunceygardiner/weewx-purple).  If the
-cell shows `???`, the two AQI fields are not arriving — the skin declares
-them, so LoopData is omitting them because the station reports no
-`pm2_5`; if it is simply empty and the footer legend does not mention air
-quality, `show_purple` is off.
+## A reading I expected is not on the board
 
-## One reading shows question marks and the rest are fine
+UV, solar radiation and air quality show only when the station's current
+record carries them — see
+[`show_uv`, `show_radiation`, `show_aqi`](configuration.html#show_uv-show_radiation-show_aqi).
+Check that the sensor is reporting, or set the matching setting to `true`
+to show the panel regardless.  For air quality, both `pm2_5` and the
+index computed from it, `pm2_5_aqi`, have to be there: without an
+extension such as
+[weewx-purple](https://github.com/chaunceygardiner/weewx-purple) there is
+no index to show.  A `show_purple = False` left in `weewx.conf` by an
+earlier release also turns air quality off.
+
+Feels like needs WeeWX's apparent temperature, which it computes from the
+temperature, humidity and wind.
+
+## One reading is missing and the rest are fine
 
 Your station does not report that observation: LoopData omits a field
 whose observation is not in the loop packet.  Look in the
 `WeatherBoardReport` entry of `loop-data.txt` for the field named on the
-[Reading the board](reading-the-board.html#the-readings) page.
+[Reading the board](reading-the-board.html) page.
+
+## A status word has a gap in it on the LED board
+
+The LED board draws the status line in its own lettering, which has the
+capitals A to Z, the digits, and the accented capitals it draws itself.
+A `[[[Texts]]]` override in `weewx.conf` that uses any other letter shows
+a gap where that letter would be.  See
+[Languages](configuration.html#languages).
 
 ## A CSS change has not taken effect
 
@@ -183,7 +176,7 @@ the file into place yourself.
 
 If `loop_data_file` points at another host, that server must send
 `Access-Control-Allow-Origin` or the browser blocks every poll and the
-board never updates.  Adding `Access-Control-Expose-Headers: Date` restores
-the full staleness check; without it the board falls back on a weaker
-measure, described in
+clock reads `NO CONNECT`.  Adding `Access-Control-Expose-Headers: Date`
+restores the full staleness check; without it the board falls back on a
+weaker measure, described in
 [How age is measured](missing-data.html#how-age-is-measured).

@@ -3,13 +3,16 @@
 # See LICENSE for your rights.
 """Offline check for the WeatherBoard templates.
 
-Renders every *.html.tmpl in the skin with a stub searchList (both
-show_purple settings crossed with both title_theme settings) and
-validates the output:
+Renders both boards -- index.html (the LED board) and splitflap.html
+(the split-flap board) -- with a stub searchList, once with every
+optional reading present and once with none, and validates the output:
 
   - templates render without Cheetah errors
-  - every element id referenced by getElementById exists in the HTML
+  - every element id the javascript paints exists in the HTML
   - no unrendered $Extras/$current/... placeholders leak into the output
+  - every <script> is plain ASCII: WeeWX writes these pages with
+    encoding = html_entities, which turns any other character into an
+    entity -- inside a script, a broken string
   - no inline style= attributes (all CSS belongs in weatherboard.css)
   - every <script> parses as valid JavaScript (needs the pure-Python
     'esprima' package; the ordinary renders skip this with a warning if it
@@ -18,17 +21,22 @@ validates the output:
 
 It also checks that skin.conf's [LoopData] [[fields]] declaration -- the
 fields loopdata 7.0 and later writes under this report's name -- is
-exactly the set of loopdata fields the updaters read.  A field the
-updaters read but the skin does not declare arrives as question marks; a
-field declared that nothing reads is rendered on every loop packet for
-nobody.
+exactly the set of loopdata fields the boards read.  A field the boards
+read but the skin does not declare arrives missing; a field declared that
+nothing reads is rendered on every loop packet for nobody.
+
+And it holds the language files to the pages: en.conf carries exactly the
+strings the pages render, every other language carries all of them and
+nothing else, and the strings the boards draw in their own lettering use
+only the letters the LED board can set and fit the split-flap board's
+twelve flaps.
 
 And it loads install.py with a stubbed user.loopdata and exercises
 loader(): an install must be refused on a station with no loopdata or one
 older than 7.0, naming 7.0, and accepted with 7.0 and later by version
 tuple rather than by string; a list or an uninstall must never be refused,
 since WeeWX runs an installed extension's loader() for those too; and the
-installer returned must carry the version changes.txt's newest heading
+installer returned must carry the version changes.md's newest heading
 names, with no configure() left to edit the deprecated [LoopData]
 [[Include]] fields line.
 
@@ -39,8 +47,7 @@ esprima somewhere on PYTHONPATH (never installed into the venv itself):
       /home/weewx/weewx-venv/bin/python3 tests/check_templates.py
 
 This is a static check only: it proves the templates generate well-formed
-pages, not that the updater behaves.  Behavior is verified by loading the
-generated pages in a browser.
+pages, not that the boards behave.  tests/browser_check.py runs them.
 """
 
 import importlib.util
@@ -71,28 +78,22 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKIN = os.path.join(REPO, 'skins', 'WeatherBoard')
 INSTALL = os.path.join(REPO, 'install.py')
 SKIN_CONF = os.path.join(SKIN, 'skin.conf')
-CHANGES = os.path.join(REPO, 'changes.txt')
+CHANGES = os.path.join(REPO, 'changes.md')
 # The report name the ordinary renders use.  The updater reads this key
 # out of loop-data.txt, so it shows up in the rendered script.
 REPORT_NAME = 'WeatherBoardReport'
 
 
 class Tag:
-    """Stub for WeeWX tags: $current.outTemp, $obs.label.foo, etc.
-
-    .raw renders as a bare number and the numeric operators are defined
-    because logo.inc embeds tag values in JavaScript ('54.9°F' there
-    would be an esprima parse error) and compares/divides them in
-    Cheetah (#if a.raw >= b.raw, $almanac.moon.phase / 100.0).
-    """
-    def __init__(self, s='54.9°F'):
+    """Stub for WeeWX tags: $current.outTemp, $obs.label.foo, etc.  Truthy
+    unless made otherwise, which is what .has_data answers."""
+    def __init__(self, s='54.9°F', present=True):
         self._s = s
+        self._present = present
 
     def __getattr__(self, name):
         if name.startswith('__'):
             raise AttributeError(name)
-        if name == 'raw':
-            return Tag('4.2')
         return self
 
     def __call__(self, *args, **kwargs):
@@ -101,11 +102,56 @@ class Tag:
     def __str__(self):
         return self._s
 
-    def __ge__(self, other):
-        return False
+    def __bool__(self):
+        return self._present
 
-    def __truediv__(self, other):
-        return 0.42
+
+class Current:
+    """$current.<obs>: its has_data is False for the observations named
+    missing, so the auto settings can be driven both ways."""
+    def __init__(self, missing=()):
+        self._missing = set(missing)
+
+    def __getattr__(self, name):
+        if name.startswith('__'):
+            raise AttributeError(name)
+        return Tag(present=name not in self._missing)
+
+
+class Unit:
+    """$unit: labels, and unit_type for the split-flap lamps' thresholds."""
+    class _Labels:
+        def __getattr__(self, name):
+            if name.startswith('__'):
+                raise AttributeError(name)
+            return {'outTemp': '°F', 'dewpoint': '°F', 'appTemp': '°F', 'outHumidity': '%',
+                    'windSpeed': 'mph', 'barometer': 'inHg', 'rain': 'in', 'rainRate': 'in/h',
+                    'radiation': 'W/m²'}.get(name, '?')
+
+    class _Types:
+        def __getattr__(self, name):
+            if name.startswith('__'):
+                raise AttributeError(name)
+            return {'windGust': 'km_per_hour', 'barometer': 'mbar'}.get(name, 'unknown')
+
+    label = _Labels()
+    unit_type = _Types()
+
+
+class UnitUS(Unit):
+    """$unit for a station in US units: mph and inHg."""
+    class _Types:
+        def __getattr__(self, name):
+            if name.startswith('__'):
+                raise AttributeError(name)
+            return {'windGust': 'mile_per_hour', 'barometer': 'inHg'}.get(name, 'unknown')
+
+    unit_type = _Types()
+
+
+# Every optional reading present, and every one absent.
+ALL_PRESENT = ()
+NONE_PRESENT = ('UV', 'radiation', 'pm2_5', 'pm2_5_aqi', 'appTemp')
 
 
 class Extras(dict):
@@ -114,26 +160,16 @@ class Extras(dict):
         return k in self
 
 
-def make_extras(show_purple, title_theme, analytics=True, overrides=None):
+def make_extras(analytics=True, overrides=None):
     extras = {
-        'title_theme': title_theme,
-        'meta_title': 'Test WeatherBoard',
-        'title': 'Test WeatherBoard&trade;',
-        'subtitle': 'Updated continuously.',
         'loop_data_file': 'loop-data.txt',
         'max_age': 10,
-        'clock_max_age': 120,
-        'in_temp_file': 'inTemp.txt',
-        'in_co2_file': 'inCO2.txt',
-        'in_aqi_file': 'inAQI.txt',
-        'in_temp_max_age': 120,
-        'in_co2_max_age': 120,
-        'in_aqi_max_age': 120,
-        'solar_array_max_age': 150,
         'refresh_rate': 2,
         'expiration_time': 4,
         'page_update_pwd': 'testpwd',
-        'show_purple': 'True' if show_purple else 'False',
+        'show_uv': 'auto',
+        'show_radiation': 'auto',
+        'show_aqi': 'auto',
     }
     # googleAnalyticsId ALONE gates analytics.inc's body; analytics_host
     # only decides whether the gtag calls are wrapped in a host test, and an
@@ -149,16 +185,23 @@ def make_extras(show_purple, title_theme, analytics=True, overrides=None):
     return Extras(extras)
 
 
-def render(tmpl, show_purple, title_theme, analytics=True, overrides=None,
-           report_name=REPORT_NAME):
+def lang_texts(lang):
+    """A language file's [Texts], the way WeeWX reads a skin's files."""
+    conf = configobj.ConfigObj(os.path.join(SKIN, 'lang', lang + '.conf'), encoding='utf-8',
+                               interpolation=False, file_error=True)
+    return conf
+
+
+def render(tmpl, missing=ALL_PRESENT, analytics=True, overrides=None,
+           report_name=REPORT_NAME, lang='en', unit=None):
+    texts = lang_texts(lang)['Texts']
     ns = {
-        'Extras': make_extras(show_purple, title_theme, analytics, overrides),
-        'current': Tag(),
+        'Extras': make_extras(analytics, overrides),
+        'current': Current(missing),
         'day': Tag(),
         'station': Tag('Test Station'),
-        'obs': Tag('SomeLabel'),
-        # logo.inc embeds almanac values in JavaScript: bare number.
-        'almanac': Tag('42.0'),
+        'unit': unit or Unit(),
+        'gettext': lambda key: texts.get(key, key),
         # WeeWX's SkinInfo search list: the [StdReport] section name.
         'REPORT_NAME': report_name,
     }
@@ -167,13 +210,15 @@ def render(tmpl, show_purple, title_theme, analytics=True, overrides=None,
     return str(Template(file=os.path.join(SKIN, tmpl), searchList=[ns]))
 
 
-def check(html, mono, show_purple):
+# The ids each board's painter reaches the page through: every helper that
+# takes a cell's id first.  A helper missing here takes its ids out of the
+# check without failing anything.
+PAINTED = re.compile(r"""(?:getElementById|ledSet|ledWind|ledBarometer|ledAqi|flapShow|flapLamp)"""
+                     r"""\(\s*(?:"([^"]+)"|'([^']+)')""")
+
+
+def check(html, tmpl, missing=ALL_PRESENT):
     failures = []
-    # The mono theme is body class + repaint script; color is neither.
-    for token in ('class="title-mono"', 'paw_logo_mono.js'):
-        if (token in html) != mono:
-            failures.append('%s %s for title_theme=%s' % (
-                token, 'missing' if mono else 'present', 'mono' if mono else 'color'))
     scripts = re.findall(r'<script>(.*?)</script>', html, re.S)
     if not scripts:
         failures.append('no <script> blocks found')
@@ -184,32 +229,58 @@ def check(html, mono, show_purple):
                 esprima.parseScript(js)
             except Exception as e:
                 failures.append('script %d: JS parse error: %s' % (i, e))
-    used = set(re.findall(r'getElementById\("([^"]+)"\)', js_all))
+    for i, js in enumerate(scripts):
+        odd = sorted(set(ch for ch in js if ord(ch) > 127))
+        if odd:
+            failures.append('script %d carries non-ASCII %s: html_entities encoding turns it into'
+                            ' an entity; write it as a \\u escape' % (i, odd))
     declared = set(re.findall(r'id=["\']([^"\']+)["\']', html))
-    missing = used - declared
-    if missing:
-        failures.append('JS references missing ids: %s' % sorted(missing))
+    used = set()
+    for dq, sq in PAINTED.findall(js_all):
+        used.add(dq or sq)
+    # flapLamp names the row; its lamp is the row's id plus -lamp.
+    used |= set((dq or sq) + '-lamp' for dq, sq in
+                re.findall(r"""flapLamp\(\s*(?:"([^"]+)"|'([^']+)')""", js_all))
+    optional = {'led-uv': 'UV', 'led-rad': 'radiation', 'led-aqi': 'pm2_5_aqi',
+                'led-fl': 'appTemp', 'flap-air': 'pm2_5_aqi', 'flap-air-lamp': 'pm2_5_aqi'}
+    missing_ids = sorted(i for i in used - declared
+                         if not (i in optional and optional[i] in missing))
+    if missing_ids:
+        failures.append('the javascript paints ids the page does not have: %s' % missing_ids)
     # $24h... is included deliberately: it is NOT a valid Cheetah placeholder
     # (digit start) and renders as literal text if put in a template.
     leaks = re.findall(
-        r'\$Extras[.\w]*|\$current[.\w]*|\$day[.\w]*|\$obs[.\w]*|\$24h[.\w]*'
-        r'|\$station[.\w]*|\$almanac[.\w]*|\$pl_\w+|\$jsstr\(',
+        r'\$Extras[.\w]*|\$current[.\w]*|\$day[.\w]*|\$obs[.\w]*|\$24h[.\w]*|\$station[.\w]*'
+        r'|\$jsstr\(|\$gettext|\$unit[.\w]*|\$wb_\w*',
         html)
     if leaks:
         failures.append('unrendered placeholders: %s' % sorted(set(leaks)))
     inline = re.findall(r'style="[^"]*"', html)
     if inline:
         failures.append('inline styles (move to weatherboard.css): %s' % inline[:5])
-    # The show_purple gate itself.  The id check above cannot see this
-    # crossing: <td id="aqi"> is unconditional in footer.inc, so if the gate
-    # ever resolved the wrong way the whole AQI updater block would vanish
-    # and every other check here would still pass.  The reading's own field
-    # names appear only inside that block, so their presence is the gate.
-    has_aqi_js = 'pm2_5' in html
-    if show_purple and not has_aqi_js:
-        failures.append('show_purple is on but no AQI updater code was rendered')
-    if not show_purple and has_aqi_js:
-        failures.append('show_purple is off but AQI updater code was rendered')
+    # The optional readings.  With everything present each panel is there
+    # and its flag is on; with nothing present each is gone and its flag is
+    # off.  The ids alone cannot see a gate that resolved the wrong way:
+    # the painter skips a missing cell, so both renders would pass.
+    want = {'uv': 'UV' not in missing, 'radiation': 'radiation' not in missing,
+            'aqi': 'pm2_5_aqi' not in missing, 'feels': 'appTemp' not in missing}
+    m = re.search(r'show: \{ uv: (\w+), radiation: (\w+), aqi: (\w+), feels: (\w+) \}', html)
+    if not m:
+        failures.append('the show flags were not rendered')
+    else:
+        got = dict(zip(('uv', 'radiation', 'aqi', 'feels'), (v == 'true' for v in m.groups())))
+        if got != want:
+            failures.append('show flags are %s, expected %s' % (got, want))
+    if tmpl == 'index.html.tmpl':
+        for cell, key in (('led-uv', 'uv'), ('led-rad', 'radiation'), ('led-aqi', 'aqi'), ('led-fl', 'feels')):
+            if (('id="%s"' % cell) in html) != want[key]:
+                failures.append('the %s panel is %s but %s is %s'
+                                % (cell, 'there' if not want[key] else 'missing', key, want[key]))
+        if ('id="led-sun"' in html) != (want['uv'] or want['radiation']):
+            failures.append('the sun panel does not follow UV and radiation')
+    else:
+        if ('id="flap-air"' in html) != want['aqi']:
+            failures.append('the air row does not follow show_aqi')
     return failures
 
 
@@ -243,41 +314,27 @@ def declared_fields():
 
 
 def fields_read_by_updaters():
-    """Every loopdata field the javascript looks up in the poll result.
-
-    Catches result["field"] directly, and result[someVar] by resolving
-    someVar's literal in the same file -- which is how the clock field,
-    current.dateTime.format("%X"), is read."""
-    direct = re.compile(r"""result\[\s*(?:"([^"]+)"|'([^']+)')\s*\]""")
-    indirect = re.compile(r"""result\[\s*([A-Za-z_$][\w$]*)\s*\]""")
-    # The standalone .js files (the live logo) receive the loop-data object
-    # as a parameter of their own naming, so result[...] never matches them.
-    # Match any object indexed by a quoted name in one of loopdata's
-    # namespaces instead.  That pattern is too loose for the templates --
-    # they carry element ids and prose that would match it -- so it is used
-    # only on .js, where every such string is a field read.
-    js_direct = re.compile(
-        r"""\[\s*(?:"((?:current|day|week|month|year|rainyear|alltime|trend|almanac|unit|station|10m|2h|24h)\.[^"]+)"|'((?:current|day|week|month|year|rainyear|alltime|trend|almanac|unit|station|10m|2h|24h)\.[^']+)')\s*\]""")
+    """Every loopdata field the javascript looks up in a poll result:
+    result["f"], r['f'] and lastResult['f'] directly, and val('f') and
+    has(r, 'f') -- the painters' two helpers."""
+    patterns = [
+        re.compile(r"""\b(?:result|lastResult|r)\[\s*(?:"([^"]+)"|'([^']+)')\s*\]"""),
+        re.compile(r"""\bval\(\s*(?:"([^"]+)"|'([^']+)')\s*\)"""),
+        re.compile(r"""\bhas\(\s*r\s*,\s*(?:"([^"]+)"|'([^']+)')\s*\)"""),
+    ]
     fields = set()
     for name in sorted(os.listdir(SKIN)):
-        if name.endswith('.js'):
-            src = io.open(os.path.join(SKIN, name), encoding='utf-8').read()
-            for dq, sq in js_direct.findall(src):
-                fields.add(dq or sq)
-            continue
         if not (name.endswith('.inc') or name.endswith('.tmpl')):
             continue
         src = io.open(os.path.join(SKIN, name), encoding='utf-8').read()
-        for dq, sq in direct.findall(src):
-            fields.add(dq or sq)
-        for var in indirect.findall(src):
-            assign = re.search(
-                r"""\b(?:var|let|const)\s+%s\s*=\s*(?:"([^"]+)"|'([^']+)')"""
-                % re.escape(var), src)
-            if assign:
-                fields.add(assign.group(1) or assign.group(2))
-            else:
-                fields.add('<unresolved variable %s in %s>' % (var, name))
+        for pat in patterns:
+            for dq, sq in pat.findall(src):
+                fields.add(dq or sq)
+        # gustField(r, span) reads span + '.windGust.max.formatted' and
+        # span + '.windSpeed.max.formatted'.
+        for span in re.findall(r"gustField\(r,\s*'(\w+)'\)", src):
+            fields.add(span + '.windGust.max.formatted')
+            fields.add(span + '.windSpeed.max.formatted')
     return fields
 
 
@@ -303,8 +360,9 @@ def check_declared_fields():
     unread = sorted(set(declared) - read)
     if unread:
         failures.append('declared in skin.conf, read by nothing: %s' % unread)
-    # The AQI fields are read only with show_purple set; they sit in a
-    # group of their own so the comment saying so stays attached to them.
+    # The AQI fields are read only when the air quality reading shows;
+    # they sit in a group of their own so the comment saying so stays
+    # attached to them.
     for field, groups in declared.items():
         if ('aqi' in field) != (groups == ['air_quality']):
             failures.append('%s: only the AQI fields belong in the air_quality group' % field)
@@ -315,7 +373,8 @@ def load_installer():
     """install.py as a module.  It imports weectl's 'setup' module: in
     WeeWX 5 weecfg.extension registers itself under that name when
     imported (the alias that keeps pre-5.0 installers loading); in WeeWX 4
-    wee_extension makes the alias itself, so it is made here too."""
+    wee_extension made the alias itself; making it here as well costs
+    nothing."""
     module = importlib.import_module('weecfg.extension')
     sys.modules.setdefault('setup', module)
     spec = importlib.util.spec_from_file_location('weatherboard_install', INSTALL)
@@ -359,8 +418,9 @@ def loader_result(module, loop_data_version, argv=INSTALL_ARGV):
 def check_installer():
     """loader() refuses to install on a station without weewx-loopdata 7.0,
     refuses nothing when WeeWX is only listing or uninstalling, and the
-    installer it returns is the release changes.txt names, with no
-    configure() left to edit the fields line."""
+    installer it returns is the release changes.md names, with no
+    configure() left to edit the fields line, and it installs every file
+    the skin has."""
     failures = []
     try:
         module = load_installer()
@@ -377,15 +437,6 @@ def check_installer():
                                '' if version is None else ' and the version found', result))
         if version is None and 'not installed' not in result:
             failures.append('the refusal with no loopdata does not say so: %r' % result)
-        # wee_extension (WeeWX 4) is optparse: --install FILE, --install=FILE,
-        # and any unambiguous prefix of the option all install.
-        for argv in (['wee_extension', '--install', 'weewx-weatherboard.zip'],
-                     ['wee_extension', '--install=weewx-weatherboard.zip'],
-                     ['wee_extension', '--inst', 'weewx-weatherboard.zip']):
-            result = loader_result(module, version, argv)
-            if not isinstance(result, str):
-                failures.append('loader() accepted weewx-loopdata %s under `%s`'
-                                % (version or 'absent', ' '.join(argv)))
     # An installed loopdata whose import fails is not an absent one: saying
     # "not installed" would tell the user to install what they have.
     result = loader_result(module, 'broken')
@@ -407,27 +458,52 @@ def check_installer():
     # catches only its own ExtensionError: a refusal there would leave the
     # board unlistable and unremovable once loopdata was gone.
     for argv in (['weectl', 'extension', 'list'],
-                 ['weectl', 'extension', 'uninstall', 'weatherboard'],
-                 ['wee_extension', '--list'],
-                 ['wee_extension', '--uninstall', 'weatherboard']):
+                 ['weectl', 'extension', 'uninstall', 'weatherboard']):
         result = loader_result(module, None, argv)
         if isinstance(result, str):
             failures.append('loader() refused `%s` with no loopdata: %r' % (' '.join(argv), result))
+    # WeeWX 5.2 or later, by version tuple: 5.10 is newer than 5.2.
+    import weewx
+    for version, accepted in (('4.10.2', False), ('5.1.0', False), ('5.2.0', True),
+                              ('5.10.0', True), ('6.0.0b1', True)):
+        with mock.patch.object(weewx, '__version__', version):
+            result = loader_result(module, '7.0')
+        if accepted and isinstance(result, str):
+            failures.append('loader() refused WeeWX %s: %r' % (version, result))
+        if not accepted and (not isinstance(result, str) or '5.2' not in result):
+            failures.append('loader() did not refuse WeeWX %s naming 5.2: %r' % (version, result))
     if installer is None:
         return failures
     if 'configure' in type(installer).__dict__:
         failures.append('the installer still defines configure()')
     if 'LoopData' in installer['config']:
         failures.append("the installer's stanza writes a [LoopData] section")
-    # The version is the release: it must be the one changes.txt's newest
+    # The version is the release: it must be the one changes.md's newest
     # heading names.
-    heading = re.search(r'^(\d+(?:\.\d+)+)\s+\d{1,2}/\d{1,2}/\d{4}\s*$',
+    heading = re.search(r'^##\s+(\d+(?:\.\d+)+)\s+\d{1,2}/\d{1,2}/\d{4}\s*$',
                         io.open(CHANGES, encoding='utf-8').read(), re.M)
     if not heading:
-        failures.append('no release heading found in changes.txt')
+        failures.append('no release heading found in changes.md')
     elif heading.group(1) != installer['version']:
-        failures.append('install.py says %s, changes.txt says %s'
+        failures.append('install.py says %s, changes.md says %s'
                         % (installer['version'], heading.group(1)))
+    # weectl installs the files named, and only those: a skin file left off
+    # the list is missing on every station, and nothing here would render
+    # differently.  Each goes to its own directory.
+    listed = set()
+    for directory, names in installer['files']:
+        for name in names:
+            listed.add(name)
+            if os.path.dirname(name) != directory:
+                failures.append('install.py puts %s in %s' % (name, directory))
+    present = set()
+    for dirpath, _dirs, names in os.walk(SKIN):
+        for name in names:
+            present.add(os.path.relpath(os.path.join(dirpath, name), REPO))
+    for name in sorted(present - listed):
+        failures.append('install.py does not install %s' % name)
+    for name in sorted(listed - present):
+        failures.append('install.py installs %s, which does not exist' % name)
     return failures
 
 
@@ -444,25 +520,11 @@ def check_installer():
 STANZA_LIVE = (
     # weectl needs these.
     'HTML_ROOT', 'enable', 'skin',
-    # Branding: read bare as $Extras.title, with no fallback at all -- a
-    # commented one is a render error, not a default.
-    'meta_title', 'title', 'subtitle',
-    # This branch has no logo Extra at all -- index.html.tmpl includes
-    # logo.inc unconditionally -- so master's entry is deliberately absent.
-    #
-    # This site's own paths and ids, and the settings most likely to be
-    # edited.  The four sidecar files are the indoor board's, and their
-    # staleness limits sit beside them: skin.conf ships neither in_co2_file
-    # nor in_co2_max_age, so those two have nothing behind them but the
-    # updater's own fallback and must stay live here.
-    'loop_data_file', 'in_temp_file', 'in_co2_file', 'in_aqi_file',
-    'solar_array_file', 'in_temp_max_age', 'in_co2_max_age', 'in_aqi_max_age',
-    'solar_array_max_age', 'title_theme',
-    # skin.conf ships show_purple = False and this site's boards want the AQI
-    # reading, so demoting it here would switch it off.  Rule 1 forbids it:
-    # the commented value would not be the one that governs.
-    'show_purple',
-    'googleAnalyticsId', 'analytics_host', 'page_update_pwd',
+    # This site's own title, path and analytics ids, and the setting most
+    # likely to be edited.  Master ships title and meta_title in neither
+    # place; this branch writes them live, so a fresh install is turnkey.
+    'title', 'meta_title',
+    'loop_data_file', 'googleAnalyticsId', 'analytics_host', 'page_update_pwd',
     # Pinned deliberately: see the comment on [[[Units]]] in install.py.
     'mile_per_hour', 'degree_C', 'km_per_hour', 'degree_F',
 )
@@ -473,9 +535,11 @@ STANZA_LIVE = (
 # line says.
 STANZA_COMMENTED = {
     'max_age': '10',
-    'clock_max_age': '120',
     'expiration_time': '4',
     'refresh_rate': '2',
+    'show_uv': 'auto',
+    'show_radiation': 'auto',
+    'show_aqi': 'auto',
 }
 
 # A realistic merge target: a weewx.conf that ALREADY HAS [StdReport].  A
@@ -533,20 +597,19 @@ def skin_conf_defaults():
 
 
 def js_fallbacks():
-    """The default each numeric Extra falls back to, read out of the updater,
-    plus show_purple's, read out of the templates that consume it."""
+    """The default each setting falls back to when skin.conf drops it too:
+    the numeric ones out of board.inc's numExtra() calls, each traced from
+    the WB property it reads back to the Extra that fills it, and the show_
+    ones out of their $Extras.get() defaults."""
     found = {}
-    common = io.open(os.path.join(SKIN, 'updater_common.inc'), encoding='utf-8').read()
-    for key, dflt in re.findall(
-            r"numExtra\(\$jsstr\(\$Extras\.get\('(\w+)',\s*''\)\),\s*([\d.]+)\)", common):
-        found[key] = dflt
-    for name in sorted(os.listdir(SKIN)):
-        if not name.endswith(('.inc', '.tmpl')):
-            continue
-        text = io.open(os.path.join(SKIN, name), encoding='utf-8').read()
-        for key, dflt in re.findall(
-                r"to_bool\(\$Extras\.get\('(\w+)',\s*(\w+)\)\)", text):
-            found.setdefault(key, dflt)
+    board = io.open(os.path.join(SKIN, 'board.inc'), encoding='utf-8').read()
+    props = dict((prop, key) for prop, key in re.findall(
+        r"(\w+): \$jsstr\(\$Extras\.get\('(\w+)', ''\)\)", board))
+    for prop, dflt in re.findall(r"numExtra\(WB\.(\w+),\s*([\d.]+)\)", board):
+        if prop in props:
+            found[props[prop]] = dflt
+    for key, dflt in re.findall(r"\$Extras\.get\('(show_\w+)',\s*'(\w+)'\)", board):
+        found.setdefault(key, dflt)
     return found
 
 
@@ -577,6 +640,9 @@ def check_stanza():
     for key in STANZA_COMMENTED:
         if key in live:
             failures.append('%s is live in the stanza but is meant to be commented out' % key)
+    # Master holds title and meta_title OUT of the stanza, since their
+    # defaults are the station's location and the title.  This branch
+    # writes the site's own, live, and STANZA_LIVE holds them there.
 
     # Rule 1.
     found = commented_assignments()
@@ -649,9 +715,9 @@ def check_stanza():
             # one has to put the option in the section it documents, and a
             # comment block that lands in front of a SECTION HEADER is written
             # at the header's indent -- one level out from the scalars it
-            # belongs with.  #show_purple left last in [[[Extras]]] comes out
+            # belongs with.  #show_aqi left last in [[[Extras]]] comes out
             # at [[[Units]]]'s column, and uncommenting it there sets
-            # show_purple on [[WeatherBoardReport]], where nothing reads it.
+            # show_aqi on [[WeatherBoardReport]], where nothing reads it.
             # So every commented option needs a LIVE SCALAR after it, in its
             # own section.
             elif is_section and re.match(r'#\w+\s*=', text):
@@ -671,47 +737,185 @@ def check_stanza():
     return failures
 
 
+LANGS = ('da', 'de', 'en', 'es', 'fr', 'it', 'nl', 'no', 'sv')
+# The LED board sets these itself (the font's own), and draws these accented
+# capitals from a base letter and a mark (led.inc's LED_MARKS).
+LED_NATIVE = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/?')
+LED_DRAWN = set('ÄÖÜÅØÁÉÍÓÚ')
+# Strings the boards draw in their own lettering, and on the split-flap
+# board's flaps.  {n} at its widest for each: seconds and minutes run to
+# 59, hours to 23, days as far as 99.
+STATUS = {'{n} S AGO': 59, '{n} M AGO': 59, '{n} H AGO': 23, '{n} D AGO': 99,
+          'NO CONNECT': None, 'EXPIRED TAP': None, 'WAITING': None}
+FLAP_LIMITS = {'HI': 3, 'RH': 3, 'G': 1, '/HR': 3, 'CALM': 7,
+               'GOOD': 8, 'MODERATE': 8, 'USG': 8, 'UNHLTHY': 8, 'V UNHLTH': 8, 'HAZARD': 8}
+
+
+def gettext_keys():
+    """Every string the pages hand to $gettext."""
+    keys = set()
+    for name in sorted(os.listdir(SKIN)):
+        if not name.endswith(('.inc', '.tmpl')):
+            continue
+        src = io.open(os.path.join(SKIN, name), encoding='utf-8').read()
+        for q, key in re.findall(r"""\$gettext\((["'])(.*?)\1\)""", src):
+            keys.add(key)
+    return keys
+
+
+def led_settable(text):
+    text = text.upper().replace('ß', 'SS')
+    return sorted(set(ch for ch in text if ch not in LED_NATIVE and ch not in LED_DRAWN))
+
+
+def check_langs():
+    """en.conf is exactly the strings the pages render; every language has
+    them all and nothing else; and what the boards draw in their own
+    lettering can be drawn, and fits."""
+    failures = []
+    rendered = gettext_keys()
+    files = sorted(f[:-5] for f in os.listdir(os.path.join(SKIN, 'lang')) if f.endswith('.conf'))
+    if files != sorted(LANGS):
+        failures.append('lang/ holds %s, expected %s' % (files, sorted(LANGS)))
+    en = lang_texts('en')['Texts']
+    if set(en) != rendered:
+        failures.append('en.conf is missing %s and carries unrendered %s'
+                        % (sorted(rendered - set(en)), sorted(set(en) - rendered)))
+    for key, value in en.items():
+        if key != value:
+            failures.append('en.conf translates %r as %r: English is its own key' % (key, value))
+    for lang in LANGS:
+        conf = lang_texts(lang)
+        texts = conf['Texts']
+        if set(texts) != set(en):
+            failures.append('%s.conf is missing %s and carries unknown %s'
+                            % (lang, sorted(set(en) - set(texts)), sorted(set(texts) - set(en))))
+        for key, widest in STATUS.items():
+            value = texts.get(key, '')
+            if ('{n}' in key) != ('{n}' in value):
+                failures.append('%s.conf %r: {n} must be kept exactly once' % (lang, key))
+            shown = value.replace('{n}', str(widest)) if widest is not None else value
+            if len(shown) > 12:
+                failures.append('%s.conf %r reads %r, %d characters: the split-flap board has 12'
+                                % (lang, key, shown, len(shown)))
+            if led_settable(shown):
+                failures.append('%s.conf %r uses %s, which the LED board cannot set'
+                                % (lang, key, led_settable(shown)))
+        clock = texts.get('%-I:%M:%S %p', '')
+        if re.sub(r'%-?[IHMSp]', '', clock).strip(': ') != '':
+            failures.append('%s.conf clock format %r uses more than %%-I %%I %%H %%M %%S %%p'
+                            % (lang, clock))
+        for key, limit in FLAP_LIMITS.items():
+            if len(texts.get(key, '')) > limit:
+                failures.append('%s.conf %r reads %r: at most %d characters on a flap row'
+                                % (lang, key, texts.get(key), limit))
+        dirs = conf.get('Units', {}).get('Ordinates', {}).get('directions')
+        if not isinstance(dirs, list) or len(dirs) != 17:
+            failures.append('%s.conf needs [Units] [[Ordinates]] directions, 17 of them' % lang)
+        else:
+            for d in dirs[:16]:
+                if led_settable(d) or len(d) > 3:
+                    failures.append('%s.conf direction %r cannot be set in three LED characters'
+                                    % (lang, d))
+    return failures
+
+
+def report(name, failures):
+    print('%s %s' % ('FAIL' if failures else 'ok  ', name))
+    for f in failures:
+        print('       - %s' % f)
+    return not failures
+
+
 def main():
     if esprima is None:
         print('WARNING: esprima not importable; skipping JS syntax checks.')
         print('         (pip install esprima to a dir on PYTHONPATH -- never into the venv.)')
     ok = True
-    templates = sorted(f for f in os.listdir(SKIN) if f.endswith('.html.tmpl'))
-    if not templates:
-        sys.exit('no *.html.tmpl files found in %s' % SKIN)
+    templates = ['index.html.tmpl', 'splitflap.html.tmpl']
     for tmpl in templates:
-        for purple in (True, False):
-          for theme in ('color', 'mono'):
-            name = '%s show_purple=%s title_theme=%s' % (tmpl, purple, theme)
+        for label, missing in (('every optional reading', ALL_PRESENT),
+                               ('no optional reading', NONE_PRESENT)):
+            name = '%s, %s' % (tmpl, label)
             try:
-                html = render(tmpl, purple, theme)
+                failures = check(render(tmpl, missing), tmpl, missing)
             except Exception as e:
-                print('FAIL %s: render error: %s' % (name, e))
-                ok = False
-                continue
-            failures = check(html, theme == 'mono', purple)
-            print('%s %s' % ('FAIL' if failures else 'ok  ', name))
-            for f in failures:
-                print('       - %s' % f)
-            ok = ok and not failures
+                failures = ['render error: %s' % e]
+            ok = report(name, failures) and ok
+        # Every language renders, and every script it produces still parses
+        # and is still ASCII -- the translations reach the page through
+        # $jsstr, which must escape them.
+        failures = []
+        for lang in LANGS:
+            try:
+                failures += ['%s: %s' % (lang, f) for f in check(render(tmpl, lang=lang), tmpl)]
+            except Exception as e:
+                failures.append('%s: render error: %s' % (lang, e))
+        ok = report('%s in every language' % tmpl, failures) and ok
+    # show_purple answers for show_aqi while show_aqi is auto, both ways,
+    # and a forced show_ setting beats what the record carries.
+    failures = []
+    for overrides, missing, want in (
+            ({'show_purple': 'False'}, ALL_PRESENT, 'false'),
+            ({'show_purple': 'True'}, NONE_PRESENT, 'true'),
+            ({'show_aqi': 'false', 'show_purple': 'True'}, ALL_PRESENT, 'false'),
+            ({'show_uv': 'true'}, NONE_PRESENT, None),
+            ({'show_aqi': 'nonsense'}, ALL_PRESENT, 'true')):
+        html = render(templates[0], missing, overrides=overrides)
+        m = re.search(r'show: \{ uv: (\w+), radiation: (\w+), aqi: (\w+),', html)
+        if want is not None and (not m or m.group(3) != want):
+            failures.append('%s with %s: aqi is %s, expected %s'
+                            % (overrides, 'everything' if not missing else 'nothing',
+                               m and m.group(3), want))
+        if want is None and (not m or m.group(1) != 'true' or 'id="led-uv"' not in html):
+            failures.append('show_uv = true did not force the UV panel on a station without UV')
+    ok = report('the show_ settings, auto and forced, and show_purple as show_aqi', failures) and ok
+    # The title: the title Extra, else the station's location; the tab:
+    # meta_title, else the title.  The placeholders earlier installers wrote
+    # live count as unset.
+    failures = []
+    for overrides, want_h1, want_tab in (
+            ({'meta_title': ''}, 'Test Station', 'Test Station'),
+            ({'title': 'Acme Weather WeatherBoard&trade;',
+              'meta_title': 'Acme Weather at a Glance WeatherBoard&trade;'}, 'Test Station', 'Test Station'),
+            ({'title': 'Casa Kline&trade;', 'meta_title': ''}, 'Casa Kline&trade;', 'Casa Kline&trade;'),
+            ({'title': 'Casa Kline', 'meta_title': 'The Tab'}, 'Casa Kline', 'The Tab')):
+        for tmpl, cls in ((templates[0], 'led-title'), (templates[1], 'flap-title')):
+            html = render(tmpl, overrides=overrides)
+            h1 = re.search(r'<h1 class="%s"[^>]*>(.*?)</h1>' % cls, html)
+            tab = re.search(r'<title>(.*?)</title>', html)
+            if not h1 or h1.group(1) != want_h1:
+                failures.append('%s with %s: the title reads %r, expected %r'
+                                % (tmpl, overrides, h1 and h1.group(1), want_h1))
+            if not tab or tab.group(1) != want_tab:
+                failures.append('%s with %s: the tab reads %r, expected %r'
+                                % (tmpl, overrides, tab and tab.group(1), want_tab))
+    ok = report('the title: title, else the location; the tab: meta_title, else the title', failures) and ok
+    # The split-flap lamps' thresholds in the report's own units.  The stub
+    # station is metric: km/h and mbar.
+    failures = []
+    html = render(templates[1])
+    for name, want in (('gustWarn', 40.2336), ('baroLow', 1005.76), ('baroHigh', 1022.69)):
+        m = re.search(r'%s: ([\d.]+),' % name, html)
+        if not m or abs(float(m.group(1)) - want) > 0.05:
+            failures.append('%s is %s on a km/h and mbar station, expected about %s'
+                            % (name, m and m.group(1), want))
+    ok = report("the split-flap lamps' thresholds are in the report's units", failures) and ok
+
     # The no-analytics render, once: the #if in analytics.inc is the only
-    # thing it changes, so one template at one show_purple setting covers it.
-    # Three renders share one line, so every failure names the render it came
-    # from -- an unattributed 'render error' among three was not enough to
-    # say which configuration had broken.
+    # thing it changes, so one template covers it.  Three renders share one
+    # line, so every failure names the render it came from.
     def analytics_render(what, overrides, assertions):
         try:
-            html = render(templates[0], False, 'color', analytics=False,
-                          overrides=overrides)
+            html = render(templates[0], analytics=False, overrides=overrides)
         except Exception as e:
             return ['%s: render error: %s' % (what, e)]
-        found = ['%s: %s' % (what, f) for f in check(html, False, False)]
+        found = ['%s: %s' % (what, f) for f in check(html, templates[0])]
         for complaint, broken in assertions:
             if broken(html):
                 found.append('%s: %s' % (what, complaint))
         return found
 
-    name = '%s analytics absent' % templates[0]
     failures = analytics_render(
         'no analytics keys', None,
         [('analytics block rendered with no googleAnalyticsId set',
@@ -726,7 +930,7 @@ def main():
         [('analytics block rendered with an empty googleAnalyticsId',
           lambda html: 'googletagmanager' in html),
          ('an empty page_update_pwd did not fall back to the default',
-          lambda html: 'var page_update_pwd = "foobar";' not in html)])
+          lambda html: 'pwd: "foobar",' not in html)])
     # An id with an empty host must configure gtag with no host check: 4.0
     # wrapped it in a check against "", which no page ever matches.
     failures += analytics_render(
@@ -738,10 +942,7 @@ def main():
           lambda html: 'host == ""' in html),
          ('gtag was not configured with the id',
           lambda html: 'gtag(\'config\', "G-HOSTLESS")' not in html)])
-    print('%s %s' % ('FAIL' if failures else 'ok  ', name))
-    for f in failures:
-        print('       - %s' % f)
-    ok = ok and not failures
+    ok = report('%s analytics absent' % templates[0], failures) and ok
     # Every Extras value that reaches a <script> goes through jsstr().  This
     # render feeds each one the characters that used to kill the updater --
     # a quote of each kind, a backslash, a newline, a </script> -- and
@@ -759,68 +960,49 @@ def main():
         'refresh_rate': '2"',
         'expiration_time': "4'",
         'max_age': 'ten\nseconds',
-        'clock_max_age': '</script>',
-        # The indoor board's sidecar files, so its render is hostile too.
-        'in_temp_file': "in'</script>.txt",
-        'in_co2_file': 'a"b.txt',
-        'in_aqi_file': 'x\\y.txt',
-        'solar_array_file': 'p</script>.json',
+        'clock_format': '</script>',
     }
     # The report name is not an Extra, but it reaches the script the same
     # way and a [StdReport] section can be named anything.
-    HOSTILE_REPORT = "Weather'Board\"</script>\\ R\u00e9port"
+    HOSTILE_REPORT = "Weather'Board\"</script>\\ Réport"
+    failures = []
     for tmpl in templates:
-        name = '%s hostile Extras' % tmpl
         try:
-            html = render(tmpl, True, 'color', overrides=HOSTILE,
-                          report_name=HOSTILE_REPORT)
-            failures = check(html, False, True)
-            expected = '[' + json.dumps(HOSTILE_REPORT).replace('<', '\\u003c') + ']'
+            html = render(tmpl, overrides=HOSTILE, report_name=HOSTILE_REPORT)
+            failures += ['%s: %s' % (tmpl, f) for f in check(html, tmpl)]
+            expected = 'report: ' + json.dumps(HOSTILE_REPORT).replace('<', '\\u003c') + ','
             if expected not in html:
-                failures.append('the report name did not reach the updater as an escaped literal')
-            if not esprima:
-                failures.append('esprima not importable: the hostile render cannot be parse-checked')
-            # Exact bytes, deliberately: these pin how jsstr escapes, and a
-            # near-miss is a real failure.  One assertion per condition, each
-            # naming the literal it wanted, so a failure says which escaping
-            # moved rather than which pair of them disagreed.
-            for wanted, what in (
-                    ('if (host == "h\',\\u003c/script>")',
-                     'a list-valued analytics_host was not joined back with commas'),
-                    ('gtag/js?id=G-1%27%262%223%3Cx%2Cy"',
-                     'the analytics src URL is not the percent-encoded list-valued id'),
-                    ('gtag(\'config\', "G-1\'&2\\"3\\u003cx,y")',
-                     'the gtag literal is not the escaped list-valued id')):
-                if wanted not in html:
-                    failures.append('%s; wanted %r' % (what, wanted))
+                failures.append('%s: the report name did not reach the page as an escaped literal'
+                                % tmpl)
             if html.count('</script') != html.count('<script'):
-                failures.append('a script element ended early: %d <script vs %d </script'
-                                % (html.count('<script'), html.count('</script')))
+                failures.append('%s: a script element ended early: %d <script vs %d </script'
+                                % (tmpl, html.count('<script'), html.count('</script')))
         except Exception as e:
-            failures = ['render error: %s' % e]
-        print('%s %s' % ('FAIL' if failures else 'ok  ', name))
-        for f in failures:
-            print('       - %s' % f)
-        ok = ok and not failures
-    failures = check_declared_fields()
-    print('%s skin.conf declares the loopdata fields the updaters read'
-          % ('FAIL' if failures else 'ok  '))
-    for f in failures:
-        print('       - %s' % f)
-    ok = ok and not failures
-    failures = check_installer()
-    print('%s install.py requires weewx-loopdata 7.0 and is the release changes.txt names'
-          % ('FAIL' if failures else 'ok  '))
-    for f in failures:
-        print('       - %s' % f)
-    ok = ok and not failures
-    failures = check_stanza()
-    print("%s the installer's stanza writes its defaults commented out, and they survive the merge"
-          % ('FAIL' if failures else 'ok  '))
-    for f in failures:
-        print('       - %s' % f)
-    ok = ok and not failures
+            failures.append('%s: render error: %s' % (tmpl, e))
+    if not esprima:
+        failures.append('esprima not importable: the hostile render cannot be parse-checked')
+    html = render(templates[0], overrides=HOSTILE, report_name=HOSTILE_REPORT)
+    # Exact bytes, deliberately: these pin how jsstr escapes, and a
+    # near-miss is a real failure.
+    for expected, what in (
+            ('if (host == "h\',\\u003c/script>")',
+             'a list-valued analytics_host was not joined back with commas'),
+            ('gtag/js?id=G-1%27%262%223%3Cx%2Cy"',
+             'the analytics src URL is not the percent-encoded list-valued id'),
+            ('gtag(\'config\', "G-1\'&2\\"3\\u003cx,y")',
+             'the gtag literal is not the escaped list-valued id')):
+        if expected not in html:
+            failures.append('%s; wanted %r' % (what, expected))
+    ok = report('both boards, hostile Extras', failures) and ok
+    ok = report('skin.conf declares the loopdata fields the boards read', check_declared_fields()) and ok
+    ok = report('the language files carry every string, and the boards can draw them', check_langs()) and ok
+    ok = report('install.py requires weewx-loopdata 7.0, is the release changes.md names'
+                ' and installs every skin file',
+                check_installer()) and ok
+    ok = report("the installer's stanza writes its defaults commented out, and they survive the merge",
+                check_stanza()) and ok
     sys.exit(0 if ok else 1)
 
 
-main()
+if __name__ == '__main__':
+    main()

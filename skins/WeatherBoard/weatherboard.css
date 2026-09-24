@@ -1,295 +1,396 @@
-/* CSS for the WeeWX WeatherBoard skin.
- * Originally derived from the Seasons skin (Copyright Tom Keffer, Matthew Wall).
- * Distributed under terms of GPLv3.  See LICENSE for your rights.
+/* CSS for the WeeWX WeatherBoard skin: the LED board (index.html) and
+ * the split-flap board (splitflap.html).
+ * Copyright (C)2019-2026 by John A Kline.  Distributed under terms of
+ * GPLv3.  See LICENSE for your rights.
  *
  * ALL styling lives here, not in the templates: hex colors in a Cheetah
  * template invite directive-parsing accidents.
+ *
+ * SIZES.  Everything is in rem, and a rem is the smaller of 1% of the
+ * screen's height and 1/160 of its width: 1% of the height on a 16:10
+ * tablet, less on a narrower one, so the board fills the screen without
+ * scrolling on either.  Each LED row then scales by its own --fit, which
+ * led.inc sets to the largest factor (never above 1) at which every panel
+ * in the row still holds its cells -- metric units and other languages
+ * run wider.
  */
 
-body {
+@font-face {
+    font-family: "LCD";
+    src: url("fonts/lcdmono2ultra/lcdmono2ultra-webfont.ttf") format("truetype");
+}
+@font-face {
+    font-family: "Jost";
+    src: url("fonts/jost/jost.woff2") format("woff2");
+    font-weight: 100 900;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+html {
+    font-size: min(1vh, .625vw);
+}
+html, body {
     margin: 0;
-    padding: 0;
-    border: 0;
-    font-family: 'Open Sans', arial, sans-serif;
-    background-color: #000000;
+    height: 100%;
+    overflow: hidden;
+}
+body {
+    background: #050505;
+    font-family: "Jost", "Avenir Next", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* Title band.  White title over the color logo and green live label:
- * red is reserved for the readings (and the label's stale/Expired
- * states), so up here it only ever means trouble. */
+/* ============================ THE LED BOARD ============================ */
 
-.header-band {
-    background-color: #000000;
-    color: #ffffff;
+/* The digits stretch vertically only: the panels have height to spare,
+ * never width.  The stretch grows up from the baseline, and the padding
+ * above each reading reserves the height it adds, since a transform takes
+ * no room of its own. */
+body.led {
+    --sy: 1.5;
+    color: #ff2d1f;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.2rem 1.2rem .6rem;
 }
-
-#centered_title,
-#centered_readings {
-    width: 100%;
-    margin: auto;
+/* Four rows, each panel as wide as its content, so a reading the station
+ * does not have simply is not there and its row closes up. */
+.led-row {
+    --fit: 1;
+    display: flex;
+    gap: 1.2rem;
+    flex: 1 1 0;
+    min-height: 0;
 }
-
-/* The side cells stay equal so the title stays centered.  The longest
- * live-label states ("10.5m ago", "HTTP 404") measure 300px at 40px;
- * 320px adds a buffer.  Narrower wraps them and, wrapped, they outgrow
- * the logo and push the readings down. */
-.title-left {
-    text-align: left;
-    width: 320px;
+.led-row.led-top {
+    flex-grow: 1.45;
 }
-
-.title-center {
+.led-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 2rem;
+    padding: .4rem 1.4rem;
+    border-radius: 1.6rem;
+    background: #0b0b0b;
+    box-shadow: inset 0 0 0 .2rem #1c1c1c;
+}
+.led-c {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.led-n {
+    position: relative;
+    font-family: "LCD", monospace;
+    font-size: calc(9.6rem * var(--fit));
+    line-height: .8;
+    white-space: pre;
+    padding-top: calc(.12em + .9em * (var(--sy) - 1));
+}
+#led-temp {
+    --sy: 1.25;
+}
+#led-temp .led-n {
+    font-size: calc(20rem * var(--fit));
+}
+.led-stk {
+    display: inline-grid;
+    transform: scaleY(var(--sy));
+    transform-origin: 50% 100%;
+}
+.led-stk > span {
+    grid-area: 1 / 1;
+}
+.led-g {
+    color: #1c0907;                 /* the unlit segments */
+}
+#led-air .led-g {
+    color: #151515;
+}
+.led-v {
+    position: relative;
+}
+.led-t {
+    font-family: "Jost", sans-serif;
+    font-size: .55em;
+    position: relative;
+    margin-left: .15em;
+}
+.led-trend {
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: -.1em;
+}
+.led-l {
+    font-size: calc(2.6rem * var(--fit));
+    font-weight: 500;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #8a3a32;
+    margin-top: 1rem;
+    white-space: nowrap;
+}
+#led-temp .led-l {
+    font-size: calc(3rem * var(--fit));
+}
+#led-air .led-l {
+    color: #8a8a8a;
+}
+/* A unit keeps its own case: inHg, not INHG. */
+.led-u {
+    text-transform: none;
+    letter-spacing: .04em;
+}
+/* The title: one line across the top, the labels' lettering a step
+ * larger.  It takes its height from the rows, which the fit then shrinks
+ * as far as they need; it never scales itself, and never gives up height
+ * to them (flex-shrink 0).  Its line is tall enough to hold the letters,
+ * since overflow is hidden to cut a long title short with an ellipsis. */
+.led-title {
+    flex-shrink: 0;
+    margin: 0;
     text-align: center;
+    font-size: 3.4rem;
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #9a4a40;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
-
-.title-right {
-    text-align: right;
-    width: 320px;
+/* Section headings are for the page's outline, not the wall. */
+.led-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    margin: 0;
 }
-
-.title-logo {
-    margin-left: 25px;
-}
-
-.page_title {
-    font-size: 28px;
-    line-height: 50%;
-}
-
-.lastupdate {
-    font-size: 18px;
-    line-height: 50%;
-    color: #9aa7b0;
-}
-
-/* Subtitle links (e.g. Full Site | About Us) follow the subtitle color;
- * the subtitle Extras value needs no inline styles. */
-.lastupdate a {
-    color: inherit;
-}
-
-#live-label {
-    font-weight: bolder;
-    color: #e51b23;
-    font-size: 40px;
-}
-
-/* Age-tier colors, set by the updaters (updater_common.inc).  The tiers
- * are tempestas': green while the loop record is under a minute old,
- * neutral to five minutes, red beyond -- white standing in for
- * tempestas' neutral black on this board's black background.
- * 'failed' matches the activity clock's disconnected blue for the named
- * fetch failures (HTTP nnn / BAD DATA).  Expired keeps the base red. */
-#live-label.live {
-    color: green;
-}
-#live-label.behind {
-    color: white;
-}
-#live-label.stale {
-    color: red;
-}
-#live-label.failed {
-    color: blue;
-}
-
-/* Mono title theme (Extras title_theme = mono): the templates put
- * .title-mono on <body> and the whole title band goes red like the
- * readings.  paw_logo_mono.js (loaded by logo.inc for this theme only)
- * repaints the live logo pure red after every poll.  The label's age
- * tiers can't be color-coded here, so they become brightness and
- * blink: full red while live, dim red minutes behind, blinking when
- * stale or the fetch is failing -- blink keeps the alarm that red
- * carries in the color theme. */
-
-.title-mono .page_title {
-    color: red;
-}
-.title-mono .lastupdate {
-    color: #990000;
-}
-.title-mono #live-label {
-    color: red;
-}
-.title-mono #live-label.live {
-    color: red;
-}
-.title-mono #live-label.behind {
-    color: #990000;
-}
-.title-mono #live-label.stale {
-    color: red;
-    animation: paw-blink 1.2s step-end infinite;
-}
-.title-mono #live-label.failed {
-    color: #990000;
-    animation: paw-blink 1.2s step-end infinite;
-}
-@keyframes paw-blink {
-    50% { opacity: 0.15; }
-}
-
-/* Readings */
-
-.board-readings {
-    color: red;
-}
-
-.reading {
+.led-foot {
     text-align: center;
-    font-family: monospace;
-    font-size: 105px;
+    font-size: 2.4rem;
+    color: #7d7f84;
+    letter-spacing: .02em;
 }
 
-.reading-small {
-    text-align: center;
-    font-family: monospace;
-    font-size: 85px;
+/* NO DATA, AND A MINUS SIGN, is the 8's own middle segment, lit.  The
+ * font has no hyphen, so the board sets an "8" and clips it to that one
+ * segment.  The six corners are the segment's outline in the font's units
+ * (2048 to the em, advance 1177); --led-bl is where the font's baseline
+ * falls in the box, which led.inc measures once the font has loaded. */
+.led-mid {
+    display: inline-block;
+    width: calc(1177em / 2048);
+    clip-path: polygon(calc(250em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
+                       calc(383em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
+                       calc(825em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
+                       calc(926em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
+                       calc(793em / 2048) calc(var(--led-bl, .7em) - 702em / 2048),
+                       calc(350em / 2048) calc(var(--led-bl, .7em) - 702em / 2048));
+}
+/* With no data the decimal point stays dark; its unlit dot is in the
+ * layer behind. */
+.led-dp-off {
+    visibility: hidden;
+}
+/* ACCENTED CAPITALS: the base letter from the font, and the accent drawn
+ * as more lit segment over it -- two dots, a ring, an acute stroke, or the
+ * slash through an O.  Each mark is a polygon in the font's units, in a box
+ * running from 2150 units above the baseline to 150 below it, so a point
+ * (x, y) sits at (x/2048 em, (2150 - y)/2048 em); led.inc places nothing
+ * else there. */
+.led-ac {
+    position: relative;
+    display: inline-block;
+    width: calc(1177em / 2048);
+}
+.led-ac::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: calc(var(--led-bl, .7em) - 2150em / 2048);
+    width: calc(1177em / 2048);
+    height: calc(2300em / 2048);
+    background: currentColor;
+}
+.led-ac-uml::after { clip-path: polygon(evenodd, calc(372em / 2048) calc(367em / 2048), calc(385em / 2048) calc(273em / 2048), calc(490em / 2048) calc(180em / 2048), calc(570em / 2048) calc(273em / 2048), calc(557em / 2048) calc(367em / 2048), calc(452em / 2048) calc(460em / 2048), calc(372em / 2048) calc(367em / 2048), calc(852em / 2048) calc(367em / 2048), calc(865em / 2048) calc(273em / 2048), calc(970em / 2048) calc(180em / 2048), calc(1050em / 2048) calc(273em / 2048), calc(1037em / 2048) calc(367em / 2048), calc(932em / 2048) calc(460em / 2048), calc(852em / 2048) calc(367em / 2048)); }
+.led-ac-ring::after { clip-path: polygon(evenodd, calc(901em / 2048) calc(300em / 2048), calc(823em / 2048) calc(161em / 2048), calc(633em / 2048) calc(161em / 2048), calc(521em / 2048) calc(300em / 2048), calc(599em / 2048) calc(439em / 2048), calc(789em / 2048) calc(439em / 2048), calc(901em / 2048) calc(300em / 2048), calc(806em / 2048) calc(300em / 2048), calc(766em / 2048) calc(238em / 2048), calc(671em / 2048) calc(238em / 2048), calc(616em / 2048) calc(300em / 2048), calc(656em / 2048) calc(362em / 2048), calc(751em / 2048) calc(362em / 2048), calc(806em / 2048) calc(300em / 2048)); }
+.led-ac-acute::after { clip-path: polygon(calc(591em / 2048) calc(450em / 2048), calc(701em / 2048) calc(450em / 2048), calc(941em / 2048) calc(160em / 2048), calc(831em / 2048) calc(160em / 2048)); }
+.led-ac-slash::after { clip-path: polygon(calc(40em / 2048) calc(2210em / 2048), calc(190em / 2048) calc(2210em / 2048), calc(1170em / 2048) calc(450em / 2048), calc(1020em / 2048) calc(450em / 2048)); }
+
+/* The baseline probe led.inc measures --led-bl with; never seen. */
+.led-probe {
+    position: absolute;
+    visibility: hidden;
+    display: inline-block;
+    font: 100px/.8 "LCD";
+}
+.led-probe-mark {
+    display: inline-block;
+    width: 0;
+    height: 0;
 }
 
-/* Barometer trend arrows */
-
-.arrow {
-  border: solid red;
-  border-width: 0 8px 8px 0;
-  display: inline-block;
-  padding: 20px;
-  margin-right: 15px;
+/* THE CLOCK IS THE STATUS LINE: the time while the data is fresh; amber
+ * while it ages; red and blinking once it is old or the fetch fails; blue
+ * when the page has expired -- paused, not broken. */
+#led-clock.led-status-aging .led-n,
+#led-clock.led-status-waiting .led-n {
+    color: #ffb21f;
 }
-.down_dir {
-  transform: rotate(45deg);
-  -webkit-transform: rotate(45deg);
+#led-clock.led-status-aging .led-g,
+#led-clock.led-status-waiting .led-g {
+    color: #1c1406;
 }
-.up_dir {
-  transform: rotate(-135deg);
-  -webkit-transform: rotate(-135deg);
+#led-clock.led-status-old .led-v,
+#led-clock.led-status-error .led-v {
+    animation: led-blink 1.2s step-end infinite;
 }
-
-/* Footer */
-
-.widget {
-    margin-bottom: 30px;
-    clear: both;
+#led-clock.led-status-expired .led-n {
+    color: #3a8fd6;
 }
-
-.widget_title {
-    font-weight: bold;
-    padding: 2px 10px 2px 10px;
-    /* underlined titles */
-    border-bottom: 2px solid #aaaaaa;
+#led-clock.led-status-expired .led-g {
+    color: #07121c;
+}
+@keyframes led-blink {
+    50% { opacity: .15; }
 }
 
-.footnote {
-    font-size: 80%;
-    font-style: italic;
-    clear: both;
-    padding-left: 20px;
-    color: red;
-    width: 100%;
-}
+/* ========================= THE SPLIT-FLAP BOARD ========================= */
 
-.overline {
-    border-top: 1px solid;
+/* Laid out in rem for a 16:10 tablet, then scaled as a whole by
+ * --flap-fit, which splitflap.inc sets so the board and its footer fit
+ * the screen. */
+html {
+    --flap-fit: 1;
 }
-
-.underline {
-    border-bottom: 1px solid;
+body.flapboard {
+    --u: calc(1rem * var(--flap-fit));
+    background: #0e0f10;
+    color: #f3f0e4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
-
-/* The clock's disconnected color.  The updaters apply this class on a
-   failing fetch, on loop data further behind than clock_max_age, and on
-   a fields line carrying no time field -- so a blue clock is not by
-   itself evidence that the fetch is failing. */
-#activity-string.disconnected {
-    color: blue;
+#flap-board {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    column-gap: calc(2.2 * var(--u));
+    row-gap: calc(1.35 * var(--u));
+    align-items: center;
+    padding: calc(3 * var(--u)) calc(4 * var(--u));
+    border-radius: calc(1.4 * var(--u));
+    background: linear-gradient(#1b1c1e, #151617);
+    box-shadow: 0 0 0 calc(.5 * var(--u)) #242628, 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, .6) inset;
 }
-
-/* Board footer (footer.inc) */
-
-.board-footer {
-    width: 95%;
-}
-.board-footer #debug_info {
-    width: 26%;
-    text-align: left;
-}
-.board-footer #aqi {
-    width: 9%;
-    font-family: monospace;
-    font-style: normal;
-    font-size: 95px;
-}
-.board-footer #activity-string {
-    width: 65%;
-    font-family: monospace;
-    font-style: normal;
-    font-size: 95px;
+.flap-lab {
+    color: #f2b134;
+    font-size: calc(4.4 * var(--u));
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
     text-align: right;
+    white-space: nowrap;
 }
-
-/* Indoor board footer (footer2.inc) -- paloaltoweather branch only */
-
-.footer-indoor {
-    width: 95%;
-    font-size: 83px;
+.flap-row {
+    display: flex;
+    gap: calc(.55 * var(--u));
 }
-.footer-indoor .footer-gap-1 {
-    width: 1%;
+.flap {
+    position: relative;
+    width: calc(7.1 * var(--u));
+    height: calc(11.2 * var(--u));
+    border-radius: calc(.7 * var(--u));
+    background: linear-gradient(#2a2b2e 0 49.4%, #1f2023 50.6% 100%);
+    box-shadow: 0 calc(.35 * var(--u)) calc(.5 * var(--u)) rgba(0, 0, 0, .55), inset 0 calc(.1 * var(--u)) 0 rgba(255, 255, 255, .06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(9.2 * var(--u));
+    font-weight: 500;
+    line-height: 1;
+    overflow: hidden;
 }
-.footer-indoor .footer-gap-2 {
-    width: 2%;
+/* the split across the middle of every flap */
+.flap::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% - .12 * var(--u));
+    height: calc(.24 * var(--u));
+    background: #0b0b0c;
 }
-.footer-indoor #indoor_co2 {
-    width: 13.4%;
-    font-family: monospace;
-    font-style: normal;
-    text-align: right;
+.flap b {
+    font-weight: 500;
+    display: block;
+    transform-origin: 50% 50%;
+    transform: scaleX(.84);
 }
-.footer-indoor #indoor_aqi {
-    width: 10%;
-    font-family: monospace;
-    font-style: normal;
+.flap.flap-tick b {
+    animation: flap-flip .07s linear;
 }
-.footer-indoor #aqi {
-    width: 10%;
-    font-family: monospace;
-    font-style: normal;
+@keyframes flap-flip {
+    0% { transform: scaleX(.84) scaleY(1); }
+    50% { transform: scaleX(.84) scaleY(.1); }
+    100% { transform: scaleX(.84) scaleY(1); }
 }
-.footer-indoor #activity-string {
-    width: 61.5%;
-    font-family: monospace;
-    font-style: normal;
-    text-align: right;
+.flap-trend {
+    width: .8em;
+    height: .8em;
+    display: block;
 }
-
-/* Live logo (logo.inc / paw_logo.js): the El Palo Alto mark shared with
- * weewx-tempestas.  paw_logo.js sets positions, colors, and opacities;
- * only the ambient animations live here.  Tempestas staggers the rain
- * drops with inline styles; this skin allows no inline styles, so the
- * per-drop delays are the nth-child rules below (9 drops, .13s apart). */
-
-.pl-cloud-a { animation: paw-drift-a 80s linear infinite; }
-.pl-cloud-b { animation: paw-drift-b 120s linear infinite; }
-@keyframes paw-drift-a { from { transform: translateX(-70px); } to { transform: translateX(190px); } }
-@keyframes paw-drift-b { from { transform: translateX(200px); } to { transform: translateX(-80px); } }
-.pl-rays { animation: paw-sunspin 90s linear infinite; transform-origin: 0px 0px; }
-@keyframes paw-sunspin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.pl-star { animation: paw-twinkle 3.2s ease-in-out infinite; }
-.pl-star.pl-t2 { animation-delay: 1.1s; }
-.pl-star.pl-t3 { animation-delay: 2.2s; }
-@keyframes paw-twinkle { 0%, 100% { opacity: .9; } 50% { opacity: .25; } }
-.pl-drop { animation: paw-raindrop 1.1s linear infinite; }
-#pl-rain .pl-drop:nth-child(2) { animation-delay: .13s; }
-#pl-rain .pl-drop:nth-child(3) { animation-delay: .26s; }
-#pl-rain .pl-drop:nth-child(4) { animation-delay: .39s; }
-#pl-rain .pl-drop:nth-child(5) { animation-delay: .52s; }
-#pl-rain .pl-drop:nth-child(6) { animation-delay: .65s; }
-#pl-rain .pl-drop:nth-child(7) { animation-delay: .78s; }
-#pl-rain .pl-drop:nth-child(8) { animation-delay: .91s; }
-#pl-rain .pl-drop:nth-child(9) { animation-delay: 1.04s; }
-@keyframes paw-raindrop {
-    from { transform: translateY(-14px); opacity: 0; }
-    12% { opacity: 1; }
-    85% { opacity: 1; }
-    to { transform: translateY(26px); opacity: 0; }
+.flap-lamp {
+    width: calc(4.2 * var(--u));
+    height: calc(4.2 * var(--u));
+    border-radius: 50%;
+    background: #222222;
+    box-shadow: inset 0 0 0 calc(.35 * var(--u)) #333333;
+    transition: background .6s, box-shadow .6s;
+}
+.flap-lamp.flap-lit {
+    background: var(--flap-lamp);
+    box-shadow: 0 0 calc(2.2 * var(--u)) var(--flap-lamp), inset 0 0 0 calc(.35 * var(--u)) rgba(255, 255, 255, .25);
+}
+/* The title: one line over the board, in the row names' amber.  Never
+ * squeezed, and tall enough to hold its letters (see .led-title). */
+.flap-title {
+    flex-shrink: 0;
+    margin: 0 0 calc(1.2 * var(--u));
+    font-size: calc(4.2 * var(--u));
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #f2b134;
+    line-height: 1.3;
+    max-width: 96vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.flap-foot {
+    margin-top: calc(1.4 * var(--u));
+    font-size: calc(2.4 * var(--u));
+    color: #7d7f84;
+    letter-spacing: .02em;
+}
+.flap-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    margin: 0;
 }

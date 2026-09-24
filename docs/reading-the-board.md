@@ -11,137 +11,169 @@ nav_order: 5
 ---
 
 The board is one screen, meant to be read from across the room rather than
-studied.  Nothing on it is a link, and nothing needs a click.
+studied.  Nothing on it is a link, and nothing needs a tap — except an
+expired page, which a tap starts again.
 
-![WeatherBoard, with the air quality reading](images/WeatherBoard.png)
+There are two boards, and they show the same station.  Open whichever you
+prefer on the tablet: `index.html` for the LED board, `splitflap.html` for
+the split-flap board.
 
-## The readings
+Across the top of both is one line of title: the station's `location`
+from `weewx.conf`, or the board's own [`title`](configuration.html#title)
+if one is set.  A title too long for the screen ends in an ellipsis.
 
-Top to bottom, with the LoopData field behind each one:
+## The LED board
 
-| Reading | Field |
-|---|---|
-| Outside temperature | `current.outTemp` |
-| Dew point | `current.dewpoint` |
-| Wind speed and direction | `current.windSpeed.formatted`, `current.windSpeed.raw`, `current.windDir.ordinal_compass` |
-| Ten-minute high gust | `10m.windGust.max.formatted` |
-| Today's high gust | `day.windGust.max` |
-| UV index | `current.UV.formatted` |
-| Barometer, with trend arrow | `current.barometer.formatted`, `trend.barometer.code` |
-| Rain today | `day.rain.sum.formatted` |
-| Rain in the last 24 hours | `24h.rain.sum.formatted` |
-| Rain rate | `current.rainRate` |
-| Air quality index | `current.pm2_5_aqi.formatted`, with `current.pm2_5_aqi_color.raw` |
+![The LED board](images/LEDBoard.png)
 
-The wind direction is left blank when the wind speed is zero: a compass
-point for a dead calm is noise, not information.
+Every reading is set in seven-segment digits over their own unlit
+segments, the way a real LED display looks.  The panels, top to bottom,
+with the LoopData field behind each reading:
 
-The footer's left column is the legend — it names the readings in the order
-they appear, so a visitor who has never seen the board can work out what
-the big numbers are.  The wording comes from
-[Labels](configuration.html#labels).
+| Panel | Reading | Field |
+|---|---|---|
+| Temperature | Outside | `current.outTemp.formatted` |
+| | Dew point | `current.dewpoint.formatted` |
+| Wind | Speed and direction | `current.windSpeed.formatted`, `current.windDir.ordinal_compass` |
+| | Ten-minute high gust | `10m.windGust.max.formatted` |
+| | Today's high gust | `day.windGust.max.formatted` |
+| Barometer | Pressure, with its trend arrow | `current.barometer.formatted`, `trend.barometer.code` |
+| Rain | Today | `day.rain.sum.formatted` |
+| | Last 24 hours | `24h.rain.sum.formatted` |
+| | Rate | `current.rainRate.formatted` |
+| Sun | UV index | `current.UV.formatted` |
+| | Solar radiation | `current.radiation.formatted` |
+| Air quality | Index, in its level's color | `current.pm2_5_aqi.formatted`, `current.pm2_5_aqi_color.raw` |
+| Comfort | Humidity | `current.outHumidity.formatted` |
+| | Feels like | `current.appTemp.formatted` |
+| Clock | The station's time, and the status line | `current.dateTime.format("%H:%M:%S")` |
+
+The label under each reading names it and gives its unit, in the report's
+own units and language.  On a station whose driver reports no gusts, the
+two gust readings show the highest wind speed over the same ten minutes
+and the same day instead — `10m.windSpeed.max.formatted` and
+`day.windSpeed.max.formatted` — which is what a gust there would have
+been; the split-flap board's `G` does the same.  The wind direction is
+left blank when the speed shows 0: a compass point for a dead calm is
+noise, not information.
+
+UV, solar radiation and air quality show only on a station that has them
+— see [`show_uv`, `show_radiation`, `show_aqi`](configuration.html#show_uv-show_radiation-show_aqi)
+— and feels like only where WeeWX can compute it.  A panel with nothing to
+show is left out, and its row closes up.
+
+## The split-flap board
+
+![The split-flap board](images/SplitFlapBoard.png)
+
+Each row is twelve flaps.  When a character changes, its flap runs forward
+through the letters to the new one, as a departure board's does.
+
+| Row | Shows | Fields |
+|---|---|---|
+| Time | The station's time, and the status line | `current.dateTime.format("%H:%M:%S")` |
+| Temp | Outside temperature, and today's high | `current.outTemp.formatted`, `day.outTemp.max.formatted` |
+| Dew pt | Dew point, and the relative humidity | `current.dewpoint.formatted`, `current.outHumidity.formatted` |
+| Wind | Direction and speed, or `CALM`, and the ten-minute gust | `current.windDir.ordinal_compass`, `current.windSpeed.formatted`, `10m.windGust.max.formatted` |
+| Barometer | Pressure, and its trend arrow | `current.barometer.formatted`, `trend.barometer.code` |
+| Rain | Today's rain, and the rate per hour | `day.rain.sum.formatted`, `current.rainRate.formatted` |
+| Air | The index, and a word for its level | `current.pm2_5_aqi.formatted` |
+
+A figure too wide for its place gives up decimals rather than running off
+the row: a rate of `145.6` beside `123.4` today reads `123 145.6/HR`.
+
+### The lamps
+
+The lamp at the end of a row lights only when the row has something to
+say, judged by the figure the row shows:
+
+| Row | Lamp | When |
+|---|---|---|
+| Time | amber, red, blue | The status line — see [below](#the-status-line) |
+| Wind | red | The ten-minute gust is 25 mph (40 km/h) or more |
+| Barometer | orange | Below 29.70 inHg (1005.8 mbar) |
+| | blue | Above 30.20 inHg (1022.7 mbar) |
+| Rain | blue | Rain is falling |
+| Air | the level's color | Always, in the color of the index's level |
 
 ## The barometer trend
 
-The arrow after the barometer is the direction, and the suffix is the rate:
+The arrow after the barometer is one arrow whose angle is the trend's
+pace, on both boards:
 
-| Symbol | Meaning |
+| Arrow | Meaning |
 |---|---|
-| ↑ ++ | Rising very rapidly |
-| ↑ + | Rising quickly |
-| ↑ | Rising |
-| ↑ − | Rising slowly |
-| − − | Steady |
-| ↓ − | Falling slowly |
-| ↓ | Falling |
-| ↓ + | Falling quickly |
-| ↓ ++ | Falling very rapidly |
+| straight up | Rising very rapidly |
+| steeply up | Rising quickly |
+| up | Rising |
+| gently up | Rising slowly |
+| level | Steady |
+| gently down | Falling slowly |
+| down | Falling |
+| steeply down | Falling quickly |
+| straight down | Falling very rapidly |
 
-LoopData computes the trend; the board only draws it.
+Each step is 22.5 degrees.  LoopData computes the trend; the board only
+draws it.
 
 ## The air quality reading
 
-With `show_purple` set, the AQI appears in the footer in the color the EPA
-assigns to its range — green through maroon — which comes from
-weewx-purple as a field of its own.
+The index shows in the color the EPA assigns to its range — green
+through maroon — which comes from the air quality extension as a field of
+its own.  The split-flap board adds a word for the level: `GOOD`,
+`MODERATE`, `USG` (unhealthy for sensitive groups), `UNHLTHY`,
+`V UNHLTH`, `HAZARD`.
 
-That reading is already smoothed: weewx-purple averages the sensor's two
-channels, and where
-[purple-proxy](https://github.com/chaunceygardiner/purple-proxy) is the
-source it averages over two minutes as well.
+With [purple-proxy](https://github.com/chaunceygardiner/purple-proxy) as
+the source the reading is a two-minute average, and weewx-purple averages
+the sensor's two channels besides.
 
-Like every other reading it is age-checked: once the data is older than
-[`max_age`](configuration.html#max_age) seconds it shows `???` in the
-board's red rather than a number that has stopped being true.
+## The status line
 
-## The live label
+Neither board has a separate LIVE label.  The clock is the status line:
 
-At the right of the title bar, in red:
+| Shows | Color | Means |
+|---|---|---|
+| `2:36:52 PM` | red | The data is fresh: this is the station's time |
+| `47 S AGO` | amber | The data is more than [`max_age`](configuration.html#max_age) seconds old, for its first minute |
+| `7 M AGO`, `2 H AGO`, `1 D AGO` | red, blinking | The data is older than a minute |
+| `HTTP 404` | red, blinking | The fetch came back with an error status — almost always `loop_data_file` pointing where nothing is served |
+| `BAD DATA` | red, blinking | The fetch succeeded but the body is not LoopData's json |
+| `NO ENTRY` | red, blinking | LoopData's json, but with no entry for this report — WeeWX has not been restarted since the board was installed |
+| `BAD URL` | red, blinking | `loop_data_file` is not a usable URL, so the fetch never left the browser |
+| `NO CONNECT` | red, blinking | The request failed or timed out: the server gone, the network down |
+| `NO CLOCK` | red, blinking | The report's entry carries no usable `current.dateTime.raw`, so its age cannot be known |
+| `EXPIRED TAP` | blue | The page stopped polling after [`expiration_time`](configuration.html#expiration_time) hours; tap anywhere to start it again |
+| `WAITING` | amber | The page has loaded and no data has arrived yet |
 
-| Shows | Means |
-|---|---|
-| `LIVE` | The loop record is younger than [`max_age`](configuration.html#max_age) |
-| `12s ago` | How old the record actually is — seconds for the first minute, then `1.5m ago`, `2.3h ago`, `1.2d ago` |
-| `HTTP 404` | The fetch came back with an error status — almost always `loop_data_file` pointing where nothing is served |
-| `BAD DATA` | The fetch succeeded but the body is not LoopData's json |
-| `NO ENTRY` | LoopData's json, but with no entry for this report — WeeWX has not been restarted since the board was installed |
-| `BAD URL` | `loop_data_file` is not a usable URL, so the fetch never left the browser |
-| `Expired` | Polling stopped after `expiration_time` hours; click the clock to restart |
-| `??` | The loop record carried no usable timestamp, so its age cannot be known — the report's entry is missing `current.dateTime.raw` |
-| (blank) | A network-level failure, presumed transient — the clock turns blue |
+On the split-flap board the words are on the time row's flaps, and its
+lamp carries the color.  The status words are translated — see
+[Languages](configuration.html#languages) — while the failure codes stay
+as they are, so this page and the troubleshooting page find them in any
+language.
 
-The label and the readings share one threshold.  At `max_age`, `LIVE`
-gives way to the record's age and every reading falls back to question
-marks, together.  The clock keeps its own, longer one —
-[`clock_max_age`](configuration.html#clock_max_age) — so a board can read
-`45s ago` over a full set of question marks with the time still in red.
+The status line and the readings share one threshold.  At `max_age` the
+clock gives way to the data's age and every reading is shown as missing,
+together — see [When data goes missing](missing-data.html).
 
 ## The clock
 
-The lower right corner shows the time of the reading now on the board —
-`10:25:34 PM`.
+The clock shows the time of the reading now on the board.  It is the
+*station's* clock, not the tablet's: LoopData renders
+`current.dateTime.format("%H:%M:%S")` through your report's own WeeWX
+formatter, so it carries the station's timezone.  That matters on a wall
+display: a tablet in another timezone, or with its clock simply set
+wrong, would otherwise show a confident time that had nothing to do with
+when the reading was taken.
 
-It is the *station's* clock, not the tablet's.  The string comes from
-LoopData, rendered through your report's own WeeWX formatter, so it carries
-the station's timezone and time format.  That matters on a wall display: a
-tablet in another timezone, or with its clock simply set wrong, used to show
-a confident time that had nothing to do with when the reading was taken.
-
-The format lives in the field name, in the skin's declaration:
-
-```
-current.dateTime.format("%X")
-```
-
-`%X` is the station's own time-of-day format: `09:44:14 PM` where the
-station runs a US locale, `21:44:14` under most others.  It cannot be pinned
-by editing the declaration — the board looks for the `%X` spelling specifically,
-so anything else blanks the corner rather than reformatting it.  The lever is
-`LANG` in weewxd's environment; see
-[the time format](configuration.html#the-time-format).
-
-The clock ages out too, but later than the readings beside it: once the
-loop record is older than
-[`clock_max_age`](configuration.html#clock_max_age) seconds — two minutes by
-default — the corner reads `??:??:??` in the disconnected blue.  Stale data
-that a web server is still handing out looks exactly like live data at a
-glance, and a plausible time is the most convincing thing on such a board.
-
-The threshold is longer than the readings' because the clock is answering a
-different question.  A temperature fifteen seconds old has stopped being
-true; a clock fifteen seconds slow is still a good clock.  The blue means
-this is not a clock any more, and it is worth keeping that warning for a
-time that would genuinely mislead you.  A time field missing from the
-report's entry is the exception and goes blue at once — there is no time
-to show.
-
-Clicking the clock restarts an expired page.
+The board lays the time out itself, 12 or 24 hour, by
+[`clock_format`](configuration.html#clock_format) or the report's
+language.
 
 ## Colors
 
 Red is the board: every reading is red on black, which is what makes it
 legible across a room and unobtrusive at night.  The exceptions carry
-meaning — the AQI in its EPA color, and the clock turning blue, which it
-does when the fetch is failing, when the data has fallen further behind
-than [`clock_max_age`](configuration.html#clock_max_age), or when the time
-field is missing from the report's entry.
+meaning — the air quality index in its level's color, and the status line
+in amber, red or blue.  On the split-flap board the flaps are white, and
+the lamps carry the color.
