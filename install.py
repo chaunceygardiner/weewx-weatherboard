@@ -192,6 +192,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/board.inc',
                 'skins/WeatherBoard/favicon.ico',
                 'skins/WeatherBoard/index.html.tmpl',
+                'skins/WeatherBoard/index_painter.inc',
                 'skins/WeatherBoard/jsstr.inc',
                 'skins/WeatherBoard/led.inc',
                 'skins/WeatherBoard/skin.conf',

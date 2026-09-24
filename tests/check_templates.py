@@ -210,8 +210,11 @@ def render(tmpl, missing=ALL_PRESENT, analytics=True, overrides=None,
     return str(Template(file=os.path.join(SKIN, tmpl), searchList=[ns]))
 
 
-# The ids each board's painter reaches the page through.
-PAINTED = re.compile(r"""(?:getElementById|ledSet|flapShow|flapLamp)\(\s*(?:"([^"]+)"|'([^']+)')""")
+# The ids each board's painter reaches the page through: every helper that
+# takes a cell's id first.  A helper missing here takes its ids out of the
+# check without failing anything.
+PAINTED = re.compile(r"""(?:getElementById|ledSet|ledWind|ledBarometer|ledAqi|flapShow|flapLamp)"""
+                     r"""\(\s*(?:"([^"]+)"|'([^']+)')""")
 
 
 def check(html, tmpl, missing=ALL_PRESENT):
@@ -416,7 +419,8 @@ def check_installer():
     """loader() refuses to install on a station without weewx-loopdata 7.0,
     refuses nothing when WeeWX is only listing or uninstalling, and the
     installer it returns is the release changes.md names, with no
-    configure() left to edit the fields line."""
+    configure() left to edit the fields line, and it installs every file
+    the skin has."""
     failures = []
     try:
         module = load_installer()
@@ -483,6 +487,23 @@ def check_installer():
     elif heading.group(1) != installer['version']:
         failures.append('install.py says %s, changes.md says %s'
                         % (installer['version'], heading.group(1)))
+    # weectl installs the files named, and only those: a skin file left off
+    # the list is missing on every station, and nothing here would render
+    # differently.  Each goes to its own directory.
+    listed = set()
+    for directory, names in installer['files']:
+        for name in names:
+            listed.add(name)
+            if os.path.dirname(name) != directory:
+                failures.append('install.py puts %s in %s' % (name, directory))
+    present = set()
+    for dirpath, _dirs, names in os.walk(SKIN):
+        for name in names:
+            present.add(os.path.relpath(os.path.join(dirpath, name), REPO))
+    for name in sorted(present - listed):
+        failures.append('install.py does not install %s' % name)
+    for name in sorted(listed - present):
+        failures.append('install.py installs %s, which does not exist' % name)
     return failures
 
 
@@ -975,7 +996,8 @@ def main():
     ok = report('both boards, hostile Extras', failures) and ok
     ok = report('skin.conf declares the loopdata fields the boards read', check_declared_fields()) and ok
     ok = report('the language files carry every string, and the boards can draw them', check_langs()) and ok
-    ok = report('install.py requires weewx-loopdata 7.0 and is the release changes.md names',
+    ok = report('install.py requires weewx-loopdata 7.0, is the release changes.md names'
+                ' and installs every skin file',
                 check_installer()) and ok
     ok = report("the installer's stanza writes its defaults commented out, and they survive the merge",
                 check_stanza()) and ok

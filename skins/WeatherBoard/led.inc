@@ -2,8 +2,12 @@
 ## Distributed under the terms of the GNU Public License (GPLv3)
 ## See LICENSE for your rights.
 ##
-## led.inc -- the LED board's painter (index.html).  board.inc calls
-## boardPaint(result, fresh, status) after every poll and every failure.
+## led.inc -- how an LED page draws: its cells, its fit to the screen and
+## the helpers a painter is built from.  It paints nothing itself.  The
+## page's own painter follows it, index_painter.inc for index.html: the
+## boardPaint(result, fresh, status) that board.inc calls after every poll
+## and every failure, which sets each of the page's cells by id and ends
+## with ledStatus(status).
 ##
 ## THE LEDS.  Every reading is set in the LCD font over a dim copy of
 ## itself with each lit character replaced by "8", so the unlit segments
@@ -200,38 +204,30 @@
   function has(r, key) {
     return r.hasOwnProperty(key) && r[key] !== null && r[key] !== '';
   }
-  function boardPaint(r, fresh, status) {
-    function val(key) {
-      return numericReading(r, key, fresh);
-    }
-    ledSet('led-t', val('current.outTemp.formatted'));
-    ledSet('led-td', val('current.dewpoint.formatted'));
-    var speed = val('current.windSpeed.formatted');
+  // The wind cell: the speed, and beside it the direction, "4 NNE".  Calm
+  // by the speed as shown: a raw 0.00009 is not zero, but it shows as 0,
+  // and a direction beside a 0 claims a wind there is not.
+  function ledWind(id, r, speed) {
     var dir = '   ';
-    // Calm by the speed as shown: a raw 0.00009 is not zero, but it
-    // shows as 0, and a direction beside a 0 claims a wind there is not.
     if (speed !== null && Number(speed) !== 0 && has(r, 'current.windDir.ordinal_compass')) {
       dir = (String(r['current.windDir.ordinal_compass']) + '   ').slice(0, 3);
     }
-    ledSet('led-w', speed === null ? null : padTo(speed, 2) + ' ' + dir);
-    ledSet('led-g', val(gustField(r, '10m')));
-    ledSet('led-gd', val(gustField(r, 'day')));
-    ledSet('led-b', val('current.barometer.formatted'), null,
+    ledSet(id, speed === null ? null : padTo(speed, 2) + ' ' + dir);
+  }
+  // The barometer, with the trend arrow beside it while the data is fresh.
+  function ledBarometer(id, r, fresh, value) {
+    ledSet(id, value, null,
            fresh && trendCode(r) !== null ? trendSvg(trendCode(r), 'led-trend') : '');
-    ledSet('led-rd', val('day.rain.sum.formatted'));
-    ledSet('led-r24', val('24h.rain.sum.formatted'));
-    ledSet('led-rr', val('current.rainRate.formatted'));
-    if (WB.show.uv) { ledSet('led-uv', val('current.UV.formatted')); }
-    if (WB.show.radiation) { ledSet('led-rad', val('current.radiation.formatted')); }
-    if (WB.show.aqi) {
-      var aqi = val('current.pm2_5_aqi.formatted');
-      ledSet('led-aqi', aqi, aqi !== null && has(r, 'current.pm2_5_aqi_color.raw')
-             ? decodeRgb(r['current.pm2_5_aqi_color.raw']) : null);
-    }
-    ledSet('led-rh', val('current.outHumidity.formatted'));
-    if (WB.show.feels) { ledSet('led-fl', val('current.appTemp.formatted')); }
-    var clock = document.getElementById('led-clock');
-    clock.className = 'led-panel led-status-' + status.kind;
+  }
+  // The outdoor air quality index, in its level's color.
+  function ledAqi(id, r, value) {
+    ledSet(id, value, value !== null && has(r, 'current.pm2_5_aqi_color.raw')
+           ? decodeRgb(r['current.pm2_5_aqi_color.raw']) : null);
+  }
+  // The clock panel, which is the status line, and then the fit: the last
+  // thing every painter does, once its cells have their widths.
+  function ledStatus(status) {
+    document.getElementById('led-clock').className = 'led-panel led-status-' + status.kind;
     ledSet('led-clk', status.text);
     if (ledFitDirty) {
       ledFitDirty = false;

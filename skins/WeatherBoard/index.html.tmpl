@@ -5,7 +5,8 @@
 ## index.html -- the LED board.  Its sibling, splitflap.html, shows the
 ## same station as a split-flap departure board; a tablet shows whichever
 ## its URL names.  The data, the status line and the expiry live in
-## board.inc; the LEDs, and the fit to the screen, in led.inc.
+## board.inc; the LEDs, and the fit to the screen, in led.inc; what goes
+## in each of this page's cells, in index_painter.inc.
 #errorCatcher Echo
 #encoding UTF-8
 #include "title.inc"
@@ -25,6 +26,7 @@
   <body class="led">
     #include "board.inc"
     #include "led.inc"
+    #include "index_painter.inc"
     <h1 class="led-title">$wb_title</h1>
     <div class="led-row led-top">
       <section class="led-panel" id="led-temp">
