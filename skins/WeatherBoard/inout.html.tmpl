@@ -34,7 +34,7 @@
     #include "inout.inc"
     <h1 class="ro-title">$wb_title</h1>
     <div class="ro-row ro-top">
-      <section class="ro-panel" id="ro-temp">
+      <section class="ro-panel ro-three" id="ro-temp">
         <h2 class="ro-hidden">$gettext("Temperature")</h2>
         <div class="ro-c" id="ro-t" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("OUTSIDE") <span class="ro-u">$unit.label.outTemp</span></div></div>
         <div class="ro-c" id="ro-td" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("DEW POINT") <span class="ro-u">$unit.label.dewpoint</span></div></div>
@@ -82,7 +82,7 @@
       </section>
       <section class="ro-panel" id="ro-clock">
         <h2 class="ro-hidden">$gettext("Time")</h2>
-        <div class="ro-c" id="ro-clk" data-empty="--:--:--"><div class="ro-n"></div></div>
+        <div class="ro-c" id="ro-clk" data-empty="--:--:--"><div class="ro-n"></div><div class="ro-l" id="ro-date">&nbsp;</div></div>
       </section>
     </div>
     <footer class="ro-foot">WeatherBoard &copy;2019-2026 by John A Kline.</footer>

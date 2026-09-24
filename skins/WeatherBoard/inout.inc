@@ -199,6 +199,7 @@
     inoutColored('ro-iaq', SIDECARS.inAQI, 0);
     if (WB.show.aqi) { roAqi('ro-aqi', r, val('current.pm2_5_aqi.formatted')); }
     inoutLastKind = status.kind;
+    roDate('ro-date', r, fresh);
     roStatus(status);
   }
 </script>

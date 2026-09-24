@@ -6,17 +6,6 @@
  * GPLv3.  See LICENSE for your rights.
  */
 
-/* Three temperatures across the top row rather than two, so smaller than
- * index.html's two: 24.9rem sets figures 17.7rem tall (Bebas Neue's 8
- * is .710 of its size). */
-body.inout #ro-temp .ro-n {
-    font-size: calc(24.9rem * var(--fit));
-}
-/* The clock shares its row with the air panel, and fills its panel: its
- * figures 13.7rem tall. */
-body.inout #ro-clock .ro-n {
-    font-size: calc(19.3rem * var(--fit));
-}
 /* The indoor CO2 and air quality wear their file's color, and white with
  * no data. */
 .inout-white .ro-n {

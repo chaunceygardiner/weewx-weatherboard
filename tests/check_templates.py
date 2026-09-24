@@ -904,7 +904,19 @@ def main():
                                m and m.group(3), want))
         if want is None and (not m or m.group(1) != 'true' or 'id="ro-uv"' not in html):
             failures.append('show_uv = true did not force the UV panel on a station without UV')
-    ok = report('the show_ settings, auto and forced, and show_purple as show_aqi', failures) and ok
+    # Feels like joins the temperatures across the top, and the panel is
+    # marked for three, which sets them smaller; without it the two keep
+    # the size for two.
+    for missing, cells, cls in ((ALL_PRESENT, ['ro-t', 'ro-fl', 'ro-td'], 'ro-panel ro-three'),
+                                (('appTemp',), ['ro-t', 'ro-td'], 'ro-panel')):
+        html = render(templates[0], missing)
+        panel = re.search(r'<section class="([^"]*)" id="ro-temp">(.*?)</section>', html, re.S)
+        got = panel and re.findall(r'<div class="ro-c" id="([^"]+)"', panel.group(2))
+        if not panel or panel.group(1) != cls or got != cells:
+            failures.append('with %s: the temperature panel is %r holding %s, expected %r holding %s'
+                            % ('feels like' if not missing else 'no feels like',
+                               panel and panel.group(1), got, cls, cells))
+    ok = report('the show_ settings, auto and forced, show_purple as show_aqi, and feels like on top', failures) and ok
     # The title: the title Extra, else the station's location; the tab:
     # meta_title, else the title.  The placeholders earlier installers wrote
     # live count as unset.

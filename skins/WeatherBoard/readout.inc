@@ -286,6 +286,40 @@
     roSet(id, value, value !== null && has(r, 'current.pm2_5_aqi_color.raw')
           ? decodeRgb(r['current.pm2_5_aqi_color.raw']) : null);
   }
+  // The date under the clock, the clock's label: the station's date, as
+  // loop-data.txt carries it, named in the page's language by the
+  // browser.  The station's and not the tablet's, so it always agrees with
+  // the clock above it; read and named in UTC, so the tablet's own time
+  // zone cannot move it a day.  It is 11:00 UTC of that day, not
+  // midnight: a browser that ignores the timeZone option names it in the
+  // tablet's own zone, and 11:00 UTC is the same day from UTC-11 to
+  // UTC+12, every inhabited zone but UTC+13 and UTC+14.  Like every
+  // reading it goes once the data is too old to vouch for (fresh false),
+  // so a board whose station stopped overnight does not name yesterday;
+  // then, and until there is a date, a blank that keeps the label's
+  // height.
+  function roDate(id, r, fresh) {
+    var label = document.getElementById(id);
+    if (label === null) {
+      return;
+    }
+    var text = '\u00a0';
+    var ymd = fresh && has(r, 'current.dateTime.format("%Y-%m-%d")')
+        ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(r['current.dateTime.format("%Y-%m-%d")']) : null;
+    if (ymd !== null) {
+      var day = new Date(Date.UTC(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]), 11));
+      try {
+        text = day.toLocaleDateString(document.documentElement.lang || 'en',
+                                      { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric' });
+      } catch (e) {
+        text = ymd[0];
+      }
+    }
+    if (label.textContent !== text) {
+      label.textContent = text;
+      roFitDirty = true;
+    }
+  }
   // The clock panel, which is the status line, and then the fit: the last
   // thing every painter does, once its cells have their widths.
   function roStatus(status) {

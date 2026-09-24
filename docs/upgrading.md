@@ -30,6 +30,17 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 5.2
+
+**Restart WeeWX after upgrading.**  The date under the readout board's
+clock comes from a field LoopData reads only when weewxd starts, so it
+stays blank until the restart.  Running a report by hand copies the new
+stylesheet but does not start the date.
+
+Nothing in `weewx.conf` needs changing, unless its stanza overrides the
+skin's `clock` fields group: see
+[The date under the clock is blank](troubleshooting.html#the-date-under-the-clock-is-blank).
+
 ## Upgrading to 5.1.1
 
 **Restart WeeWX after upgrading.**  The readout board's readings are now

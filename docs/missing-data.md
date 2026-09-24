@@ -32,9 +32,10 @@ seconds — ten by default — every reading is shown as missing:
 ![The readout board, with data 47 seconds old](images/ReadoutBoard_stale.png)
 
 At the same moment the clock gives way to the data's age: `47 S AGO` in
-amber for the first minute, then `7 M AGO` and on in red.  The status line
-and the readings share the one threshold, so a board never shows a live
-clock over missing readings, or a stale age over live ones.
+amber for the first minute, then `7 M AGO` and on in red, and on the
+readout board the date under it goes blank.  The status line and the
+readings share the one threshold, so a board never shows a live clock
+over missing readings, or a stale age over live ones.
 
 The board itself keeps working the whole time.  A reading whose field is
 missing from `loop-data.txt` — an observation your station does not

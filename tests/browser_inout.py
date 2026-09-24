@@ -20,6 +20,9 @@ What it holds the page to:
     dashes on its own, with no new fetch
   - an expired page fetches no sidecar file, and the tap that restarts it
     fetches them at once
+  - the top row's three temperatures are at the size for three, and the
+    bottom row is one line of figures, the clock on its neighbors'
+    baseline over the date
   - the page fits every screen size with the widest readings
 
 Run with the same Python as browser_check.py:
@@ -124,6 +127,20 @@ def check_readings(browser):
                       ('ro-aqi', 'rgb(0, 228, 0)'), ('ro-in', 'rgb(255, 45, 31)')):
         if b.color(cid) != want:
             failures.append('%s is %s, expected %s' % (cid, b.color(cid), want))
+    # The same layout rules as index.html: three temperatures at the size
+    # for three, and the bottom row one line of figures, the clock the size
+    # of the figures beside it and on their baseline, over the date.
+    size = b.page.evaluate("""(() => { const n = document.querySelector('#ro-t .ro-n');
+        return parseFloat(getComputedStyle(n).fontSize) / parseFloat(getComputedStyle(document.documentElement).fontSize)
+               / Number(n.closest('.ro-row').style.getPropertyValue('--fit') || 1); })()""")
+    if abs(size - 24.9) > .05:
+        failures.append('the three temperatures are set at %.1frem, not 24.9rem' % size)
+    line = b.page.evaluate(bc.RO_BASELINES)
+    if len(set(line.values())) != 1:
+        failures.append('the bottom row is not one line of figures: %s' % line)
+    shown = b.page.evaluate("(document.getElementById('ro-date') || {}).textContent")
+    if shown != 'Wednesday, September 23':
+        failures.append('the date reads %r' % shown)
     # Each failure, one file at a time, the next poll forced through the
     # page's own pollSidecars rather than waited out.  A failed fetch
     # leaves the good reading up; the reading is then aged past its limit
