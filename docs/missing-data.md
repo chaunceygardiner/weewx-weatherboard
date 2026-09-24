@@ -19,8 +19,7 @@ in the shape of the number it replaces.
 ## The staleness rule
 
 If the loop record is older than [`max_age`](configuration.html#max_age)
-seconds — ten by default — every reading is shown as missing, the way
-each display would show it:
+seconds — ten by default — every reading is shown as missing:
 
 * **The readout board** shows a dash for each digit, and dims the
   decimal point.  A temperature reads `--.-` with a faint dot where the

@@ -30,6 +30,20 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 5.1
+
+**Restart WeeWX after upgrading.**  `index.html` is now the readout board,
+set in League Gothic, and it needs 5.1's stylesheet and the new font.
+Both are copied to the web server only on the first report after weewxd
+starts, so until you restart, the new page is served with 5.0's
+stylesheet and draws without its layout.
+
+Nothing in `weewx.conf` needs changing.  An upgrade leaves behind two
+things 5.0 installed and 5.1 does not use: the `fonts/lcdmono2ultra`
+folder, in `skins/WeatherBoard/` and in the board's web directory, and
+`skins/WeatherBoard/led.inc`.  Delete them whenever it suits you, or
+leave them; nothing reads them.
+
 ## Upgrading to 5.0
 
 **WeeWX 5.2 or later is now required**, and the installer refuses to run

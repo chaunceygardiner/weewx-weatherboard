@@ -1,6 +1,10 @@
 # weewx-weatherboard change history
 
-## 5.1 (in progress)
+## 5.1 09/24/2026
+- Action required: restart WeeWX after upgrading.  The stylesheet and the
+  new font reach the web server only on the first report after weewxd
+  starts, and until then index.html is served with 5.0's stylesheet and
+  draws without its layout.
 - index.html is now the readout board: every reading is set in League
   Gothic, a tall, narrow typeface that reads more easily across a room
   than the seven-segment digits it replaces, at the same height.  A

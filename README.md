@@ -202,11 +202,10 @@ any other WeeWX skin.
 ## About the missing-data behavior
 
 Every reading is age-checked.  If the loop record is older than `max_age`
-seconds (10 by default), every reading is shown as missing, the way each
-display would show it: the readout board shows a dash for each digit and
-dims its decimal point, and the split-flap board turns each digit to a
-question mark.  The clock, at the same moment, gives
-way to the data's age — `47 S AGO` — in amber for the first minute and red
+seconds (10 by default), every reading is shown as missing: the readout
+board shows a dash for each digit and dims its decimal point, and the
+split-flap board turns each digit to a question mark.  The clock, at the
+same moment, gives way to the data's age — `47 S AGO` — in amber for the first minute and red
 after that.  If loop-data.txt cannot be fetched or used, the clock names the
 failure instead (`HTTP 404`, `BAD DATA`, `NO ENTRY`, `BAD URL`,
 `NO CONNECT` for a network failure, or `NO CLOCK` for a record with no

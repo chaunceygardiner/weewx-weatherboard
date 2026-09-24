@@ -76,8 +76,8 @@ own units and formats, so an ordinary install has nothing to edit.  See
 [Installation](installation.html).
 
 Everything on the board is age-checked.  If the loop data stops advancing —
-or stops arriving at all — every reading is shown as missing, the way the
-display would show it, and the clock says how old the data is or what went
+or stops arriving at all — every reading is shown as missing, and the
+clock says how old the data is or what went
 wrong, rather than showing you a number that stopped being true ten minutes
 ago.  See [When data goes missing](missing-data.html).
 
