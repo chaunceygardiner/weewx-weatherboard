@@ -181,7 +181,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/index.html.tmpl',
                 'skins/WeatherBoard/index_painter.inc',
                 'skins/WeatherBoard/jsstr.inc',
-                'skins/WeatherBoard/led.inc',
+                'skins/WeatherBoard/readout.inc',
                 'skins/WeatherBoard/skin.conf',
                 'skins/WeatherBoard/splitflap.html.tmpl',
                 'skins/WeatherBoard/splitflap.inc',
@@ -190,9 +190,9 @@ class WeatherBoardInstaller(ExtensionInstaller):
             ]), ('skins/WeatherBoard/fonts/jost', [
                 'skins/WeatherBoard/fonts/jost/jost.woff2',
                 'skins/WeatherBoard/fonts/jost/license.txt',
-            ]), ('skins/WeatherBoard/fonts/lcdmono2ultra', [
-                'skins/WeatherBoard/fonts/lcdmono2ultra/LICENSE.TXT',
-                'skins/WeatherBoard/fonts/lcdmono2ultra/lcdmono2ultra-webfont.ttf',
+            ]), ('skins/WeatherBoard/fonts/leaguegothic', [
+                'skins/WeatherBoard/fonts/leaguegothic/leaguegothic.woff2',
+                'skins/WeatherBoard/fonts/leaguegothic/license.txt',
             ]), ('skins/WeatherBoard/lang', [
                 'skins/WeatherBoard/lang/da.conf',
                 'skins/WeatherBoard/lang/de.conf',

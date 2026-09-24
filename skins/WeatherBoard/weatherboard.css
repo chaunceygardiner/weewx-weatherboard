@@ -1,4 +1,4 @@
-/* CSS for the WeeWX WeatherBoard skin: the LED board (index.html) and
+/* CSS for the WeeWX WeatherBoard skin: the readout board (index.html) and
  * the split-flap board (splitflap.html).
  * Copyright (C)2019-2026 by John A Kline.  Distributed under terms of
  * GPLv3.  See LICENSE for your rights.
@@ -15,15 +15,15 @@
  * SIZES.  Everything is in rem, and a rem is the smaller of 1% of the
  * screen's height and 1/160 of its width: 1% of the height on a 16:10
  * tablet, less on a narrower one, so the board fills the screen without
- * scrolling on either.  Each LED row then scales by its own --fit, which
- * led.inc sets to the largest factor (never above 1) at which every panel
- * in the row still holds its cells -- metric units and other languages
- * run wider.
+ * scrolling on either.  Each readout row then scales by its own --fit,
+ * which readout.inc sets to the largest factor (never above 1) at which
+ * every panel in the row still holds its cells -- metric units and other
+ * languages run wider.
  */
 
 @font-face {
-    font-family: "LCD";
-    src: url("fonts/lcdmono2ultra/lcdmono2ultra-webfont.ttf") format("truetype");
+    font-family: "League Gothic";
+    src: url("fonts/leaguegothic/leaguegothic.woff2") format("woff2");
 }
 @font-face {
     font-family: "Jost";
@@ -49,14 +49,9 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ============================ THE LED BOARD ============================ */
+/* ========================== THE READOUT BOARD ========================== */
 
-/* The digits stretch vertically only: the panels have height to spare,
- * never width.  The stretch grows up from the baseline, and the padding
- * above each reading reserves the height it adds, since a transform takes
- * no room of its own. */
-body.led {
-    --sy: 1.5;
+body.readout {
     color: #ff2d1f;
     display: flex;
     flex-direction: column;
@@ -65,17 +60,17 @@ body.led {
 }
 /* Four rows, each panel as wide as its content, so a reading the station
  * does not have simply is not there and its row closes up. */
-.led-row {
+.ro-row {
     --fit: 1;
     display: flex;
     gap: 1.2rem;
     flex: 1 1 0;
     min-height: 0;
 }
-.led-row.led-top {
+.ro-row.ro-top {
     flex-grow: 1.45;
 }
-.led-panel {
+.ro-panel {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
@@ -87,54 +82,58 @@ body.led {
     background: #0b0b0b;
     box-shadow: inset 0 0 0 .2rem #1c1c1c;
 }
-.led-c {
+.ro-c {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
-.led-n {
+/* The readings.  League Gothic's 8 stands .743 of its size, so 15.5rem
+ * sets figures 11.5rem tall, and the temperatures' 27rem sets them 20rem
+ * tall.  The line is the 8's height and a little over; the padding keeps
+ * the tallest letters clear of the panel's edge. */
+.ro-n {
     position: relative;
-    font-family: "LCD", monospace;
-    font-size: calc(9.6rem * var(--fit));
+    font-family: "League Gothic", "Arial Narrow", sans-serif;
+    font-size: calc(15.5rem * var(--fit));
     line-height: .8;
     white-space: pre;
-    padding-top: calc(.12em + .9em * (var(--sy) - 1));
+    padding-top: .08em;
 }
-#led-temp {
-    --sy: 1.25;
+#ro-temp .ro-n {
+    font-size: calc(27rem * var(--fit));
 }
-#led-temp .led-n {
-    font-size: calc(20rem * var(--fit));
+/* Each digit in a box as wide as the font's widest (.363 of its size),
+ * a hair over, so a figure does not shift as its digits change.  A
+ * minimum, not a width: every League Gothic digit fits it exactly, and a
+ * fallback font's wider digits, should League Gothic never arrive, widen
+ * their boxes rather than run into one another. */
+.ro-d {
+    display: inline-block;
+    min-width: .383em;
+    text-align: center;
 }
-.led-stk {
-    display: inline-grid;
-    transform: scaleY(var(--sy));
-    transform-origin: 50% 100%;
+/* With no data the decimal point is dimmed. */
+.ro-dp-off {
+    opacity: .15;
 }
-.led-stk > span {
-    grid-area: 1 / 1;
-}
-.led-g {
-    color: #1c0907;                 /* the unlit segments */
-}
-#led-air .led-g {
-    color: #151515;
-}
-.led-v {
+.ro-v {
     position: relative;
 }
-.led-t {
+/* The trend arrow beside the barometer.  Its line takes no height, or it
+ * would make the barometer's cell taller than the figure. */
+.ro-t {
     font-family: "Jost", sans-serif;
     font-size: .55em;
+    line-height: 0;
     position: relative;
     margin-left: .15em;
 }
-.led-trend {
+.ro-trend {
     width: 1.3em;
     height: 1.3em;
-    vertical-align: -.1em;
+    vertical-align: 0;
 }
-.led-l {
+.ro-l {
     font-size: calc(2.6rem * var(--fit));
     font-weight: 500;
     letter-spacing: .2em;
@@ -143,14 +142,14 @@ body.led {
     margin-top: 1rem;
     white-space: nowrap;
 }
-#led-temp .led-l {
+#ro-temp .ro-l {
     font-size: calc(3rem * var(--fit));
 }
-#led-air .led-l {
+#ro-air .ro-l {
     color: #8a8a8a;
 }
 /* A unit keeps its own case: inHg, not INHG. */
-.led-u {
+.ro-u {
     text-transform: none;
     letter-spacing: .04em;
 }
@@ -159,7 +158,7 @@ body.led {
  * as far as they need; it never scales itself, and never gives up height
  * to them (flex-shrink 0).  Its line is tall enough to hold the letters,
  * since overflow is hidden to cut a long title short with an ellipsis. */
-.led-title {
+.ro-title {
     flex-shrink: 0;
     margin: 0;
     text-align: center;
@@ -174,7 +173,7 @@ body.led {
     text-overflow: ellipsis;
 }
 /* Section headings are for the page's outline, not the wall. */
-.led-hidden {
+.ro-hidden {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -184,99 +183,36 @@ body.led {
     white-space: nowrap;
     margin: 0;
 }
-.led-foot {
+/* The line of figures readout.inc measures, in a browser that cannot say
+ * when a font has loaded, to see the figures' font arrive; never seen. */
+.ro-probe {
+    position: absolute;
+    visibility: hidden;
+    white-space: pre;
+    font: 100px/1 "League Gothic", "Arial Narrow", sans-serif;
+}
+.ro-foot {
     text-align: center;
     font-size: 2.4rem;
     color: #7d7f84;
     letter-spacing: .02em;
 }
 
-/* NO DATA, AND A MINUS SIGN, is the 8's own middle segment, lit.  The
- * font has no hyphen, so the board sets an "8" and clips it to that one
- * segment.  The six corners are the segment's outline in the font's units
- * (2048 to the em, advance 1177); --led-bl is where the font's baseline
- * falls in the box, which led.inc measures once the font has loaded. */
-.led-mid {
-    display: inline-block;
-    width: calc(1177em / 2048);
-    -webkit-clip-path: polygon(calc(250em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
-                               calc(383em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
-                               calc(825em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
-                               calc(926em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
-                               calc(793em / 2048) calc(var(--led-bl, .7em) - 702em / 2048),
-                               calc(350em / 2048) calc(var(--led-bl, .7em) - 702em / 2048));
-    clip-path: polygon(calc(250em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
-                       calc(383em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
-                       calc(825em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
-                       calc(926em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
-                       calc(793em / 2048) calc(var(--led-bl, .7em) - 702em / 2048),
-                       calc(350em / 2048) calc(var(--led-bl, .7em) - 702em / 2048));
-}
-/* With no data the decimal point stays dark; its unlit dot is in the
- * layer behind. */
-.led-dp-off {
-    visibility: hidden;
-}
-/* ACCENTED CAPITALS: the base letter from the font, and the accent drawn
- * as more lit segment over it -- two dots, a ring, an acute stroke, or the
- * slash through an O.  Each mark is a polygon in the font's units, in a box
- * running from 2150 units above the baseline to 150 below it, so a point
- * (x, y) sits at (x/2048 em, (2150 - y)/2048 em); led.inc places nothing
- * else there. */
-.led-ac {
-    position: relative;
-    display: inline-block;
-    width: calc(1177em / 2048);
-}
-.led-ac::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: calc(var(--led-bl, .7em) - 2150em / 2048);
-    width: calc(1177em / 2048);
-    height: calc(2300em / 2048);
-    background: currentColor;
-}
-.led-ac-uml::after { -webkit-clip-path: polygon(evenodd, calc(372em / 2048) calc(367em / 2048), calc(385em / 2048) calc(273em / 2048), calc(490em / 2048) calc(180em / 2048), calc(570em / 2048) calc(273em / 2048), calc(557em / 2048) calc(367em / 2048), calc(452em / 2048) calc(460em / 2048), calc(372em / 2048) calc(367em / 2048), calc(852em / 2048) calc(367em / 2048), calc(865em / 2048) calc(273em / 2048), calc(970em / 2048) calc(180em / 2048), calc(1050em / 2048) calc(273em / 2048), calc(1037em / 2048) calc(367em / 2048), calc(932em / 2048) calc(460em / 2048), calc(852em / 2048) calc(367em / 2048)); clip-path: polygon(evenodd, calc(372em / 2048) calc(367em / 2048), calc(385em / 2048) calc(273em / 2048), calc(490em / 2048) calc(180em / 2048), calc(570em / 2048) calc(273em / 2048), calc(557em / 2048) calc(367em / 2048), calc(452em / 2048) calc(460em / 2048), calc(372em / 2048) calc(367em / 2048), calc(852em / 2048) calc(367em / 2048), calc(865em / 2048) calc(273em / 2048), calc(970em / 2048) calc(180em / 2048), calc(1050em / 2048) calc(273em / 2048), calc(1037em / 2048) calc(367em / 2048), calc(932em / 2048) calc(460em / 2048), calc(852em / 2048) calc(367em / 2048)); }
-.led-ac-ring::after { -webkit-clip-path: polygon(evenodd, calc(901em / 2048) calc(300em / 2048), calc(823em / 2048) calc(161em / 2048), calc(633em / 2048) calc(161em / 2048), calc(521em / 2048) calc(300em / 2048), calc(599em / 2048) calc(439em / 2048), calc(789em / 2048) calc(439em / 2048), calc(901em / 2048) calc(300em / 2048), calc(806em / 2048) calc(300em / 2048), calc(766em / 2048) calc(238em / 2048), calc(671em / 2048) calc(238em / 2048), calc(616em / 2048) calc(300em / 2048), calc(656em / 2048) calc(362em / 2048), calc(751em / 2048) calc(362em / 2048), calc(806em / 2048) calc(300em / 2048)); clip-path: polygon(evenodd, calc(901em / 2048) calc(300em / 2048), calc(823em / 2048) calc(161em / 2048), calc(633em / 2048) calc(161em / 2048), calc(521em / 2048) calc(300em / 2048), calc(599em / 2048) calc(439em / 2048), calc(789em / 2048) calc(439em / 2048), calc(901em / 2048) calc(300em / 2048), calc(806em / 2048) calc(300em / 2048), calc(766em / 2048) calc(238em / 2048), calc(671em / 2048) calc(238em / 2048), calc(616em / 2048) calc(300em / 2048), calc(656em / 2048) calc(362em / 2048), calc(751em / 2048) calc(362em / 2048), calc(806em / 2048) calc(300em / 2048)); }
-.led-ac-acute::after { -webkit-clip-path: polygon(calc(591em / 2048) calc(450em / 2048), calc(701em / 2048) calc(450em / 2048), calc(941em / 2048) calc(160em / 2048), calc(831em / 2048) calc(160em / 2048)); clip-path: polygon(calc(591em / 2048) calc(450em / 2048), calc(701em / 2048) calc(450em / 2048), calc(941em / 2048) calc(160em / 2048), calc(831em / 2048) calc(160em / 2048)); }
-.led-ac-slash::after { -webkit-clip-path: polygon(calc(40em / 2048) calc(2210em / 2048), calc(190em / 2048) calc(2210em / 2048), calc(1170em / 2048) calc(450em / 2048), calc(1020em / 2048) calc(450em / 2048)); clip-path: polygon(calc(40em / 2048) calc(2210em / 2048), calc(190em / 2048) calc(2210em / 2048), calc(1170em / 2048) calc(450em / 2048), calc(1020em / 2048) calc(450em / 2048)); }
-
-/* The baseline probe led.inc measures --led-bl with; never seen. */
-.led-probe {
-    position: absolute;
-    visibility: hidden;
-    display: inline-block;
-    font: 100px/.8 "LCD";
-}
-.led-probe-mark {
-    display: inline-block;
-    width: 0;
-    height: 0;
-}
-
 /* THE CLOCK IS THE STATUS LINE: the time while the data is fresh; amber
  * while it ages; red and blinking once it is old or the fetch fails; blue
  * when the page has expired -- paused, not broken. */
-#led-clock.led-status-aging .led-n,
-#led-clock.led-status-waiting .led-n {
+#ro-clock.ro-status-aging .ro-n,
+#ro-clock.ro-status-waiting .ro-n {
     color: #ffb21f;
 }
-#led-clock.led-status-aging .led-g,
-#led-clock.led-status-waiting .led-g {
-    color: #1c1406;
+#ro-clock.ro-status-old .ro-v,
+#ro-clock.ro-status-error .ro-v {
+    animation: ro-blink 1.2s step-end infinite;
 }
-#led-clock.led-status-old .led-v,
-#led-clock.led-status-error .led-v {
-    animation: led-blink 1.2s step-end infinite;
-}
-#led-clock.led-status-expired .led-n {
+#ro-clock.ro-status-expired .ro-n {
     color: #3a8fd6;
 }
-#led-clock.led-status-expired .led-g {
-    color: #07121c;
-}
-@keyframes led-blink {
+@keyframes ro-blink {
     50% { opacity: .15; }
 }
 
@@ -378,7 +314,7 @@ body.flapboard {
     box-shadow: 0 0 calc(2.2 * var(--u)) var(--flap-lamp), inset 0 0 0 calc(.35 * var(--u)) rgba(255, 255, 255, .25);
 }
 /* The title: one line over the board, in the row names' amber.  Never
- * squeezed, and tall enough to hold its letters (see .led-title). */
+ * squeezed, and tall enough to hold its letters (see .ro-title). */
 .flap-title {
     flex-shrink: 0;
     margin: 0 0 calc(1.2 * var(--u));

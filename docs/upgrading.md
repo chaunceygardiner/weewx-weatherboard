@@ -36,9 +36,11 @@ upgrades); edits made directly to the shipped skin files do not.
 on anything older.  A station staying on WeeWX 4, or on 5.0 or 5.1, can
 stay on WeatherBoard 4.2, which goes on working with LoopData 7.
 
-The board is new: an LED display at `index.html`, and a split-flap
-departure board beside it at `splitflap.html`.  A tablet already pointed
-at the board shows the LED board after the upgrade; point it at
+The board is new: a board of tall figures at `index.html` (the LED board
+in 5.0, set in League Gothic since 5.1 as the readout board), and a
+split-flap departure board beside it at `splitflap.html`.  A tablet
+already pointed at the board shows the readout board after the upgrade;
+point it at
 `splitflap.html` instead if you prefer that one.  See
 [Reading the board](reading-the-board.html).
 
@@ -73,8 +75,8 @@ the index now stays off until you delete that line or set
 `show_aqi = true`.  See
 [`show_uv`, `show_radiation`, `show_aqi`](configuration.html#show_uv-show_radiation-show_aqi).
 
-**Missing data looks different.**  The LED board lights only the middle
-segment of each missing digit, the split-flap board shows question marks,
+**Missing data looks different.**  The readout board shows a dash for
+each missing digit, the split-flap board shows question marks,
 and the clock says how old the data is or names the failure — the codes
 the live label used to show, `HTTP 404`, `BAD DATA`, `NO ENTRY`,
 `BAD URL`, and `NO CONNECT` for a failure that has no code of its own.

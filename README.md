@@ -25,10 +25,9 @@ Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
 
 The skin makes two pages, and a tablet shows whichever its URL names.
 
-**The LED board**, `index.html`, is a wall of seven-segment digits with
-their unlit segments showing:
+**The readout board**, `index.html`, is a wall of tall figures in panels:
 
-![The LED board](docs/images/LEDBoard.png)
+![The readout board](docs/images/ReadoutBoard.png)
 
 **The split-flap board**, `splitflap.html`, shows the same station as an
 airport departure board, with a lamp at the end of each row that lights
@@ -50,10 +49,9 @@ The pages are generated once per archive interval, but the readings update
 continuously in the browser (every 2 seconds by default) from the
 loop-data.txt file written by the
 [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
-extension.  If the loop data goes stale or cannot be read, the LED board
-lights only the middle segment of each digit, the split-flap board turns
-to question marks, and the clock says how old the data is or what went
-wrong.
+extension.  If the loop data goes stale or cannot be read, the readout
+board shows a dash for each digit, the split-flap board turns to question
+marks, and the clock says how old the data is or what went wrong.
 
 The board speaks Danish, Dutch, English, French, German, Italian,
 Norwegian, Spanish and Swedish, chosen by the report's `lang` setting like
@@ -205,9 +203,9 @@ any other WeeWX skin.
 
 Every reading is age-checked.  If the loop record is older than `max_age`
 seconds (10 by default), every reading is shown as missing, the way each
-display would show it: the LED board lights only the middle segment of
-each digit and leaves its decimal point dark, and the split-flap board
-turns each digit to a question mark.  The clock, at the same moment, gives
+display would show it: the readout board shows a dash for each digit and
+dims its decimal point, and the split-flap board turns each digit to a
+question mark.  The clock, at the same moment, gives
 way to the data's age — `47 S AGO` — in amber for the first minute and red
 after that.  If loop-data.txt cannot be fetched or used, the clock names the
 failure instead (`HTTP 404`, `BAD DATA`, `NO ENTRY`, `BAD URL`,
@@ -245,9 +243,9 @@ staleness is measured, and troubleshooting.
 
 weewx-weatherboard is licensed under the GNU Public License v3.
 
-The LED board's lettering is the LCDMono2 Ultra font, Copyright 1999 by
-Samuel Reynolds (http://www.spinwardstars.com/scrfonts/), distributed
-under the terms in `skins/WeatherBoard/fonts/lcdmono2ultra/LICENSE.TXT`.
-The split-flap board's lettering is Jost, Copyright 2020 The Jost Project
+The readout board's figures are set in League Gothic, Copyright 2010 The
+League Gothic Project Authors, under the SIL Open Font License in
+`skins/WeatherBoard/fonts/leaguegothic/license.txt`.  Its labels, and the
+split-flap board's lettering, are Jost, Copyright 2020 The Jost Project
 Authors, under the SIL Open Font License in
 `skins/WeatherBoard/fonts/jost/license.txt`.

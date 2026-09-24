@@ -4,27 +4,27 @@
 ##
 ## index_painter.inc -- index.html's painter: the boardPaint(result, fresh,
 ## status) that board.inc calls after every poll and every failure.  It
-## sets each of index.html's cells by id, with led.inc's helpers.
+## sets each of index.html's cells by id, with readout.inc's helpers.
 #errorCatcher Echo
 <script>
   function boardPaint(r, fresh, status) {
     function val(key) {
       return numericReading(r, key, fresh);
     }
-    ledSet('led-t', val('current.outTemp.formatted'));
-    ledSet('led-td', val('current.dewpoint.formatted'));
-    ledWind('led-w', r, val('current.windSpeed.formatted'));
-    ledSet('led-g', val(gustField(r, '10m')));
-    ledSet('led-gd', val(gustField(r, 'day')));
-    ledBarometer('led-b', r, fresh, val('current.barometer.formatted'));
-    ledSet('led-rd', val('day.rain.sum.formatted'));
-    ledSet('led-r24', val('24h.rain.sum.formatted'));
-    ledSet('led-rr', val('current.rainRate.formatted'));
-    if (WB.show.uv) { ledSet('led-uv', val('current.UV.formatted')); }
-    if (WB.show.radiation) { ledSet('led-rad', val('current.radiation.formatted')); }
-    if (WB.show.aqi) { ledAqi('led-aqi', r, val('current.pm2_5_aqi.formatted')); }
-    ledSet('led-rh', val('current.outHumidity.formatted'));
-    if (WB.show.feels) { ledSet('led-fl', val('current.appTemp.formatted')); }
-    ledStatus(status);
+    roSet('ro-t', val('current.outTemp.formatted'));
+    roSet('ro-td', val('current.dewpoint.formatted'));
+    roWind('ro-w', r, val('current.windSpeed.formatted'));
+    roSet('ro-g', val(gustField(r, '10m')));
+    roSet('ro-gd', val(gustField(r, 'day')));
+    roBarometer('ro-b', r, fresh, val('current.barometer.formatted'));
+    roSet('ro-rd', val('day.rain.sum.formatted'));
+    roSet('ro-r24', val('24h.rain.sum.formatted'));
+    roSet('ro-rr', val('current.rainRate.formatted'));
+    if (WB.show.uv) { roSet('ro-uv', val('current.UV.formatted')); }
+    if (WB.show.radiation) { roSet('ro-rad', val('current.radiation.formatted')); }
+    if (WB.show.aqi) { roAqi('ro-aqi', r, val('current.pm2_5_aqi.formatted')); }
+    roSet('ro-rh', val('current.outHumidity.formatted'));
+    if (WB.show.feels) { roSet('ro-fl', val('current.appTemp.formatted')); }
+    roStatus(status);
   }
 </script>

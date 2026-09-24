@@ -22,15 +22,15 @@ If the loop record is older than [`max_age`](configuration.html#max_age)
 seconds — ten by default — every reading is shown as missing, the way
 each display would show it:
 
-* **The LED board** lights only the middle segment of each digit, and
-  leaves the decimal point dark.  A temperature reads `--.-` with an unlit
-  dot where the point was; the barometer `--.---`; the wind direction
-  `---`.
+* **The readout board** shows a dash for each digit, and dims the
+  decimal point.  A temperature reads `--.-` with a faint dot where the
+  point was; the barometer `--.---`; the wind direction `---`.  Each
+  placeholder is exactly as wide as the reading it stands for.
 * **The split-flap board** turns each digit to a question mark and leaves
   a blank flap where the decimal point was: `?? ?°`, `?? ???`,
   `? ?? ? ??/HR`.
 
-![The LED board, with data 47 seconds old](images/LEDBoard_stale.png)
+![The readout board, with data 47 seconds old](images/ReadoutBoard_stale.png)
 
 At the same moment the clock gives way to the data's age: `47 S AGO` in
 amber for the first minute, then `7 M AGO` and on in red.  The status line

@@ -249,11 +249,11 @@ The stanza outranks the language file, and unlike the skin it survives an
 upgrade.
 
 {: .note }
-The LED board draws its status words in its own lettering, which has the
-capitals A to Z, the digits, and the accented capitals it draws itself —
-Ä, Ö, Ü, Å, Ø, Á, É, Í, Ó and Ú.  A status word reworded with any other
-letter shows a gap where that letter would be.  The labels under the
-readings have no such limit.
+The readout board sets its status words in League Gothic, which has the
+Latin letters and the accented capitals of the Western European
+languages.  A status word reworded with a letter outside that set is
+drawn in whatever typeface the tablet falls back to.  The labels under
+the readings have no such limit.
 
 ## Units and number formats
 
@@ -267,7 +267,7 @@ To change a format or a unit for the board alone, set it in the
 WeatherBoard stanza the way you would for any WeeWX report: `[[[Units]]]
 [[[[StringFormats]]]]` for a format, `unit_system = metric` on the stanza,
 or `[[[Units]]] [[[[Groups]]]]` for one group.  A reading too wide for its
-panel shrinks that row of the LED board, and the split-flap board gives up
+panel shrinks that row of the readout board, and the split-flap board gives up
 a decimal before a figure runs off its row, so nothing needs adjusting.
 Earlier releases' installers wrote the wind and temperature formats into
 the stanza; that copy is harmless and can stay or go.

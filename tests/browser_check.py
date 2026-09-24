@@ -19,15 +19,18 @@ What it holds the boards to:
     DATA, NO ENTRY, NO CONNECT), and EXPIRED TAP once the page expires --
     after which it fetches nothing until a tap starts it again; a page with
     the keep-alive password never expires
-  - missing data: on the LED board every digit is the 8's OWN middle
-    segment, lit, and the decimal point is dark -- both measured in pixels
-    against the digit's own full 8; on the split-flap board, question marks
-    with a blank flap for the decimal point
-  - a minus sign is that middle segment too, and an accented capital (Ø in
-    a Danish wind direction) is its base letter plus a lit mark
+  - missing data: on the readout board every digit is a minus sign in the
+    digit's own box, so a placeholder is exactly as wide as the reading it
+    replaced, and the decimal point is dimmed -- the bar and the dimming
+    measured in pixels against the digits that stood there; on the
+    split-flap board, question marks with a blank flap for the decimal
+    point
+  - the readings are set in League Gothic, loaded from the skin, and the
+    font has every character the status line and the wind directions use
+    in every language
   - the split-flap lamps light for gusts, low and high pressure, rain, and
     the air quality level, and stay dark otherwise
-  - both boards fit the screen -- every LED panel holds its cells, the
+  - both boards fit the screen -- every readout panel holds its cells, the
     split-flap board and its footer sit inside the window -- at 1280x800,
     1024x768, 1180x820 and 1366x1024, with metric readings and the widest
     language
@@ -37,7 +40,7 @@ Chromium in Playwright's browser cache -- tools/pwenv, which is not
 published:
 
   python3 -m venv tools/pwenv
-  tools/pwenv/bin/pip install playwright CT3 configobj pillow weewx   # playwright: match the browsers already cached
+  tools/pwenv/bin/pip install playwright CT3 configobj pillow weewx fonttools brotli   # playwright: match the browsers already cached
   tools/pwenv/bin/playwright install chromium
   PYTHONDONTWRITEBYTECODE=1 tools/pwenv/bin/python tests/browser_check.py
 """
@@ -155,7 +158,6 @@ class Board:
         self.page = browser.new_page(viewport={'width': size[0], 'height': size[1]})
         self.errors = []
         self.page.on('pageerror', lambda e: self.errors.append(str(e)))
-        self.page.on('console', lambda m: self.errors.append(m.text) if 'cannot set' in m.text else None)
         self.page.route('**/*', self.server.handle)
         self.page.goto('http://board.test/board.html' + query)
         self.page.evaluate('document.fonts.ready')
@@ -175,25 +177,28 @@ class Board:
 
 
 # ---------------------------------------------------------------------------
-# The LED board.
+# The readout board.
 
-LED_TEXT = """id => {
-  const v = document.querySelector('#' + id + ' .led-v');
+# A cell's text as the board shows it: a dimmed decimal point reads _, and
+# the minus sign every dash is drawn as reads -.
+RO_TEXT = """id => {
+  const v = document.querySelector('#' + id + ' .ro-v');
   if (!v) return null;
   let s = '';
   for (const n of v.childNodes) {
-    if (n.nodeType === 3) { s += n.data; continue; }
-    if (n.classList.contains('led-mid')) s += '-';
-    else if (n.classList.contains('led-dp-off')) s += '_';
-    else if (n.classList.contains('led-ac')) s += n.className.replace(/.*led-ac-/, '<') + n.textContent;
-    else s += n.textContent;
+    if (n.nodeType === 3) s += n.data;
+    else if (n.classList.contains('ro-dp-off')) s += '_';
+    else s += n.textContent.replace(/−/g, '-');
   }
   return s.trim();
 }"""
 
+# Each row's --fit, top to bottom.
+FITS = "[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')"
+
 
 def lit_pixels(img):
-    """Pixels bright enough to be a lit segment (the unlit ones are near black)."""
+    """Pixels bright enough to be lettering (the panels are near black)."""
     im = img.convert('RGB')
     px = im.load()
     w, h = im.size
@@ -204,180 +209,270 @@ def shot(page, box):
     return Image.open(io.BytesIO(page.screenshot(clip=box)))
 
 
-def check_led(browser):
+def check_readout(browser):
     failures = []
     b = Board(browser, 'index.html.tmpl')
-    t = lambda cid: b.page.evaluate(LED_TEXT, cid)
-    b.wait("document.querySelector('#led-t .led-v') && document.querySelector('#led-t .led-v').textContent.trim() === '78.4'")
-    for cid, want in (('led-t', '78.4'), ('led-td', '61.2'), ('led-w', '4 NNE'), ('led-g', '9'),
-                      ('led-gd', '14'), ('led-b', '29.912'), ('led-rd', '0.00'), ('led-rr', '0.00'),
-                      ('led-uv', '5.4'), ('led-rad', '612'), ('led-aqi', '42'), ('led-rh', '56'),
-                      ('led-fl', '79.9'), ('led-clk', '4:07:17 PM')):
+    t = lambda cid: b.page.evaluate(RO_TEXT, cid)
+    b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.trim() === '78.4'")
+    for cid, want in (('ro-t', '78.4'), ('ro-td', '61.2'), ('ro-w', '4 NNE'), ('ro-g', '9'),
+                      ('ro-gd', '14'), ('ro-b', '29.912'), ('ro-rd', '0.00'), ('ro-rr', '0.00'),
+                      ('ro-uv', '5.4'), ('ro-rad', '612'), ('ro-aqi', '42'), ('ro-rh', '56'),
+                      ('ro-fl', '79.9'), ('ro-clk', '4:07:17 PM')):
         if t(cid) != want:
-            failures.append('LED %s reads %r, expected %r' % (cid, t(cid), want))
-    if b.page.evaluate("document.querySelector('#led-aqi .led-n').style.color") != 'rgb(0, 228, 0)':
+            failures.append('readout %s reads %r, expected %r' % (cid, t(cid), want))
+    if b.page.evaluate("document.querySelector('#ro-aqi .ro-n').style.color") != 'rgb(0, 228, 0)':
         failures.append('the air quality reading is not in its level color')
-    if b.page.evaluate("!!document.querySelector('#led-b .led-trend')") is not True:
+    if b.page.evaluate("!!document.querySelector('#ro-b .ro-trend')") is not True:
         failures.append('the barometer has no trend arrow')
+    # The readings are in League Gothic, fetched from the skin: a font the
+    # stylesheet names at a path that is not there leaves the board in
+    # whatever fallback the tablet has.
+    b.page.evaluate('document.fonts.ready')
+    faces = b.page.evaluate("[...document.fonts].filter(f => f.family.replace(/\"/g, '') === 'League Gothic')"
+                            ".map(f => f.status)")
+    if faces != ['loaded']:
+        failures.append('League Gothic is %s, not loaded' % (faces or 'not declared'))
+    if 'League Gothic' not in b.page.evaluate("getComputedStyle(document.querySelector('#ro-t .ro-n')).fontFamily"):
+        failures.append('the readings are not set in League Gothic')
+    fresh = ro_digits(b)
 
     # Aging, then old: the age on the status line, every reading dashes
-    # with its decimal point dark.
+    # with its decimal point dimmed.
     b.server.set(age=47)
-    b.wait("document.getElementById('led-clock').className.indexOf('led-status-aging') >= 0")
-    if t('led-clk') != '47 S AGO':
-        failures.append('47 s old reads %r' % t('led-clk'))
-    for cid, want in (('led-t', '--_-'), ('led-b', '--_---'), ('led-w', '- ---'), ('led-aqi', '--')):
+    b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-aging') >= 0")
+    if t('ro-clk') != '47 S AGO':
+        failures.append('47 s old reads %r' % t('ro-clk'))
+    for cid, want in (('ro-t', '--_-'), ('ro-b', '--_---'), ('ro-w', '- ---'), ('ro-aqi', '--')):
         if t(cid) != want:
             failures.append('missing %s reads %r, expected %r' % (cid, t(cid), want))
-    if b.page.evaluate("!!document.querySelector('#led-b .led-trend')"):
+    if b.page.evaluate("!!document.querySelector('#ro-b .ro-trend')"):
         failures.append('the trend arrow outlived the data')
-    failures += led_pixels(b)
+    failures += ro_missing_pixels(b, fresh)
     b.server.set(age=420)
-    b.wait("document.getElementById('led-clock').className.indexOf('led-status-old') >= 0")
-    if t('led-clk') != '7 M AGO':
-        failures.append('7 minutes old reads %r' % t('led-clk'))
+    b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-old') >= 0")
+    if t('ro-clk') != '7 M AGO':
+        failures.append('7 minutes old reads %r' % t('ro-clk'))
 
     # Failures, each on the status line.
     for mode, status, want in (('status', 404, 'HTTP 404'), ('badjson', 200, 'BAD DATA'),
                                ('noentry', 200, 'NO ENTRY'), ('abort', 200, 'NO CONNECT')):
         b.server.set(mode=mode, status=status)
-        b.wait("document.getElementById('led-clock').className.indexOf('led-status-error') >= 0"
-               " && document.querySelector('#led-clk .led-v').textContent.replace(/\\s/g, '') === %s"
+        b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-error') >= 0"
+               " && document.querySelector('#ro-clk .ro-v').textContent.replace(/\\s/g, '') === %s"
                % json.dumps(want.replace(' ', '')))
-    # Back, and a minus sign is the middle segment too.
+    # Back, and a minus sign is a minus in a digit's box too; a Danish
+    # wind direction is the font's own letters.
     b.server.set(e=WIDE)
-    b.wait("document.getElementById('led-clock').className === 'led-panel led-status-live'")
-    if t('led-t') != '-12.3':
-        failures.append('-12.3 reads %r' % t('led-t'))
-    if t('led-w') != '112 <slashONN<slashO'.replace('NN', 'N'):
-        failures.append('a Danish wind direction reads %r' % t('led-w'))
-    failures += accent_pixels(b)
+    b.wait("document.getElementById('ro-clock').className === 'ro-panel ro-status-live'")
+    if t('ro-t') != '-12.3':
+        failures.append('-12.3 reads %r' % t('ro-t'))
+    if t('ro-w') != '112 ØNØ':
+        failures.append('a Danish wind direction reads %r' % t('ro-w'))
     # A station that reports no gusts shows the highest wind speed instead.
     gustless = entry(**{'10m.windSpeed.max.formatted': '11', 'day.windSpeed.max.formatted': '17'})
     del gustless['10m.windGust.max.formatted']
     del gustless['day.windGust.max.formatted']
     b.server.set(e=gustless)
-    b.wait("document.querySelector('#led-g .led-v').textContent.trim() === '11'")
-    if t('led-gd') != '17':
-        failures.append('with no gusts reported, today reads %r, not the top speed 17' % t('led-gd'))
+    b.wait("document.querySelector('#ro-g .ro-v').textContent.trim() === '11'")
+    if t('ro-gd') != '17':
+        failures.append('with no gusts reported, today reads %r, not the top speed 17' % t('ro-gd'))
     # Not-a-number is missing: WeeWX writes N/A for a value it lacks, and a
     # trend code that is not a number draws no arrow.
     b.server.set(e=entry(**{'current.outTemp.formatted': 'N/A', 'current.barometer.formatted': '29.912',
                             'trend.barometer.code': 'x'}))
-    b.wait("document.querySelector('#led-t .led-mid') !== null")
-    if t('led-t') != '--_-':
-        failures.append('an N/A temperature reads %r, not missing' % t('led-t'))
-    if b.page.evaluate("!!document.querySelector('#led-b .led-trend')"):
+    b.wait("(%s)('ro-t') === '--_-'" % RO_TEXT)
+    if b.page.evaluate("!!document.querySelector('#ro-b .ro-trend')"):
         failures.append('a trend code that is not a number drew an arrow')
     # Calm by the speed as SHOWN: a raw 0.00009 shows as 0, and a direction
     # beside it would claim a wind that is not there.
     b.server.set(e=entry(**{'current.windSpeed.formatted': '0', 'current.windSpeed.raw': 9.1e-05}))
-    b.wait("document.querySelector('#led-w .led-v').textContent.trim().charAt(0) === '0'")
-    if t('led-w') not in ('0', '0    '.strip()):
-        failures.append('a wind that shows 0 reads %r: a direction beside a calm' % t('led-w'))
-    failures += ['LED page: %s' % e for e in b.errors]
+    b.wait("document.querySelector('#ro-w .ro-v').textContent.trim().charAt(0) === '0'")
+    if t('ro-w') != '0':
+        failures.append('a wind that shows 0 reads %r: a direction beside a calm' % t('ro-w'))
+    failures += ['readout page: %s' % e for e in b.errors]
     b.close()
     return failures
 
 
-def led_pixels(b):
-    """The missing digits and decimal points, measured: each dash lights only
-    pixels of its own 8, about one segment in seven; each dark decimal point
-    lights nothing."""
+def ro_crops(b, cid, cls):
+    """Each .cls box in a cell, as tall as the cell's own block (.ro-n), so
+    a crop takes in the whole glyph and nothing of the label beneath or the
+    row below: an inline box runs to the font's full ascent and descent,
+    far past the figures."""
+    n = b.page.query_selector('#%s .ro-n' % cid).bounding_box()
+    crops = []
+    for d in b.page.query_selector_all('#%s .%s' % (cid, cls)):
+        r = d.bounding_box()
+        crops.append({'x': r['x'], 'y': n['y'], 'width': r['width'], 'height': n['height']})
+    return crops
+
+
+def ro_ink(b, box):
+    """The lit pixels in a crop, in page coordinates."""
+    return {(x + box['x'], y + box['y']) for x, y in lit_pixels(shot(b.page, box))}
+
+
+def ro_digits(b):
+    """The temperature and the barometer as they stand: each figure's
+    width, and each digit's lit pixels."""
+    out = {}
+    for cid in ('ro-t', 'ro-b'):
+        width = b.page.evaluate("document.querySelector('#%s .ro-v').getBoundingClientRect().width" % cid)
+        out[cid] = (width, [ro_ink(b, box) for box in ro_crops(b, cid, 'ro-d')])
+    return out
+
+
+def ro_missing_pixels(b, fresh):
+    """The placeholders, measured against the readings they replaced: each
+    exactly as wide, each missing digit a bar across the middle of where
+    the digit stood, and each decimal point dimmed -- there to see, but
+    never lit.  In page coordinates, and each crop taken afresh, so a
+    figure that had moved would be measured where it now is."""
     failures = []
-    # One dash at a time, the others hidden, in a crop wide enough for the
-    # italic 8's lean: each dash against its own full 8, nothing else.
-    b.page.add_style_tag(content='.led-v .led-mid { visibility: hidden; }'
-                                 ' .led-v .led-mid.probe { visibility: visible; }'
-                                 ' .led-title { visibility: hidden; }')   # its red is not a segment
-    mids = b.page.query_selector_all('#led-t .led-mid, #led-b .led-mid')
-    for m in mids:
-        m.evaluate("e => e.classList.add('probe')")
-        box = m.bounding_box()
-        box = {'x': box['x'] - box['width'] * .5, 'y': box['y'] - box['height'],
-               'width': box['width'] * 2, 'height': box['height'] * 3}
-        dash = lit_pixels(shot(b.page, box))
-        m.evaluate("e => e.style.clipPath = 'none'")
-        full = lit_pixels(shot(b.page, box))
-        m.evaluate("e => { e.style.clipPath = ''; e.classList.remove('probe'); }")
-        share = len(dash) / max(1, len(full))
-        if dash - full or not 0.10 < share < 0.20:
-            failures.append('a missing digit lights %d pixels outside its 8 and %.2f of it:'
-                            ' not its middle segment' % (len(dash - full), share))
-        # And it is the MIDDLE one: every lit pixel within the 8's middle
-        # band (the segment spans 702 to 936 of the font's 1638 units).
-        if dash and full:
+    for cid, (width, digits) in sorted(fresh.items()):
+        now = b.page.evaluate("document.querySelector('#%s .ro-v').getBoundingClientRect().width" % cid)
+        if abs(now - width) > .5:
+            failures.append('missing %s is %.1f px wide, the reading was %.1f' % (cid, now, width))
+        crops = ro_crops(b, cid, 'ro-d')
+        if len(crops) != len(digits):
+            failures.append('missing %s has %d digits, the reading had %d' % (cid, len(crops), len(digits)))
+        for box, full in zip(crops, digits):
+            bar = ro_ink(b, box)
+            if not full or not bar:
+                failures.append('%s: a digit or its dash lit nothing' % cid)
+                continue
             top = min(y for x, y in full)
             height = max(y for x, y in full) - top
-            stray = [p for p in dash if not .36 <= (p[1] - top) / height <= .64]
-            if stray:
-                failures.append('a missing digit lights %d pixels outside the middle band'
-                                % len(stray))
-    for d in b.page.query_selector_all('#led-t .led-dp-off, #led-b .led-dp-off'):
-        if lit_pixels(shot(b.page, d.bounding_box())):
+            ys = [y for x, y in bar]
+            xs = [x for x, y in bar]
+            if max(ys) - min(ys) > height * .2:
+                failures.append('%s: a missing digit is %d px tall where the digit was %d: not a bar'
+                                % (cid, max(ys) - min(ys), height))
+            elif not .35 <= ((max(ys) + min(ys)) / 2 - top) / height <= .65:
+                failures.append('%s: a missing digit is not across the middle of the digit' % cid)
+            if max(xs) - min(xs) < box['width'] * .5:
+                failures.append('%s: a missing digit spans %d px of its %d px box'
+                                % (cid, max(xs) - min(xs), box['width']))
+    dps = ro_crops(b, 'ro-t', 'ro-dp-off') + ro_crops(b, 'ro-b', 'ro-dp-off')
+    if len(dps) != 2:
+        failures.append('%d dimmed decimal points, expected 2' % len(dps))
+    for box in dps:
+        im = shot(b.page, box).convert('RGB')
+        brightest = max(max(im.getpixel((x, y))) for x in range(im.width) for y in range(im.height))
+        if brightest > 150:
             failures.append('a decimal point is lit with no data')
-    if not mids:
-        failures.append('no missing digits were drawn')
+        elif brightest < 30:
+            failures.append('a decimal point is dark with no data, not dimmed')
     return failures
 
 
-def mark_pixels(b, el):
-    """The pixels an accent adds to its base letter, and the letter's box:
-    the same crop with the mark and without it."""
-    box = el.bounding_box()
-    wide = {'x': box['x'] - box['width'], 'y': box['y'] - box['height'],
-            'width': box['width'] * 3, 'height': box['height'] * 3}
-    with_mark = lit_pixels(shot(b.page, wide))
-    el.evaluate("e => e.classList.add('led-ac-none')")
-    b.page.add_style_tag(content='.led-ac-none::after { display: none; }')
-    bare = lit_pixels(shot(b.page, wide))
-    el.evaluate("e => e.classList.remove('led-ac-none')")
-    return with_mark - bare, bare, box
-
-
-def accent_pixels(b):
-    """O-slash is the font's O plus a lit slash: a thin stroke, not a block,
-    inside the character's own box."""
+def check_readout_widths(browser):
+    """Letters are not all one width.  A wind direction as long as the last
+    one but wider (WWW after NNN) makes the board fit again rather than run
+    past its panel, and a narrower one (III) leaves the cell as wide as it
+    was, so the gusts beside it stay where they are.  Dutch at 1024x768
+    with readings too wide for the design: the wind row is already full.
+    And the same holds through the refits a browser without document.fonts
+    makes on its timer."""
     failures = []
-    acs = b.page.query_selector_all('#led-w .led-ac-slash')
-    if len(acs) != 2:
-        return ['the Danish direction drew %d slashed Os, expected 2' % len(acs)]
-    added, bare, box = mark_pixels(b, acs[0])
-    area = box['width'] * box['height']
-    if len(added) < 50:
-        failures.append('the slash through the O lights only %d pixels' % len(added))
-    if len(added) > area * .25:
-        failures.append('the slash lights %d pixels, a block rather than a stroke' % len(added))
-    inside = [(x, y) for x, y in added if box['width'] * .8 <= x <= box['width'] * 2.2]
-    if len(inside) < len(added) * .95:
-        failures.append('the slash strays outside its own character')
-    return failures
+    w = "document.querySelector('#ro-w .ro-n').getBoundingClientRect().width"
+    b = Board(browser, 'index.html.tmpl', size=(1024, 768), lang='nl')
+    widths = []
+    for d in ('NNN', 'WWW', 'III'):
+        b.server.set(e=entry(**dict(EXTREME, **{'current.windDir.ordinal_compass': d})))
+        b.wait("document.querySelector('#ro-w .ro-v') && document.querySelector('#ro-w .ro-v').textContent.indexOf('%s') >= 0" % d)
+        b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        for p in b.page.evaluate(RO_FIT):
+            failures.append('the wind direction %s: %s overflows' % (d, p))
+        widths.append(b.page.evaluate(w))
+    if widths[1] <= widths[0]:
+        failures.append('WWW is no wider than NNN (%.1f, %.1f px): this checks nothing' % tuple(widths[:2]))
+    if widths[2] < widths[1] - .5:
+        failures.append('the wind cell narrowed from %.1f to %.1f px for III' % (widths[1], widths[2]))
+    b.close()
+    # Without document.fonts, and with a hung analytics script holding
+    # window load back, the board fits again every two seconds for a
+    # minute, not knowing when its fonts arrive.  It notices the figures'
+    # font at the first tick after it lands, and measures every cell again
+    # then, once; the ticks after that must not narrow a cell.  So: wait
+    # until the arrival has been noticed, then WWW, then III, and two ticks
+    # later the cell is still as wide as WWW made it.
+    b = Board.__new__(Board)
+    b.server = Server(ct.render('index.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
+    b.errors = []
+    b.page = browser.new_page(viewport={'width': 1280, 'height': 800})
+    b.page.add_init_script(NO_FONT_API)
+    b.page.route('**/*', hang_analytics(b.server.handle))
+    # The page's clock is the test's: each two-second tick is run on demand.
+    b.page.clock.install()
+    b.page.goto('http://board.test/board.html?page_update_pwd=testpwd', wait_until='domcontentloaded')
 
-
-def check_marks_above(browser):
-    """A ring and two dots sit ABOVE their letter: Swedish, whose status
-    line reads FR<A-ring>NKOPPLAD with no connection and TRYCK H<A-umlaut>R
-    once the page has expired -- both steady, so nothing is redrawn while
-    they are measured."""
-    failures = []
-    b = Board(browser, 'index.html.tmpl', lang='sv')
-    b.server.set(mode='abort')
-    for cls, reach in (('led-ac-ring', None), ('led-ac-uml', 'expirePage()')):
-        if reach:
-            b.page.evaluate(reach)
-        b.wait("document.querySelector('#led-clk .%s')" % cls)
-        el = b.page.query_selector('#led-clk .' + cls)
-        added, bare, box = mark_pixels(b, el)
-        cap = min(y for x, y in bare if box['width'] <= x <= box['width'] * 2) if bare else 0
-        if len(added) < 20:
-            failures.append('%s adds only %d lit pixels' % (cls, len(added)))
-        elif any(y >= cap for x, y in added):
-            failures.append('%s lights %d pixels at or below the top of its letter'
-                            % (cls, sum(1 for x, y in added if y >= cap)))
-        if len(added) > box['width'] * box['height'] * .25:
-            failures.append('%s is a block, not a mark' % cls)
+    def tick():
+        n = b.page.evaluate('roTries')
+        b.page.clock.run_for(2000)
+        b.wait('roTries > %d' % n)
+    tick()
+    b.wait("roProbed === roProbe()")
+    for d in ('WWW', 'III'):
+        b.server.set(e=entry(**{'current.windDir.ordinal_compass': d}))
+        b.page.clock.run_for(1000)                 # the next poll
+        b.wait("document.querySelector('#ro-w .ro-v') && document.querySelector('#ro-w .ro-v').textContent.indexOf('%s') >= 0" % d)
+    wide = b.page.evaluate(w)
+    tick()
+    tick()
+    if b.page.evaluate(w) < wide - .5:
+        failures.append('without document.fonts, a refit on its timer narrowed the wind cell from'
+                        ' %.1f to %.1f px' % (wide, b.page.evaluate(w)))
     b.close()
     return failures
+
+
+def check_readout_no_font(browser):
+    """League Gothic never arrives -- not yet synced to the web server, or
+    blocked: the figures fall back to a wider face, and each digit's box
+    widens to hold its digit rather than letting it run into the next."""
+    failures = []
+    b = Board.__new__(Board)
+    b.server = Server(ct.render('index.html.tmpl', analytics=False, overrides={'refresh_rate': '1'}))
+    b.errors = []
+    b.page = browser.new_page(viewport={'width': 1280, 'height': 800})
+
+    def route(r, request):
+        if request.url.endswith('leaguegothic.woff2'):
+            return r.fulfill(status=404, body='')
+        return b.server.handle(r, request)
+    b.page.route('**/*', route)
+    b.page.goto('http://board.test/board.html?page_update_pwd=testpwd')
+    b.wait("document.querySelector('#ro-b .ro-v') && document.querySelector('#ro-b .ro-v').textContent.trim() === '29.912'")
+    spill = b.page.evaluate("[...document.querySelectorAll('.ro-d')].filter(d => d.scrollWidth > d.clientWidth)"
+                            ".map(d => d.closest('.ro-c').id)")
+    if spill:
+        failures.append('with no League Gothic, digits spill out of their boxes in %s' % sorted(set(spill)))
+    for p in b.page.evaluate(RO_FIT):
+        failures.append('with no League Gothic, %s overflows' % p)
+    b.close()
+    return failures
+
+
+def check_font_covers(browser):
+    """Every character the readout board sets in League Gothic, in every
+    language, is in the font: the status words, the wind directions, the
+    clock's AM and PM, the digits, the decimal point, the colon and the
+    minus sign.  A character it lacks would be drawn in whatever face the
+    tablet falls back to.  (Read from the font itself: a browser shows no
+    sign of a fallback it made.)"""
+    from fontTools.ttLib import TTFont
+    cmap = TTFont(os.path.join(SKIN, 'fonts', 'leaguegothic', 'leaguegothic.woff2')).getBestCmap()
+    need = set('0123456789.:/− AMP')
+    for lang in ct.LANGS:
+        conf = ct.lang_texts(lang)
+        for key in ct.STATUS:
+            need |= set(conf['Texts'].get(key, '').replace('{n}', '').upper())
+        need |= set(''.join(conf['Units']['Ordinates']['directions'][:16]).upper())
+    missing = sorted(ch for ch in need if ord(ch) not in cmap)
+    if missing:
+        return ['League Gothic has no %s' % ', '.join('%r (U+%04X)' % (ch, ord(ch)) for ch in missing)]
+    return []
 
 
 def check_frozen_file(browser):
@@ -387,45 +482,45 @@ def check_frozen_file(browser):
     failures = []
     b = Board(browser, 'index.html.tmpl', overrides={'max_age': '3'})
     b.server.set(e=entry(**{'current.dateTime.raw': int(time.time())}), frozen=True)
-    b.wait("document.getElementById('led-clock').className === 'led-panel led-status-live'")
-    b.wait("document.getElementById('led-clock').className.indexOf('led-status-aging') >= 0", timeout=8000)
-    if b.page.evaluate(LED_TEXT, 'led-t') != '--_-':
-        failures.append('a frozen file left the temperature up: %r' % b.page.evaluate(LED_TEXT, 'led-t'))
+    b.wait("document.getElementById('ro-clock').className === 'ro-panel ro-status-live'")
+    b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-aging') >= 0", timeout=8000)
+    if b.page.evaluate(RO_TEXT, 'ro-t') != '--_-':
+        failures.append('a frozen file left the temperature up: %r' % b.page.evaluate(RO_TEXT, 'ro-t'))
     b.close()
     return failures
 
 
-def check_led_expiry(browser):
+def check_readout_expiry(browser):
     """Without the password the page expires, says so, fetches nothing
     more, and a tap starts it again.  (expiration_time is in hours: 0.0006
     is about two seconds.)"""
     failures = []
     b = Board(browser, 'index.html.tmpl', overrides={'expiration_time': '0.0006'}, query='')
-    b.wait("document.getElementById('led-clock').className.indexOf('led-status-expired') >= 0")
-    if b.page.evaluate(LED_TEXT, 'led-clk') != 'EXPIRED TAP':
-        failures.append('an expired page reads %r' % b.page.evaluate(LED_TEXT, 'led-clk'))
+    b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-expired') >= 0")
+    if b.page.evaluate(RO_TEXT, 'ro-clk') != 'EXPIRED TAP':
+        failures.append('an expired page reads %r' % b.page.evaluate(RO_TEXT, 'ro-clk'))
     polls = b.server.polls
     b.page.wait_for_timeout(2500)          # proving the ABSENCE of polls
     if b.server.polls != polls:
         failures.append('an expired page went on fetching: %d polls' % (b.server.polls - polls))
     b.page.mouse.click(300, 300)
-    b.wait("document.getElementById('led-clock').className === 'led-panel led-status-live'")
+    b.wait("document.getElementById('ro-clock').className === 'ro-panel ro-status-live'")
     b.close()
     # With the password it does not expire.
     b = Board(browser, 'index.html.tmpl', overrides={'expiration_time': '0.0006'})
-    b.wait("document.querySelector('#led-t .led-v') && document.querySelector('#led-t .led-v').textContent.trim() === '78.4'")
+    b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.trim() === '78.4'")
     b.page.wait_for_timeout(2600)          # proving the ABSENCE of expiry
-    if 'expired' in b.page.evaluate("document.getElementById('led-clock').className"):
+    if 'expired' in b.page.evaluate("document.getElementById('ro-clock').className"):
         failures.append('a page with the keep-alive password expired')
     b.close()
     return failures
 
 
-LED_FIT = """() => {
+RO_FIT = """() => {
   const bad = [];
-  for (const p of document.querySelectorAll('.led-panel')) {
+  for (const p of document.querySelectorAll('.ro-panel')) {
     const P = p.getBoundingClientRect();
-    for (const c of p.querySelectorAll('.led-stk, .led-l')) {
+    for (const c of p.querySelectorAll('.ro-n, .ro-l')) {
       const r = c.getBoundingClientRect();
       if (r.left < P.left - 1 || r.right > P.right + 1 || r.top < P.top - 1 || r.bottom > P.bottom + 1)
         bad.push(p.id);
@@ -434,12 +529,12 @@ LED_FIT = """() => {
   // A panel that cannot hold its cells may simply grow past the window's
   // edge, where nothing scrolls to show it: hold every panel, and the
   // footer, inside the window too.
-  for (const e of document.querySelectorAll('.led-panel, .led-foot, .led-title')) {
+  for (const e of document.querySelectorAll('.ro-panel, .ro-foot, .ro-title')) {
     const r = e.getBoundingClientRect();
     if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1)
       bad.push((e.id || 'the footer') + ' leaves the window');
   }
-  const title = document.querySelector('.led-title');
+  const title = document.querySelector('.ro-title');
   if (title && title.scrollHeight > title.clientHeight * 1.08)
     bad.push('the title is squeezed to ' + title.clientHeight + 'px of its ' + title.scrollHeight);
   if (document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight)
@@ -447,18 +542,18 @@ LED_FIT = """() => {
   return [...new Set(bad)];
 }"""
 
-# For each LED row the fit has shrunk: whether it is the LARGEST step that
+# For each readout row the fit has shrunk: whether it is the LARGEST step that
 # fits.  The row is set one step (0.01) larger and measured: a row that
 # still fits there was shrunk further than it needed to be.  Measured here,
 # independently of the page's own arithmetic.
-LED_TIGHT = """() => {
+RO_TIGHT = """() => {
   const need = row => {
     let most = 0;
-    for (const p of row.querySelectorAll('.led-panel')) {
+    for (const p of row.querySelectorAll('.ro-panel')) {
       const cs = getComputedStyle(p);
       const iw = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       const ih = p.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-      const cells = [...p.querySelectorAll('.led-c')];
+      const cells = [...p.querySelectorAll('.ro-c')];
       let w = 0, h = 0;
       for (const c of cells) { const r = c.getBoundingClientRect(); w += r.width; h = Math.max(h, r.height); }
       w += Math.max(0, cells.length - 1) * parseFloat(cs.columnGap);
@@ -467,7 +562,7 @@ LED_TIGHT = """() => {
     return most;
   };
   const out = [];
-  for (const row of document.querySelectorAll('.led-row')) {
+  for (const row of document.querySelectorAll('.ro-row')) {
     const fit = row.style.getPropertyValue('--fit');
     if (!fit || fit === '1') continue;
     const at = need(row);
@@ -501,7 +596,7 @@ def check_long_title(browser):
     board is pushed off the screen by it."""
     failures = []
     long_title = 'The Weather Station at the End of the Very Long Road, Somewhere Rather Far Away'
-    for tmpl, check, sel in (('index.html.tmpl', LED_FIT, '.led-title'), ('splitflap.html.tmpl', FLAP_FIT, '#flap-title')):
+    for tmpl, check, sel in (('index.html.tmpl', RO_FIT, '.ro-title'), ('splitflap.html.tmpl', FLAP_FIT, '#flap-title')):
         for size in ((1280, 800), (1024, 768)):
             b = Board(browser, tmpl, size=size, overrides={'title': long_title})
             b.page.evaluate('document.fonts.ready')
@@ -520,18 +615,18 @@ NO_FONT_API = "Object.defineProperty(document, 'fonts', {value: undefined, confi
 
 
 # Run before a page's own scripts: a browser without flex gap, which draws
-# none between the LED panels' cells and reports it as "normal", which is
+# none between the readout panels' cells and reports it as "normal", which is
 # not a number.
 GAP_NORMAL = """(() => {
   document.addEventListener('DOMContentLoaded', () => {
     const st = document.createElement('style');
-    st.textContent = '.led-panel { gap: 0 !important; }';
+    st.textContent = '.ro-panel { gap: 0 !important; }';
     document.head.appendChild(st);
   });
   const real = window.getComputedStyle;
   window.getComputedStyle = function (el, pseudo) {
     const cs = real.call(window, el, pseudo);
-    if (!el.classList || !el.classList.contains('led-panel')) return cs;
+    if (!el.classList || !el.classList.contains('ro-panel')) return cs;
     return new Proxy(cs, {get: (t, k) => k === 'columnGap' ? 'normal'
                                    : (typeof t[k] === 'function' ? t[k].bind(t) : t[k])});
   };
@@ -602,29 +697,85 @@ def check_flap_late_font(browser, font_api=True, hang=False):
     return failures
 
 
-def check_led_without_font_api(browser):
-    """Without document.fonts the LED board still measures its font's
-    baseline, at window load -- or on its timers, when a hung analytics
-    script means window load never comes -- and gets the same answer: the
-    dashes and accents are placed from it."""
+def check_readout_without_font_api(browser):
+    """Without document.fonts the readout board still fits again once its
+    fonts are in, at window load -- or on its timers, when a hung analytics
+    script means window load never comes -- and ends at the fit a browser
+    with the font API reaches.  The readings are too wide for the design,
+    so the fit has rows to shrink."""
     failures = []
     want = None
     for font_api, hang in ((True, False), (False, False), (False, True)):
         b = Board.__new__(Board)
         b.server = Server(ct.render('index.html.tmpl', analytics=hang, overrides={'refresh_rate': '1'}))
+        b.server.set(e=EXTREME)
         b.errors = []
-        b.page = browser.new_page(viewport={'width': 1280, 'height': 800})
+        b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
         if not font_api:
             b.page.add_init_script(NO_FONT_API)
         b.page.route('**/*', hang_analytics(b.server.handle) if hang else b.server.handle)
         b.page.goto('http://board.test/board.html?page_update_pwd=testpwd',
                     wait_until='domcontentloaded' if hang else 'load')
-        b.wait("document.documentElement.style.getPropertyValue('--led-bl') !== ''")
-        bl = b.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')")
+        b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
         if want is None:
-            want = bl
-        elif bl != want:
-            failures.append('without document.fonts the baseline is %s, with it %s' % (bl, want))
+            b.page.evaluate('document.fonts.ready')
+            b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+            want = b.page.evaluate(FITS)
+            if all(f == '1' for f in want):
+                failures.append('readings too wide for the design shrank no row: the test proves nothing')
+        else:
+            try:
+                b.wait('JSON.stringify(%s) === %s' % (FITS, json.dumps(json.dumps(want, separators=(',', ':')))),
+                       timeout=5000)
+            except Exception:
+                failures.append('without document.fonts%s the fit ends at %s, not %s'
+                                % (' or window load' if hang else '', b.page.evaluate(FITS), want))
+        b.close()
+    return failures
+
+
+def check_readout_late_font(browser):
+    """Each of the readout board's fonts held back until the board has
+    painted in a fallback: once it arrives the board fits again, and ends
+    where a board that had its fonts from the start does.  League Gothic
+    sets the readings and Jost the labels; the fit measures both, so each
+    is held alone.  Dutch, whose labels run longest, and readings too wide
+    for the design, so the fit has rows to shrink."""
+    failures = []
+    ref = Board(browser, 'index.html.tmpl', size=(1024, 768), lang='nl')
+    ref.server.set(e=EXTREME)
+    ref.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
+    ref.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    want = ref.page.evaluate(FITS)
+    ref.close()
+    for font in ('leaguegothic.woff2', 'jost.woff2'):
+        held = []
+        b = Board.__new__(Board)
+        b.server = Server(ct.render('index.html.tmpl', analytics=False, lang='nl', overrides={'refresh_rate': '1'}))
+        b.server.set(e=EXTREME)
+        b.errors = []
+        b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+
+        def route(r, request, handle=b.server.handle, font=font):
+            if request.url.endswith(font):
+                held.append(r)
+                return None
+            return handle(r, request)
+        b.page.route('**/*', route)
+        b.page.goto('http://board.test/board.html?page_update_pwd=testpwd', wait_until='domcontentloaded')
+        b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
+        b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        early = b.page.evaluate(FITS)
+        if early == want:
+            failures.append('with %s held the fallback fit the board just as the font does: the test'
+                            ' proves nothing' % font)
+        while held:
+            b.server.handle(held[0], held.pop(0).request)
+        try:
+            b.wait('JSON.stringify(%s) === %s' % (FITS, json.dumps(json.dumps(want, separators=(',', ':')))),
+                   timeout=3000)
+        except Exception:
+            failures.append('%s arriving late left the fit at %s, not %s' % (font, b.page.evaluate(FITS), want))
         b.close()
     return failures
 
@@ -632,13 +783,15 @@ def check_led_without_font_api(browser):
 def check_font_late_without_load(browser):
     """Without document.fonts, with the analytics script hung so window
     load never comes, and each board's font held back eight seconds: the
-    LED board still ends on the font's own baseline, and the split-flap
-    board refits to the font once it arrives.  Both pages load together
-    and the fonts are released from here, so the wait is paid once."""
+    readout board still ends fitted to League Gothic, and the split-flap
+    board refits to Jost once it arrives.  Both pages load together and the
+    fonts are released from here, so the wait is paid once."""
     failures = []
-    ref = Board(browser, 'index.html.tmpl')
-    ref.wait("document.documentElement.style.getPropertyValue('--led-bl') !== ''")
-    want = ref.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')")
+    ref = Board(browser, 'index.html.tmpl', size=(1024, 768))
+    ref.server.set(e=EXTREME)
+    ref.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
+    ref.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    want = ref.page.evaluate(FITS)
     ref.close()
     held = []
 
@@ -650,12 +803,13 @@ def check_font_late_without_load(browser):
             return handle(r, request)
         return hang_analytics(route)
 
-    led = Board.__new__(Board)
-    led.server = Server(ct.render('index.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
-    led.errors = []
-    led.page = browser.new_page(viewport={'width': 1280, 'height': 800})
-    led.page.add_init_script(NO_FONT_API)
-    led.page.route('**/*', holding(led.server.handle, 'lcdmono2ultra-webfont.ttf'))
+    ro = Board.__new__(Board)
+    ro.server = Server(ct.render('index.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
+    ro.server.set(e=EXTREME)
+    ro.errors = []
+    ro.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    ro.page.add_init_script(NO_FONT_API)
+    ro.page.route('**/*', holding(ro.server.handle, 'leaguegothic.woff2'))
     texts = ct.lang_texts('en')
     texts['Texts']['BAROMETER'] = 'ATMOSPHERIC PRESSURE AT SEA LEVEL'
     real = ct.lang_texts
@@ -670,23 +824,24 @@ def check_font_late_without_load(browser):
     flap.page.add_init_script(NO_FONT_API)
     flap.page.route('**/*', holding(flap.server.handle, 'jost.woff2'))
     start = time.time()
-    for b in (led, flap):
+    for b in (ro, flap):
         b.page.goto('http://board.test/board.html?page_update_pwd=testpwd', wait_until='domcontentloaded')
-    # Past the old six-second timer, with the fonts still held: the LED
-    # board has only the fallback font to measure, so its baseline must
-    # differ, or this test is not testing anything.
-    led.page.wait_for_timeout(max(0, 7000 - (time.time() - start) * 1000))
-    early = led.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')")
+    # Past the old six-second timer, with the fonts still held: the readout
+    # board has only the fallback font to fit, which runs wider, so its fit
+    # must differ, or this test is not testing anything.
+    ro.page.wait_for_timeout(max(0, 7000 - (time.time() - start) * 1000))
+    early = ro.page.evaluate(FITS)
     if early == want:
-        failures.append('the fallback font measured the same baseline as the real one: the test proves nothing')
-    led.page.wait_for_timeout(max(0, 8000 - (time.time() - start) * 1000))
+        failures.append('the fallback font fit the board just as League Gothic does: the test proves nothing')
+    ro.page.wait_for_timeout(max(0, 8000 - (time.time() - start) * 1000))
     for r, handle in held:
         handle(r, r.request)
     try:
-        led.wait("document.documentElement.style.getPropertyValue('--led-bl') === %s" % json.dumps(want), timeout=4000)
+        ro.wait('JSON.stringify(%s) === %s' % (FITS, json.dumps(json.dumps(want, separators=(',', ':')))),
+                timeout=4000)
     except Exception:
-        failures.append('a font arriving after eight seconds left the baseline at %s, not %s'
-                        % (led.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')"), want))
+        failures.append('a font arriving after eight seconds left the fit at %s, not %s'
+                        % (ro.page.evaluate(FITS), want))
     try:
         flap.wait("""(() => { const b = document.getElementById('flap-board').getBoundingClientRect(),
             f = document.getElementById('flap-foot').getBoundingClientRect();
@@ -696,12 +851,12 @@ def check_font_late_without_load(browser):
         failures.append('a font arriving after eight seconds: the split-flap board was never refitted to it')
     for p in flap.page.evaluate(FLAP_FIT):
         failures.append('a font arriving after eight seconds: %s' % p)
-    led.close()
+    ro.close()
     flap.close()
     return failures
 
 
-def check_led_fit_gap_normal(browser):
+def check_readout_fit_gap_normal(browser):
     """A browser that reports the panels' gap as "normal" still fits: with
     readings too wide for the design, every panel holds and some row
     shrinks."""
@@ -714,12 +869,12 @@ def check_led_fit_gap_normal(browser):
     b.page.add_init_script(GAP_NORMAL)
     b.page.route('**/*', b.server.handle)
     b.page.goto('http://board.test/board.html?page_update_pwd=testpwd')
-    b.wait("document.querySelector('#led-t .led-v') && document.querySelector('#led-t .led-v').textContent.indexOf('112.34') >= 0")
+    b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
     b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
-    fits = b.page.evaluate("[...document.querySelectorAll('.led-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
+    fits = b.page.evaluate("[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
     if all(f == '1' for f in fits):
         failures.append('with the gap reported as "normal" no row shrank: %s' % fits)
-    for p in b.page.evaluate(LED_FIT):
+    for p in b.page.evaluate(RO_FIT):
         failures.append('with the gap reported as "normal": %s overflows' % p)
     b.close()
     return failures
@@ -731,17 +886,17 @@ def check_fit(browser):
     language, resized: the fit reruns on every resize."""
     failures = []
     for lang in ('en', 'nl'):
-        led = Board(browser, 'index.html.tmpl', size=SIZES[0], lang=lang)
-        led.server.set(e=WIDE)
-        led.wait("document.querySelector('#led-t .led-v') && document.querySelector('#led-t .led-v').textContent.indexOf('12.3') >= 0")
+        ro = Board(browser, 'index.html.tmpl', size=SIZES[0], lang=lang)
+        ro.server.set(e=WIDE)
+        ro.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('12.3') >= 0")
         flap = Board(browser, 'splitflap.html.tmpl', size=SIZES[0], lang=lang)
         flap.wait("document.querySelector('#flap-temp .flap')")
         for size in SIZES:
-            for b in (led, flap):
+            for b in (ro, flap):
                 b.page.set_viewport_size({'width': size[0], 'height': size[1]})
                 b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
-            for p in led.page.evaluate(LED_FIT):
-                failures.append('LED %s %dx%d: %s overflows' % (lang, size[0], size[1], p))
+            for p in ro.page.evaluate(RO_FIT):
+                failures.append('readout %s %dx%d: %s overflows' % (lang, size[0], size[1], p))
             for p in flap.page.evaluate(FLAP_FIT):
                 failures.append('split-flap %s %dx%d: %s' % (lang, size[0], size[1], p))
         # The fit counts the cells and nothing else: a panel with room to
@@ -749,31 +904,31 @@ def check_fit(browser):
         # title's line leaves height to spare, everyday readings keep every
         # row at its full size.  (At 16:10 the title's line comes out of
         # the temperature row: that is its cost.)
-        led.server.set()
-        led.page.set_viewport_size({'width': 1024, 'height': 768})
-        led.wait("document.querySelector('#led-t .led-v').textContent.indexOf('78.4') >= 0")
-        led.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        ro.server.set()
+        ro.page.set_viewport_size({'width': 1024, 'height': 768})
+        ro.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('78.4') >= 0")
+        ro.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
         if lang == 'en':
-            fits = led.page.evaluate("[...document.querySelectorAll('.led-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
+            fits = ro.page.evaluate("[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
             if any(f != '1' for f in fits):
                 failures.append('everyday English readings shrank a row at 1024x768: %s' % fits)
         # The case that needs the fit: at 1024x768 every panel still holds.
-        led.server.set(e=EXTREME)
-        led.wait("document.querySelector('#led-t .led-v').textContent.indexOf('112.34') >= 0")
-        led.page.set_viewport_size({'width': 1024, 'height': 768})
-        led.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
-        for p in led.page.evaluate(LED_FIT):
-            failures.append('LED %s, readings too wide for the design: %s overflows' % (lang, p))
-        tight = led.page.evaluate(LED_TIGHT)
+        ro.server.set(e=EXTREME)
+        ro.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
+        ro.page.set_viewport_size({'width': 1024, 'height': 768})
+        ro.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        for p in ro.page.evaluate(RO_FIT):
+            failures.append('readout %s, readings too wide for the design: %s overflows' % (lang, p))
+        tight = ro.page.evaluate(RO_TIGHT)
         if not tight:
-            failures.append('LED %s: readings too wide for the design shrank no row' % lang)
+            failures.append('readout %s: readings too wide for the design shrank no row' % lang)
         for fit, at, above in tight:
             if at > 1.001:
-                failures.append('LED %s: a row at %.2f is %.3f full, overflowing' % (lang, fit, at))
+                failures.append('readout %s: a row at %.2f is %.3f full, overflowing' % (lang, fit, at))
             if above <= 1.001:
-                failures.append('LED %s: a row at %.2f would still fit a step larger (%.3f full'
+                failures.append('readout %s: a row at %.2f would still fit a step larger (%.3f full'
                                 ' there): the fit shrank it further than it needed' % (lang, fit, above))
-        led.close()
+        ro.close()
         flap.close()
     return failures
 
@@ -883,15 +1038,15 @@ def check_languages(browser):
     status line draws its letters."""
     failures = []
     b = Board(browser, 'index.html.tmpl', lang='da')
-    b.wait("document.querySelector('#led-clk .led-v') && document.querySelector('#led-clk .led-v').textContent.trim() === '16:07:17'")
+    b.wait("document.querySelector('#ro-clk .ro-v') && document.querySelector('#ro-clk .ro-v').textContent.trim() === '16:07:17'")
     b.server.set(age=47)
-    b.wait("document.getElementById('led-clock').className.indexOf('aging') >= 0")
-    if b.page.evaluate(LED_TEXT, 'led-clk') != '47 S SIDEN':
-        failures.append('Danish 47 s old reads %r' % b.page.evaluate(LED_TEXT, 'led-clk'))
-    failures += ['Danish LED page: %s' % e for e in b.errors]
+    b.wait("document.getElementById('ro-clock').className.indexOf('aging') >= 0")
+    if b.page.evaluate(RO_TEXT, 'ro-clk') != '47 S SIDEN':
+        failures.append('Danish 47 s old reads %r' % b.page.evaluate(RO_TEXT, 'ro-clk'))
+    failures += ['Danish readout page: %s' % e for e in b.errors]
     b.close()
     b = Board(browser, 'index.html.tmpl', overrides={'clock_format': '24'})
-    b.wait("document.querySelector('#led-clk .led-v') && document.querySelector('#led-clk .led-v').textContent.trim() === '16:07:17'")
+    b.wait("document.querySelector('#ro-clk .ro-v') && document.querySelector('#ro-clk .ro-v').textContent.trim() === '16:07:17'")
     b.close()
     return failures
 
@@ -901,18 +1056,21 @@ def main():
     ok = True
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        for name, fn in (('the LED board: readings, status line, missing data in pixels', check_led),
-                         ('the LED board: expiry, the tap, and the keep-alive password', check_led_expiry),
+        for name, fn in (('the readout board: readings, status line, missing data in pixels', check_readout),
+                         ('the readout board: expiry, the tap, and the keep-alive password', check_readout_expiry),
                          ('a file that stops changing goes stale', check_frozen_file),
                          ('the split-flap board: rows, lamps, missing data, failures', check_flap),
                          ('the clock and status line in other languages', check_languages),
-                         ('accents drawn above their letters', check_marks_above),
+                         ('League Gothic has every character the status line and wind use', check_font_covers),
+                         ('the readout board fits again as each of its fonts arrives', check_readout_late_font),
+                         ('a wider wind direction refits the board; a narrower one moves nothing', check_readout_widths),
+                         ('with no League Gothic, each digit keeps to its own box', check_readout_no_font),
                          ('both boards fit every screen size, metric and in Dutch', check_fit),
                          ('the split-flap board refits once its font has loaded', check_flap_late_font),
-                         ('without document.fonts, window load or not: the LED baseline, the split-flap refit',
-                          lambda br: check_led_without_font_api(br) + check_flap_late_font(br, font_api=False)
+                         ('without document.fonts, window load or not: the readout and split-flap refits',
+                          lambda br: check_readout_without_font_api(br) + check_flap_late_font(br, font_api=False)
                           + check_flap_late_font(br, font_api=False, hang=True)),
-                         ('the LED fit, in a browser that reports its gap as "normal"', check_led_fit_gap_normal),
+                         ('the readout fit, in a browser that reports its gap as "normal"', check_readout_fit_gap_normal),
                          ('without document.fonts or window load, a font that arrives after eight seconds',
                           check_font_late_without_load),
                          ('a long title is cut short, and moves nothing off the screen', check_long_title)):
