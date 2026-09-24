@@ -20,9 +20,10 @@
   read across a room.  splitflap.html shows the same station as an airport
   departure board, rows of flipping flaps with a lamp at the end of each
   that lights for strong gusts, very low or high pressure, rain falling and
-  the air quality level.  A tablet shows whichever its URL names; there is
-  no setting.  Both fill the screen of any landscape tablet, shrinking a
-  row's digits only if a reading runs wider than the design allows.
+  air quality worse than good, in its level's color.  A tablet shows
+  whichever its URL names; there is no setting.  Both fill the screen of
+  any landscape tablet, shrinking a row's digits only if a reading runs
+  wider than the design allows.
 - The LED board adds humidity, feels like (WeeWX's apparent temperature) and
   solar radiation to what the board showed before.  The split-flap board
   carries today's high and the humidity on its temperature rows.
@@ -67,6 +68,12 @@
   weatherboard.css?v=5.0, so a tablet that cached the old stylesheet
   fetches the new one instead of drawing the new page with the old one,
   which could leave it blank.
+- The manual gives the oldest browsers the boards need: Safari 14.1 (iOS
+  14.5), Chrome 84 or Firefox 75.  A browser without the font loading API
+  still places the LED board's dashes and accents and refits the
+  split-flap board once its fonts arrive, even with a stalled analytics
+  script holding up the page's load.  The LED board's fit no longer stops
+  for good in a browser that reports no gap between its cells.
 - Internal: the change history is now changes.md, in Markdown, so it
   reads as formatted text on GitHub; it was changes.txt.
 

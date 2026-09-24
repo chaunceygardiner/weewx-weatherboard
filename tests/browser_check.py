@@ -164,6 +164,13 @@ class Board:
         self.page.wait_for_function(js, timeout=timeout)
 
     def close(self):
+        # A request held open on purpose (hang_analytics) is let go here
+        # rather than left pending when the page goes.
+        while HELD:
+            try:
+                HELD.pop().abort()
+            except Exception:
+                pass
         self.page.close()
 
 
@@ -508,11 +515,52 @@ def check_long_title(browser):
     return failures
 
 
-def check_flap_late_font(browser):
+# Run before a page's own scripts: a browser without the font loading API.
+NO_FONT_API = "Object.defineProperty(document, 'fonts', {value: undefined, configurable: true});"
+
+
+# Run before a page's own scripts: a browser without flex gap, which draws
+# none between the LED panels' cells and reports it as "normal", which is
+# not a number.
+GAP_NORMAL = """(() => {
+  document.addEventListener('DOMContentLoaded', () => {
+    const st = document.createElement('style');
+    st.textContent = '.led-panel { gap: 0 !important; }';
+    document.head.appendChild(st);
+  });
+  const real = window.getComputedStyle;
+  window.getComputedStyle = function (el, pseudo) {
+    const cs = real.call(window, el, pseudo);
+    if (!el.classList || !el.classList.contains('led-panel')) return cs;
+    return new Proxy(cs, {get: (t, k) => k === 'columnGap' ? 'normal'
+                                   : (typeof t[k] === 'function' ? t[k].bind(t) : t[k])});
+  };
+})();"""
+
+
+HELD = []
+
+
+def hang_analytics(handle):
+    """A route handler that never answers the analytics script, as a
+    tablet with no route out sees it: window load then never fires.  The
+    request waits in HELD until Board.close lets it go."""
+    def route(r, request):
+        if 'googletagmanager' in request.url:
+            HELD.append(r)
+            return None
+        return handle(r, request)
+    return route
+
+
+def check_flap_late_font(browser, font_api=True, hang=False):
     """A split-flap board whose row names are too long for the screen
     shrinks to fit -- and fits again once its font has loaded, which the
     first paint may come before.  The font is held back a second here, and
-    one row name made absurdly long so the board has to shrink at all."""
+    one row name made absurdly long so the board has to shrink at all.
+    Without document.fonts (font_api False) it fits again at window load,
+    and with the analytics script hung (hang), so that window load never
+    comes, on its timers."""
     failures = []
     texts = ct.lang_texts('en')
     texts['Texts']['BAROMETER'] = 'ATMOSPHERIC PRESSURE AT SEA LEVEL'
@@ -520,10 +568,10 @@ def check_flap_late_font(browser):
     ct.lang_texts = lambda lang: texts
     try:
         b = Board.__new__(Board)
-        b.server = Server(ct.render('splitflap.html.tmpl', analytics=False, overrides={'refresh_rate': '1'}))
+        b.server = Server(ct.render('splitflap.html.tmpl', analytics=hang, overrides={'refresh_rate': '1'}))
     finally:
         ct.lang_texts = real
-    plain = b.server.handle
+    plain = hang_analytics(b.server.handle) if hang else b.server.handle
 
     def late(route, request):
         if request.url.endswith('jost.woff2'):
@@ -531,9 +579,16 @@ def check_flap_late_font(browser):
         return plain(route, request)
     b.errors = []
     b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    if not font_api:
+        b.page.add_init_script(NO_FONT_API)
     b.page.route('**/*', late)
-    b.page.goto('http://board.test/board.html?page_update_pwd=testpwd')
-    b.page.evaluate('document.fonts.ready')
+    b.page.goto('http://board.test/board.html?page_update_pwd=testpwd',
+                wait_until='domcontentloaded' if hang else 'load')
+    if font_api:
+        b.page.evaluate('document.fonts.ready')
+    if hang:
+        # The two-second timer, after the font's one-second hold.
+        b.page.wait_for_timeout(2500)
     b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
     for p in b.page.evaluate(FLAP_FIT):
         failures.append('a long row name, font late: %s' % p)
@@ -543,6 +598,129 @@ def check_flap_late_font(browser):
     if full < 0.98:
         failures.append('with its font loaded late the board fills only %.3f of the screen:'
                         ' it was fitted to the fallback font and never again' % full)
+    b.close()
+    return failures
+
+
+def check_led_without_font_api(browser):
+    """Without document.fonts the LED board still measures its font's
+    baseline, at window load -- or on its timers, when a hung analytics
+    script means window load never comes -- and gets the same answer: the
+    dashes and accents are placed from it."""
+    failures = []
+    want = None
+    for font_api, hang in ((True, False), (False, False), (False, True)):
+        b = Board.__new__(Board)
+        b.server = Server(ct.render('index.html.tmpl', analytics=hang, overrides={'refresh_rate': '1'}))
+        b.errors = []
+        b.page = browser.new_page(viewport={'width': 1280, 'height': 800})
+        if not font_api:
+            b.page.add_init_script(NO_FONT_API)
+        b.page.route('**/*', hang_analytics(b.server.handle) if hang else b.server.handle)
+        b.page.goto('http://board.test/board.html?page_update_pwd=testpwd',
+                    wait_until='domcontentloaded' if hang else 'load')
+        b.wait("document.documentElement.style.getPropertyValue('--led-bl') !== ''")
+        bl = b.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')")
+        if want is None:
+            want = bl
+        elif bl != want:
+            failures.append('without document.fonts the baseline is %s, with it %s' % (bl, want))
+        b.close()
+    return failures
+
+
+def check_font_late_without_load(browser):
+    """Without document.fonts, with the analytics script hung so window
+    load never comes, and each board's font held back eight seconds: the
+    LED board still ends on the font's own baseline, and the split-flap
+    board refits to the font once it arrives.  Both pages load together
+    and the fonts are released from here, so the wait is paid once."""
+    failures = []
+    ref = Board(browser, 'index.html.tmpl')
+    ref.wait("document.documentElement.style.getPropertyValue('--led-bl') !== ''")
+    want = ref.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')")
+    ref.close()
+    held = []
+
+    def holding(handle, font):
+        def route(r, request):
+            if request.url.endswith(font):
+                held.append((r, handle))
+                return None
+            return handle(r, request)
+        return hang_analytics(route)
+
+    led = Board.__new__(Board)
+    led.server = Server(ct.render('index.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
+    led.errors = []
+    led.page = browser.new_page(viewport={'width': 1280, 'height': 800})
+    led.page.add_init_script(NO_FONT_API)
+    led.page.route('**/*', holding(led.server.handle, 'lcdmono2ultra-webfont.ttf'))
+    texts = ct.lang_texts('en')
+    texts['Texts']['BAROMETER'] = 'ATMOSPHERIC PRESSURE AT SEA LEVEL'
+    real = ct.lang_texts
+    ct.lang_texts = lambda lang: texts
+    try:
+        flap = Board.__new__(Board)
+        flap.server = Server(ct.render('splitflap.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
+    finally:
+        ct.lang_texts = real
+    flap.errors = []
+    flap.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    flap.page.add_init_script(NO_FONT_API)
+    flap.page.route('**/*', holding(flap.server.handle, 'jost.woff2'))
+    start = time.time()
+    for b in (led, flap):
+        b.page.goto('http://board.test/board.html?page_update_pwd=testpwd', wait_until='domcontentloaded')
+    # Past the old six-second timer, with the fonts still held: the LED
+    # board has only the fallback font to measure, so its baseline must
+    # differ, or this test is not testing anything.
+    led.page.wait_for_timeout(max(0, 7000 - (time.time() - start) * 1000))
+    early = led.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')")
+    if early == want:
+        failures.append('the fallback font measured the same baseline as the real one: the test proves nothing')
+    led.page.wait_for_timeout(max(0, 8000 - (time.time() - start) * 1000))
+    for r, handle in held:
+        handle(r, r.request)
+    try:
+        led.wait("document.documentElement.style.getPropertyValue('--led-bl') === %s" % json.dumps(want), timeout=4000)
+    except Exception:
+        failures.append('a font arriving after eight seconds left the baseline at %s, not %s'
+                        % (led.page.evaluate("document.documentElement.style.getPropertyValue('--led-bl')"), want))
+    try:
+        flap.wait("""(() => { const b = document.getElementById('flap-board').getBoundingClientRect(),
+            f = document.getElementById('flap-foot').getBoundingClientRect();
+            return Math.max(b.width * 1.02 / innerWidth, (b.height + f.height) * 1.04 / innerHeight) >= 0.98; })()""",
+                  timeout=4000)
+    except Exception:
+        failures.append('a font arriving after eight seconds: the split-flap board was never refitted to it')
+    for p in flap.page.evaluate(FLAP_FIT):
+        failures.append('a font arriving after eight seconds: %s' % p)
+    led.close()
+    flap.close()
+    return failures
+
+
+def check_led_fit_gap_normal(browser):
+    """A browser that reports the panels' gap as "normal" still fits: with
+    readings too wide for the design, every panel holds and some row
+    shrinks."""
+    failures = []
+    b = Board.__new__(Board)
+    b.server = Server(ct.render('index.html.tmpl', analytics=False, overrides={'refresh_rate': '1'}))
+    b.server.set(e=EXTREME)
+    b.errors = []
+    b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    b.page.add_init_script(GAP_NORMAL)
+    b.page.route('**/*', b.server.handle)
+    b.page.goto('http://board.test/board.html?page_update_pwd=testpwd')
+    b.wait("document.querySelector('#led-t .led-v') && document.querySelector('#led-t .led-v').textContent.indexOf('112.34') >= 0")
+    b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    fits = b.page.evaluate("[...document.querySelectorAll('.led-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
+    if all(f == '1' for f in fits):
+        failures.append('with the gap reported as "normal" no row shrank: %s' % fits)
+    for p in b.page.evaluate(LED_FIT):
+        failures.append('with the gap reported as "normal": %s overflows' % p)
     b.close()
     return failures
 
@@ -621,23 +799,31 @@ def check_flap(browser):
                       ('flap-air', ' 42 GOOD    ')):
         if row(rid) != want:
             failures.append('split-flap %s reads %r, expected %r' % (rid, row(rid), want))
-    if lamp('flap-air') != '#00e400' and lamp('flap-air') != 'rgb(0,228,0)':
-        failures.append('the air lamp is %r, not the level color' % lamp('flap-air'))
-    for rid in ('flap-time', 'flap-wind', 'flap-baro', 'flap-rain'):
+    for rid in ('flap-time', 'flap-wind', 'flap-baro', 'flap-rain', 'flap-air'):
         if lamp(rid):
             failures.append('the %s lamp is lit on a quiet day' % rid)
     # A storm: every lamp that should light does.
     b.server.set(e=entry(**{'10m.windGust.max.formatted': '38', '10m.windGust.max.raw': 38.0,
                             'current.barometer.formatted': '29.612', 'current.barometer.raw': 29.612,
-                            'current.rainRate.formatted': '0.42', 'current.rainRate.raw': 0.42}))
+                            'current.rainRate.formatted': '0.42', 'current.rainRate.raw': 0.42,
+                            'current.pm2_5_aqi.formatted': '51', 'current.pm2_5_aqi_color.raw': 0xffff00}))
     b.wait("document.getElementById('flap-rain-lamp').classList.contains('flap-lit')")
-    for rid in ('flap-wind', 'flap-baro', 'flap-rain'):
+    for rid in ('flap-wind', 'flap-baro', 'flap-rain', 'flap-air'):
         if not lamp(rid):
             failures.append('the %s lamp stayed dark in a storm' % rid)
+    # The air lamp lights at 51, the first figure past good, in the level's
+    # color; 50 is still good and stayed dark on the quiet day above at 42.
+    if lamp('flap-air') not in ('#ffff00', 'rgb(255,255,0)'):
+        failures.append('an AQI of 51 lights the air lamp %r, not the level color' % lamp('flap-air'))
     b.server.set(e=entry(**{'current.barometer.formatted': '30.312', 'current.barometer.raw': 30.312}))
     b.wait("!document.getElementById('flap-rain-lamp').classList.contains('flap-lit')")
     if lamp('flap-baro') != '#3399ff':
         failures.append('high pressure lights %r, not blue' % lamp('flap-baro'))
+    # 50 is still good: the air lamp goes dark again.
+    b.server.set(e=entry(**{'current.pm2_5_aqi.formatted': '50'}))
+    b.wait("(%s)('flap-air').indexOf(' 50 ') === 0" % FLAP_ROW)
+    if lamp('flap-air'):
+        failures.append('an AQI of 50, still good, lights the air lamp %r' % lamp('flap-air'))
     # Not-a-number is missing: an N/A high reads ??, and a trend code that
     # is not a number puts no arrow on the row.
     b.server.set(e=entry(**{'day.outTemp.max.formatted': 'N/A', 'trend.barometer.code': 'x'}))
@@ -678,6 +864,13 @@ def check_flap(browser):
     b.page.wait_for_timeout(700)           # the flaps finish turning
     if not row('flap-wind').endswith('G 45'):
         failures.append('with no gusts reported the wind row reads %r' % row('flap-wind'))
+    # A day's total too long to leave the rate room shows alone, never
+    # running off the row with the rate's unit.
+    b.server.set(e=entry(**{'day.rain.sum.formatted': '10234.56', 'current.rainRate.formatted': '1234.56'}))
+    b.wait("[...document.querySelectorAll('#flap-rain .flap')].map(f => f.getAttribute('data-ch')).join('').indexOf('10234.56') === 0")
+    b.page.wait_for_timeout(700)           # the flaps finish turning
+    if row('flap-rain') != '10234.56    ':
+        failures.append('a rain total with no room for the rate reads %r' % row('flap-rain'))
     b.server.set(mode='status', status=404)
     b.wait("document.getElementById('flap-time-lamp').style.getPropertyValue('--flap-lamp') === '#ff3b30'")
     failures += ['split-flap page: %s' % e for e in b.errors]
@@ -716,6 +909,12 @@ def main():
                          ('accents drawn above their letters', check_marks_above),
                          ('both boards fit every screen size, metric and in Dutch', check_fit),
                          ('the split-flap board refits once its font has loaded', check_flap_late_font),
+                         ('without document.fonts, window load or not: the LED baseline, the split-flap refit',
+                          lambda br: check_led_without_font_api(br) + check_flap_late_font(br, font_api=False)
+                          + check_flap_late_font(br, font_api=False, hang=True)),
+                         ('the LED fit, in a browser that reports its gap as "normal"', check_led_fit_gap_normal),
+                         ('without document.fonts or window load, a font that arrives after eight seconds',
+                          check_font_late_without_load),
                          ('a long title is cut short, and moves nothing off the screen', check_long_title)):
             t0 = time.time()
             try:

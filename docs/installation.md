@@ -198,3 +198,10 @@ With the password present the page never expires.
 The password is visible in the page source, by design.  It is a keep-alive
 gate, not a secret — it exists so that a random visitor's browser tab
 expires and yours does not.
+
+{: .note }
+**Older tablets.**  The boards need Safari 14.1 or later (iOS 14.5 on an
+iPad), Chrome 84 or later, or Firefox 75 or later: the first versions of
+each that support everything the boards use.  They are tested in current
+Chrome and Firefox.  An iPad that cannot update past iOS 12 is below that
+line.

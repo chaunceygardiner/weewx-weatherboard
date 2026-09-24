@@ -64,6 +64,8 @@ any other WeeWX skin.
 * [WeeWX](https://weewx.com) 5.2 or later
 * Python 3.7 or later
 * [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 7.0 or later
+* On the tablet: Safari 14.1 or later (iOS 14.5), Chrome 84 or later, or
+  Firefox 75 or later
 
 ## Additional Requirements for the Air Quality Index (AQI) Reading
 * An air quality sensor, and an extension that computes its index, such as
