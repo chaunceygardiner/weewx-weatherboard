@@ -1,5 +1,12 @@
 # weewx-weatherboard change history
 
+## 5.1 (in progress)
+- A fresh install no longer writes a [[[Units]]] section into weewx.conf.
+  It pinned the wind and temperature formats for 4.x's fixed-width
+  columns; since 5.0 both boards fit whatever width they are given, so the
+  board follows the station's own formats.  A station installed earlier
+  keeps its copy, which is harmless and can stay or go.
+
 ## 5.0 09/23/2026
 - Action required: WeeWX 5.2 or later.  The installer refuses to run on
   anything older; a station on WeeWX 4, or 5.0 or 5.1, can stay on 4.2.

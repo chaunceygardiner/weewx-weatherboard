@@ -147,12 +147,6 @@ any other WeeWX skin.
            googleAnalyticsId = ""
            analytics_host = ""
            page_update_pwd = foobar
-       [[[Units]]]
-           [[[[StringFormats]]]]
-               mile_per_hour = %.0f
-               degree_C = %.1f
-               km_per_hour = %.0f
-               degree_F = %.1f
    ```
 
    Explanatory comments are written above each setting; they are left out
