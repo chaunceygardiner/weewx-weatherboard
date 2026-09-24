@@ -131,3 +131,6 @@ dmypy.json
 # Claude Code files (private, never checked in)
 CLAUDE.md
 .claude/
+
+# The browser checks' own Python (Playwright, CT3, configobj, pillow); not published.
+tools/pwenv/

@@ -18,27 +18,29 @@ from setup import ExtensionInstaller
 # leave every reading at question marks.  Refuse to install instead.
 LOOP_DATA_REQUIRED = (7, 0)
 
+# WeeWX 5.2 or later: the one weectl, and no WeeWX 4 to support alongside it.
+WEEWX_REQUIRED = (5, 2)
+
 def loader():
     if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 7):
         sys.exit("weewx-weatherboard requires Python 3.7 or later, found %s.%s" % (
             sys.version_info[0], sys.version_info[1]))
 
-    if version_tuple(weewx.__version__) < (4, 6):
-        sys.exit("weewx-weatherboard requires WeeWX 4.6 or later, found %s" % weewx.__version__)
+    if version_tuple(weewx.__version__) < WEEWX_REQUIRED:
+        sys.exit("weewx-weatherboard requires WeeWX %s or later, found %s"
+                 % ('.'.join(str(n) for n in WEEWX_REQUIRED), weewx.__version__))
 
     # Only an INSTALL is gated on loopdata.  WeeWX runs an installed
     # extension's loader() again for `weectl extension list` and `weectl
-    # extension uninstall` (wee_extension's --list and --uninstall), from
-    # the copy of this file it keeps under user/installer/, and catches
+    # extension uninstall`, from the copy of this file it keeps under user/installer/, and catches
     # only its own ExtensionError -- so a refusal there would leave the
     # board unlistable and unremovable once loopdata had been removed or
     # downgraded.  The two checks above cannot regress after an install
     # (the same Python and WeeWX run weectl afterwards); this one can.
     if installing():
-        # weectl (WeeWX 5) and wee_extension (WeeWX 4) both have the
-        # station's user directory on sys.path by the time they call
-        # loader(), so user.loopdata is importable exactly when loopdata is
-        # installed.
+        # weectl has the station's user directory on sys.path by the time
+        # it calls loader(), so user.loopdata is importable exactly when
+        # loopdata is installed.
         try:
             from user.loopdata import LOOP_DATA_VERSION
         except ImportError as e:
@@ -62,12 +64,9 @@ def loader():
     return WeatherBoardInstaller()
 
 def installing():
-    """True when the command line is installing an extension.  weectl spells
-    it `extension install`; wee_extension (optparse) takes `--install FILE`,
-    `--install=FILE`, and any unambiguous prefix of the option, `--inst`
-    included -- so anything starting with `--i` counts, there being no other
-    wee_extension option that starts that way."""
-    return any(arg == 'install' or arg.startswith('--i') for arg in sys.argv)
+    """True when the command line is installing an extension: weectl
+    extension install."""
+    return 'install' in sys.argv
 
 def version_tuple(version):
     """(4, 6, 0), (4, 10, 0), (5, 0, 0) -- for comparing.  Not a string
@@ -96,6 +95,10 @@ def version_tuple(version):
 # it reach every station.  The options that stay live are HTML_ROOT, enable
 # and skin (weectl needs them), the branding and the two analytics keys
 # (placeholders to fill in), loop_data_file and page_update_pwd.
+# title and meta_title ship in neither place: their defaults are the
+# station's location and the title, which no value written here could say.
+# clock_format ships in neither place: left unset, the report's language
+# picks 12 or 24 hour.
 #
 # A commented option needs a live key after it in the same section: weectl
 # attaches a comment block to the NEXT key and drops it entirely if the
@@ -107,46 +110,42 @@ CONFIG = """
         enable = true
         skin = WeatherBoard
         [[[Extras]]]
-            # The branding across the top of the board and in the browser's
-            # title bar.  Acme Weather is a placeholder; put your own site's
-            # name here.  HTML entities are allowed.
-            meta_title = Acme Weather at a Glance WeatherBoard&trade;
-            title = Acme Weather WeatherBoard&trade;
-            subtitle = Updated continuously.
-            # The mark at the left of the title bar, as a URL the browser
-            # resolves.  A generic weather icon ships with the skin; point
-            # this at your own image, or set it to "" for no mark at all.
-            logo = weatherboard_logo.png
+            # The title across the top of the board is the station's
+            # location, from [Station] above.  To show something else, add
+            # title = ... here -- your site's name, say.  meta_title sets
+            # the browser tab's title the same way; without it the tab shows
+            # the board's title.  HTML entities are allowed in both.
+            #
             # Where the page fetches loop data from, as a URL the browser
             # resolves, relative to this report's HTML_ROOT.  This is where
             # a stock weewx-loopdata writes: its own sample report's
             # HTML_ROOT, loopdata, beside this board's.  Either side can
             # move, as long as the browser can fetch the result.
             loop_data_file = ../loopdata/loop-data.txt
-            # The five settings below only select the value skin.conf
-            # already ships, so they ship commented out with that value
-            # shown.  Uncomment one and change it to override it.
+            # The settings below only select the value skin.conf already
+            # ships, so they ship commented out with that value shown.
+            # Uncomment one and change it to override it.
             #
             # How old the loop record may be, in seconds, before the
-            # readings it feeds show question marks instead.  The default
-            # suits a station emitting loop packets every couple of
-            # seconds; raise it for a slower one.
+            # readings it feeds turn to dashes and the clock gives way to
+            # the data's age.  The default suits a station emitting loop
+            # packets every couple of seconds; raise it for a slower one.
             #max_age = 10
-            # The clock's own, longer threshold, in seconds: a temperature
-            # a minute old is a stale reading, while a clock a minute slow
-            # is still a clock.  Never sits below max_age.
-            #clock_max_age = 120
             # Hours before a page WITHOUT the keep-alive password on its
-            # URL stops polling.  It then shows Expired, and a click starts
-            # it again.
+            # URL stops polling.  It then says so where the clock was, and
+            # a tap starts it again.
             #expiration_time = 4
             # Seconds between polls.  A good choice is the rate at which
             # your station's driver emits loop packets.  Never armed faster
             # than once a second, whatever is set.
             #refresh_rate = 2
-            # Set to True to show the air quality index, which requires
-            # weewx-purple.
-            #show_purple = False
+            # The optional readings: auto shows one when the station's
+            # current record carries it; true or false forces it.  Air
+            # quality needs an air quality sensor and an extension that
+            # computes its index, such as weewx-purple.
+            #show_uv = auto
+            #show_radiation = auto
+            #show_aqi = auto
             # With an ID set, the board loads Google Analytics.
             # analytics_host restricts that to one hostname, which keeps a
             # development copy of the page out of your statistics.
@@ -181,7 +180,7 @@ def installer_config():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "4.2",
+            version = "5.0",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -190,14 +189,31 @@ class WeatherBoardInstaller(ExtensionInstaller):
             files = [('skins/WeatherBoard', [
                 'skins/WeatherBoard/analytics.inc',
                 'skins/WeatherBoard/apple-touch-icon-180x180.png',
+                'skins/WeatherBoard/board.inc',
                 'skins/WeatherBoard/favicon.ico',
-                'skins/WeatherBoard/footer.inc',
                 'skins/WeatherBoard/index.html.tmpl',
                 'skins/WeatherBoard/jsstr.inc',
-                'skins/WeatherBoard/realtime_updater.inc',
+                'skins/WeatherBoard/led.inc',
                 'skins/WeatherBoard/skin.conf',
-                'skins/WeatherBoard/updater_common.inc',
+                'skins/WeatherBoard/splitflap.html.tmpl',
+                'skins/WeatherBoard/splitflap.inc',
+                'skins/WeatherBoard/title.inc',
                 'skins/WeatherBoard/weatherboard.css',
-                'skins/WeatherBoard/weatherboard_logo.png',
+            ]), ('skins/WeatherBoard/fonts/jost', [
+                'skins/WeatherBoard/fonts/jost/jost.woff2',
+                'skins/WeatherBoard/fonts/jost/license.txt',
+            ]), ('skins/WeatherBoard/fonts/lcdmono2ultra', [
+                'skins/WeatherBoard/fonts/lcdmono2ultra/LICENSE.TXT',
+                'skins/WeatherBoard/fonts/lcdmono2ultra/lcdmono2ultra-webfont.ttf',
+            ]), ('skins/WeatherBoard/lang', [
+                'skins/WeatherBoard/lang/da.conf',
+                'skins/WeatherBoard/lang/de.conf',
+                'skins/WeatherBoard/lang/en.conf',
+                'skins/WeatherBoard/lang/es.conf',
+                'skins/WeatherBoard/lang/fr.conf',
+                'skins/WeatherBoard/lang/it.conf',
+                'skins/WeatherBoard/lang/nl.conf',
+                'skins/WeatherBoard/lang/no.conf',
+                'skins/WeatherBoard/lang/sv.conf',
             ])]
         )

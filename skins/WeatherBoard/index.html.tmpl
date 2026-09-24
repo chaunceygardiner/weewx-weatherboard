@@ -1,92 +1,88 @@
 ## Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
 ## Distributed under the terms of the GNU Public License (GPLv3)
 ## See LICENSE for your rights.
+##
+## index.html -- the LED board.  Its sibling, splitflap.html, shows the
+## same station as a split-flap departure board; a tablet shows whichever
+## its URL names.  The data, the status line and the expiry live in
+## board.inc; the LEDs, and the fit to the screen, in led.inc.
 #errorCatcher Echo
 #encoding UTF-8
+#include "title.inc"
 <!DOCTYPE html>
-<html lang="en">
+<html lang="$gettext('en')">
   <head>
     #include "analytics.inc"
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=1196">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-180x180.png">
     <link rel="stylesheet" type="text/css" href="weatherboard.css">
-    #if $Extras.has_key('meta_title')
-      <title>$Extras.meta_title</title>
-    #else
-      <title>WeatherBoard&trade;&mdash;$station.location</title>
-    #end if
-    <meta name="description" content="Tablet formatted display of current temperature, dew point, wind speed, UV Index, barometer, 10m max wind gust, today's max wind gust, today's rainfall and current rain rate.">
+    <title>$wb_tab</title>
+    <meta name="description" content="$gettext('Current weather conditions, on a board meant to be read across the room.')">
   </head>
-  <body>
-    #include "realtime_updater.inc"
-    <div class="header-band">
-      <div>
-        <table id="centered_title">
-          <tr>
-            #if $Extras.has_key('logo') and $Extras.logo != ''
-              <td class="title-left">
-                <img src='$Extras.logo' alt='' width="100" class="title-logo">
-              </td>
-            #else
-              <td class="title-left">
-              </td>
-            #end if
-            <td class="title-center">
-              <h1 class="page_title">
-                #if $Extras.has_key('title')
-                  $Extras.title
-                #else
-                  WeatherBoard&trade;
-                #end if
-              </h1>
-              <span class="lastupdate">
-                #if $Extras.has_key('subtitle')
-                  $Extras.subtitle
-                #else
-                  Updated continuously.
-                #end if
-              </span>
-            </td>
-            <td class="title-right">
-              <span id="live-label"></span>&nbsp;&nbsp;&nbsp;&nbsp;<br>&nbsp;<br>&nbsp;
-            </td>
-          </tr>
-        </table>
-      </div>
+  <body class="led">
+    #include "board.inc"
+    #include "led.inc"
+    <h1 class="led-title">$wb_title</h1>
+    <div class="led-row led-top">
+      <section class="led-panel" id="led-temp">
+        <h2 class="led-hidden">$gettext("Temperature")</h2>
+        <div class="led-c" id="led-t" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("OUTSIDE") <span class="led-u">$unit.label.outTemp</span></div></div>
+        <div class="led-c" id="led-td" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("DEW POINT") <span class="led-u">$unit.label.dewpoint</span></div></div>
+      </section>
     </div>
-
-    <div class="board-readings">
-      <table id="centered_readings">
-        <tr>
-          <td class="reading">
-            <span id="current.outTemp">$current.outTemp</span><span>&nbsp;</span><span id="current.dewpoint">$current.dewpoint</span>
-          </td>
-        </tr>
-        <tr>
-          <td class="reading">
-            <span id="windSpeedAndBearing">
-              $current.windSpeed.formatted $current.windDir.ordinal_compass
-            </span><span>/</span><span id="10m.windGust.max.formatted">
-              </span><span>/</span><span id="day.windGust.max"></span>
-          </td>
-        </tr>
-        <tr>
-          <td class="reading">
-            <span id="current.UV.formatted">$current.UV.formatted</span>
-            <span>/</span>
-            <span id="barometer">$current.barometer</span>
-          </td>
-        </tr>
-        <tr>
-          <td class="reading-small">
-            <span id="day.rain.sum.formatted">$day.rain.sum.formatted</span>/<span id="24h.rain.sum.formatted"></span><span>&nbsp;</span><span id="current.rainRate">$current.rainRate</span>
-          </td>
-        </tr>
-      </table>
+    <div class="led-row">
+      <section class="led-panel" id="led-wind">
+        <h2 class="led-hidden">$gettext("Wind")</h2>
+        <div class="led-c" id="led-w" data-empty="-- ---"><div class="led-n"></div><div class="led-l">$gettext("WIND") <span class="led-u">$unit.label.windSpeed</span></div></div>
+        <div class="led-c" id="led-g" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("GUST 10M")</div></div>
+        <div class="led-c" id="led-gd" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("PEAK TODAY")</div></div>
+      </section>
+      <section class="led-panel" id="led-baro">
+        <h2 class="led-hidden">$gettext("Barometer")</h2>
+        <div class="led-c" id="led-b" data-empty="--.---"><div class="led-n"></div><div class="led-l">$gettext("BAROMETER") <span class="led-u">$unit.label.barometer</span></div></div>
+      </section>
     </div>
-    #include "footer.inc"
+    <div class="led-row">
+      <section class="led-panel" id="led-rain">
+        <h2 class="led-hidden">$gettext("Rain")</h2>
+        <div class="led-c" id="led-rd" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RAIN TODAY") <span class="led-u">$unit.label.rain</span></div></div>
+        <div class="led-c" id="led-r24" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RAIN 24H") <span class="led-u">$unit.label.rain</span></div></div>
+        <div class="led-c" id="led-rr" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RATE") <span class="led-u">$unit.label.rainRate</span></div></div>
+      </section>
+      #if $wb_uv or $wb_rad
+      <section class="led-panel" id="led-sun">
+        <h2 class="led-hidden">$gettext("Sun")</h2>
+        #if $wb_uv
+        <div class="led-c" id="led-uv" data-empty="-.-"><div class="led-n"></div><div class="led-l">$gettext("UV")</div></div>
+        #end if
+        #if $wb_rad
+        <div class="led-c" id="led-rad" data-empty="---"><div class="led-n"></div><div class="led-l">$gettext("SUN") <span class="led-u">$unit.label.radiation</span></div></div>
+        #end if
+      </section>
+      #end if
+    </div>
+    <div class="led-row">
+      #if $wb_aqi
+      <section class="led-panel" id="led-air">
+        <h2 class="led-hidden">$gettext("Air quality")</h2>
+        <div class="led-c" id="led-aqi" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("AIR QUALITY")</div></div>
+      </section>
+      #end if
+      <section class="led-panel" id="led-comfort">
+        <h2 class="led-hidden">$gettext("Comfort")</h2>
+        <div class="led-c" id="led-rh" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("HUMIDITY") <span class="led-u">$unit.label.outHumidity</span></div></div>
+        #if $wb_feels
+        <div class="led-c" id="led-fl" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("FEELS LIKE") <span class="led-u">$unit.label.appTemp</span></div></div>
+        #end if
+      </section>
+      <section class="led-panel" id="led-clock">
+        <h2 class="led-hidden">$gettext("Time")</h2>
+        <div class="led-c" id="led-clk" data-empty="--:--:--"><div class="led-n"></div></div>
+      </section>
+    </div>
+    <footer class="led-foot">WeatherBoard &copy;2019-2026 by John A Kline.</footer>
   </body>
 </html>

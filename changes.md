@@ -1,0 +1,471 @@
+# weewx-weatherboard change history
+
+## 5.0 09/23/2026
+- Action required: WeeWX 5.2 or later.  The installer refuses to run on
+  anything older; a station on WeeWX 4, or 5.0 or 5.1, can stay on 4.2.
+- Action required, and only if weewx.conf sets any of these under
+  [[WeatherBoardReport]] [[[Extras]]]: subtitle, logo and clock_max_age no
+  longer do anything and can be deleted, and show_purple is better written
+  show_aqi.  A [[[Labels]]] section is no longer read either: the wording
+  is in the language files, and [[[Texts]]] rewords it.  A title or
+  meta_title still reading the Acme Weather placeholder is ignored; set
+  your own, or delete it and the board shows the station's location.
+  Nothing breaks if they stay.  Restart WeeWX after upgrading, as always:
+  loopdata reads the board's field list only when weewxd starts, and the
+  stylesheet and fonts reach the web server on the first report after the
+  restart.
+- The board is new, and there are two of it.  index.html is an LED display:
+  tall seven-segment digits with their unlit segments showing, meant to be
+  read across a room.  splitflap.html shows the same station as an airport
+  departure board, rows of flipping flaps with a lamp at the end of each
+  that lights for strong gusts, very low or high pressure, rain falling and
+  the air quality level.  A tablet shows whichever its URL names; there is
+  no setting.  Both fill the screen of any landscape tablet, shrinking a
+  row's digits only if a reading runs wider than the design allows.
+- The LED board adds humidity, feels like (WeeWX's apparent temperature) and
+  solar radiation to what the board showed before.  The split-flap board
+  carries today's high and the humidity on its temperature rows.
+- The title band is gone, and with it subtitle and logo.  The title is one
+  line across the top: title if it is set, else the station's location from
+  weewx.conf, and the browser tab shows meta_title if set, else the title.
+  The installer no longer writes either one.
+- The clock is the status line: while the data is fresh it is the
+  station's time; once the data is max_age seconds old it says how old
+  ("47 S AGO"), amber for the first minute and red after; when a fetch
+  fails it names the failure (HTTP 404, BAD DATA, NO ENTRY, BAD URL, NO
+  CONNECT); and an expired page reads EXPIRED TAP, and a tap anywhere
+  starts it again.  clock_max_age is gone: the clock no longer outlives
+  the readings.
+- Missing data is shown the way the display would show it.  On the LED
+  board every missing digit lights its middle segment alone and the decimal
+  point goes dark; on the split-flap board, question marks, with a blank
+  flap where the decimal point was.
+- UV, solar radiation and air quality show only on a station that has them.
+  show_uv, show_radiation and show_aqi each default to auto, which shows a
+  reading when the station's current record carries it -- for air quality,
+  both pm2_5 and the pm2_5_aqi index computed from it -- and true or false
+  forces it.  show_purple is still honored while show_aqi is auto.
+- The board speaks the report's language: Danish, Dutch, English, French,
+  German, Italian, Norwegian, Spanish and Swedish, chosen by the report's
+  lang option like any other skin.  Every label and status word is
+  translated; the clock is 24 hour outside English, and clock_format = 12
+  or 24 overrides that.  The LED board draws the accented capitals it needs
+  -- the O-slash in a Danish wind direction, the ring and umlauts of a
+  Swedish status line -- as more lit segments.
+- A station whose driver reports no gusts shows the highest wind speed of
+  the last ten minutes, and of the day, where the gusts would be, instead of
+  leaving them missing for good.
+- The barometer's trend is one arrow whose angle is its pace: flat when
+  steady, tilting further with each step, straight up or down at the
+  fastest.
+- The clock arrives from loopdata as the station's time in digits,
+  current.dateTime.format("%H:%M:%S"), and the board lays it out, so a
+  locale that puts a timezone in its time no longer runs the clock onto a
+  second line.
+- Internal: the change history is now changes.md, in Markdown, so it
+  reads as formatted text on GitHub; it was changes.txt.
+
+## 4.2 08/29/2026
+- An expired board says so at once, instead of at what would have been its
+  next poll, and then stops fetching anything at all until it is clicked.
+- Both browser timers are armed once the page has been parsed.  They were
+  armed while it was still parsing, before the elements they paint existed.
+- An empty loop_data_file means the default, ../loopdata/loop-data.txt,
+  rather than the page itself -- which the board used to fetch, and then sit
+  on BAD DATA for ever.
+- A fresh install writes the settings that only select a default commented
+  out, with the default shown: max_age, clock_max_age, expiration_time,
+  refresh_rate and show_purple.  A commented line does nothing, so the value
+  skin.conf ships applies -- and since an upgrade replaces the skin but never
+  rewrites weewx.conf, a later release can improve one of those defaults and
+  have it reach every station.  Existing installs are untouched.  The
+  installer no longer writes a [[[Labels]]] section either; it duplicated the
+  skin's own labels and froze them.  [[[Units]]] is still written: the board's
+  columns are laid out around those formats.
+- The manual says how to put a password containing % , & or # on the URL:
+  write them %25, %26 and %23, since the value there is decoded before it is
+  compared.
+- Noted late, from 4.0.1: refresh_rate has been floored at one second since
+  that release.
+
+## 4.1 08/25/2026
+- Action required: upgrade weewx-loopdata to 7.0 or later BEFORE installing
+  this release.  The installer refuses to run without it, saying whether
+  loopdata is missing or which older version it found.  Restart WeeWX
+  afterwards, as always.
+- The board reads its own report's entry in loop-data.txt.  Since loopdata
+  7.0 a report declares the fields it needs in its own skin.conf, and
+  loopdata writes them into the file under the report's name, rendered
+  with that report's own units and formats.  skins/WeatherBoard/skin.conf
+  now carries a [LoopData] [[fields]] declaration of every field the page
+  reads, and the page takes the WeatherBoardReport entry out of the file
+  rather than the flat keys the station-wide [LoopData] [[Include]] fields
+  line produced.  The declaration ships with the skin, so an upgrading
+  station has nothing to edit.
+- The installer no longer touches the [LoopData] [[Include]] fields line.
+  4.0 added the board's fields to it; loopdata 7.0 deprecates the line and
+  a later loopdata release removes it, along with target_report.  Leave it
+  alone in the meantime -- loopdata warns at startup while it is there, and
+  that is loopdata's to resolve, not this board's.  Installing is one step
+  again: loopdata, then the board, with no second run of the board's
+  installer to pick up a fields line that was not there the first time.
+- The live numbers are formatted by the WeatherBoard report itself.  Before
+  7.0 loopdata rendered every field through the one report named by its
+  target_report, so the [[[Units]]] [[[[StringFormats]]]] entries the
+  installer has always put in the WeatherBoard stanza -- %.0f for wind
+  speeds, %.1f for temperatures -- applied to the values the page rendered
+  at generation time and not to the ones that replaced them two seconds
+  later.  Now they apply to both, and so does the report's unit system: a
+  board can show metric on a station whose other reports are US, by setting
+  unit_system in its own stanza.  On a station whose target_report rendered
+  in the same units and formats as the WeatherBoard report, nothing changes
+  on screen.
+- A new live label, NO ENTRY, with "restart WeeWX" in place of the clock.
+  It means loop-data.txt is there and is json, but carries no entry for this
+  report.  That is the state between installing the board and restarting
+  weewxd: the report engine reads the skin's declaration afresh every cycle
+  and builds the new page, while the loopdata service inside weewxd is still
+  running on the declarations it read at startup and does not know this
+  report yet.  The cure is the restart the installation instructions ask for
+  anyway.
+- The installer requires weewx-loopdata 7.0 or later, and says so.
+  install.py imports user.loopdata and compares its LOOP_DATA_VERSION as a
+  version tuple -- 10.0 is newer than 7.0 -- and refuses, naming 7.0, when
+  loopdata is absent or older.  Until now the board could be installed on a
+  station with no loopdata at all and come up all question marks; it cannot
+  any more.  Only an install is checked: WeeWX runs an installed extension's
+  loader for `weectl extension list` and `uninstall` too, and a board has to
+  stay listable and removable after loopdata is gone.
+- A fresh install finds loop-data.txt.  The shipped loop_data_file was
+  loop-data.txt, a file in the board's own directory, while a stock
+  weewx-loopdata writes into its own sample report's directory, loopdata,
+  beside it -- so two default installs came up HTTP 404 until the user
+  changed one side, and the manual had been saying the opposite since
+  loopdata moved its file.  The default is now ../loopdata/loop-data.txt,
+  which is where loopdata writes.  Fresh installs only: WeeWX never
+  overwrites a setting already in weewx.conf, so an upgraded station keeps
+  whatever it has.
+- The offline check (tests/check_templates.py) holds skin.conf's
+  declaration, rather than the installer's field lists, in step with what
+  the updaters read; loads install.py against a stubbed user.loopdata to pin
+  the refusal and the acceptance; and pins install.py's version to the
+  newest heading here.
+
+## 4.0.1 08/25/2026
+- The board reads one air quality field: the AQI of the pm2_5 observation
+  the WeeWX database carries.  Since 2020 the updater had also asked for
+  current.pm2_5_1m_aqi.formatted and current.pm2_5_1m_aqi_color.raw, a
+  one-minute pair, and preferred them when present.  The board's readings are
+  the database's observations -- pm1_0, pm2_5, pm10_0 -- not whatever else a
+  sensor's driver adds to the loop packet, so the pair is gone from the
+  installer, from the updater and from the manual, which had credited it to
+  purple-proxy.  On most stations nothing changes on screen; on one whose
+  driver supplies the pair, the AQI shown is pm2_5's rather than the
+  one-minute average's.  An existing fields line keeps the two entries;
+  loopdata ignores names nothing reads, and they can be deleted whenever it
+  is convenient.
+- The reading is a smoothed one in any case: weewx-purple averages the
+  sensor's two channels where it has a pair, and purple-proxy averages over
+  two minutes.
+- The two settings that feed browser timers are bounded from above.  4.0
+  began parsing refresh_rate and expiration_time rather than writing them
+  into the page as-is, but nothing limited how large they could be, and a
+  timer keeps its delay in a signed 32-bit integer: an expiration_time of
+  8760 -- a year, the obvious way to ask for a board that never times out --
+  wrapped to about seventeen days, and values just over the edge fired at
+  once.  Anything whose milliseconds pass the timer's ceiling is now clamped
+  to it -- about 596 hours for expiration_time -- rather than wrapping.  A
+  station that typed 8760 asked for a very long time, and 596 hours honors
+  that; dropping to the four-hour default would not have.
+  max_age and clock_max_age are not bounded: they are compared against an age
+  rather than handed to a timer, so there is nothing to overflow, and a
+  station emitting slowly may legitimately want a large one.
+- Text settings that reach javascript are escaped rather than written in
+  raw.  page_update_pwd is the one that mattered: the documentation asks
+  every user to choose their own, and an apostrophe in it -- don't-sleep,
+  say -- ended the javascript string early and threw before the updater had
+  defined anything, so nothing polled and the board sat on its report-cycle
+  numbers with no live label and no clock.  loop_data_file and the two
+  Google Analytics ids had the same shape.  All four are now written as
+  properly escaped literals, with `<` escaped besides, so a value containing
+  `</script>` cannot end the script element either.  Values reach javascript
+  as typed -- quote a value containing a comma, which weewx.conf otherwise
+  splits and rejoins without its surrounding whitespace -- and nothing is
+  silently altered.
+- A default install no longer loads Google Analytics with an empty id.  The
+  installer's stanza ships googleAnalyticsId and analytics_host as empty
+  strings, and the template tested for the settings' presence rather than
+  their value, so every page load of an unconfigured board fetched Google's
+  tag loader with id= and no id.  The block now renders only for a non-empty
+  id.  The same presence test hid a second fault: a station that set an id
+  but left analytics_host at its shipped empty value got its gtag call
+  wrapped in a host check against "", which no page ever matches, so its
+  analytics never ran at all.  An empty analytics_host now means no host
+  restriction, as it was always meant to.
+- Two more things a user could type no longer stop the board.  A password
+  with a lone % in it -- 100%, say -- put on the URL as typed made the
+  browser's URL decoding throw before the updater had defined anything, the
+  same total failure as the unescaped apostrophe; the raw value is now used
+  when it does not decode.  And an empty page_update_pwd in weewx.conf
+  matched the empty string every visitor without a password presents, so no
+  page ever expired for anyone; empty now means the shipped default.
+- An expired board no longer shows CLICK-ME in the disconnected blue.  A page
+  that expired while it was already disconnected -- a failing fetch, or loop
+  data further behind than clock_max_age -- painted CLICK-ME in the fault
+  color and left the corner blue after the click, until the first successful
+  poll repainted it.  It read as a fault rather than as a board waiting to
+  start again.  The expiry paint now clears the color, and a poll that lands
+  after expiry -- a late failure or a late success -- no longer paints over
+  Expired / CLICK-ME: a late success used to replace it with LIVE and a clock
+  time on a board that had stopped polling, leaving no visible way to start
+  it again.
+
+## 4.0 08/25/2026
+- Action required:
+  1. WeatherBoard 4.0 requires WeeWX 4.6 or later.  WeeWX 4.5 and earlier are
+     no longer supported; the installer refuses to run on them.
+  2. WeatherBoard 4.0 requires LoopData 6.0 or later.  The clock in the lower
+     right corner is now a string loopdata renders with the target report's
+     WeeWX formatter, which is a 6.0 feature.
+  3. One new field is read from loop-data.txt:
+     current.dateTime.format("%X").  Installing 4.0 adds it to the
+     [LoopData] [[Include]] fields line for you -- along with any other field
+     the board reads that the line is missing -- so the ordinary upgrade needs
+     no hand editing.  A board whose fields line does not carry it shows
+     ??:??:?? where the time used to be.
+- The clock in the lower right corner now shows the STATION's time.  It was
+  drawn by the browser, from the tablet's own clock, timezone and locale --
+  so a tablet in another timezone, or with its clock simply set wrong, showed
+  a confident time that had nothing to do with when the reading was taken.
+  This is the same wrong clock that sent the staleness math onto the server's
+  clock in 3.2; the displayed time was the half of it left behind.  The board
+  now displays a value loopdata formats with the target report's own WeeWX
+  formatter, so it carries the station's timezone and time format.  The
+  format travels with the field name: %X is the station's time of day format,
+  09:44:14 PM where the station runs a US locale and 21:44:14 under most
+  others.  That locale comes from weewxd's environment (LANG), not from a
+  report's lang setting, and a weewxd started with no LANG -- common in
+  containers -- renders 24 hour times, and setting LANG is the way to change
+  that.  The format cannot be pinned from the fields line: the board looks for
+  the %X spelling specifically, so a different strftime string there does not
+  reformat the clock, it removes the field the board reads and the corner falls
+  back to ??:??:??.
+- The clock also ages out now, instead of showing a plausible time forever.
+  When weewxd stops while a web server goes on handing out the last
+  loop-data.txt, every reading falls back to question marks -- and the clock
+  used to keep displaying that record's timestamp, in the ordinary red, which
+  is the most convincing thing on such a board.  It now reads ??:??:?? in the
+  blue a failing fetch already wore.
+- New: max_age, an Extra.  It is the number of seconds a loop record may be
+  before the readings it feeds show question marks instead, and it was
+  hardcoded at 10 in fourteen places.  The default is unchanged; raise it for
+  a station that emits loop data slowly.
+- The live label now changes at that same threshold.  Its LIVE tier was a
+  separate six seconds, dating from the first release, so a board could read
+  "8s ago" beside a full set of live readings; worse, once max_age was
+  configurable, a station that raised it would have watched the label count
+  seconds forever and never say LIVE again.  The label and the readings now
+  move together: at max_age the label stops saying LIVE and starts counting,
+  and every reading falls back to question marks.
+- The count itself now scales, instead of running the seconds up forever: it
+  reads seconds for the first minute, then minutes, then hours, then days, so
+  a board that has been behind since yesterday says 1.2d ago rather than
+  counting out a hundred thousand seconds.
+- New: clock_max_age, an Extra, default 120 seconds.  It is how far behind
+  the clock may fall before it goes blue, and it is deliberately longer than
+  max_age, because the clock and the readings are answering different
+  questions.  A temperature fifteen seconds old has stopped being true and
+  should show question marks; a clock fifteen seconds slow is still a good
+  clock, and probably the best one in the room.  The blue is the board
+  saying it is no longer a clock at all, so it is worth saving for a time
+  that would actually mislead you.  It is never allowed below max_age, so
+  raising max_age for a slow station carries the clock up with it rather than
+  leaving a blue clock beside live readings.  Two cases still turn it blue at
+  once, as they should: a failing fetch, and a fields line that does not carry
+  the time field, where there is no time to show in the first place.
+- The label also stops reporting a nonsense age.  A loop record that carries
+  no usable timestamp has no computable age, and the label is the one place
+  that age is printed rather than compared, so it read "NaNs ago" while the
+  readings beside it showed question marks.  It now reads ?? and says the
+  same thing they do.
+- A malformed loop_data_file no longer fails silently.  A value that is not a
+  usable URL makes the browser throw before the request is even sent, on a
+  path that never produced an error event, so the board showed no live label,
+  no blue clock and no question marks -- just its report-cycle numbers in the
+  ordinary red, forever.  It now reads BAD URL with check loop_data_file in
+  the corner, like the other configuration-shaped failures.
+- A typo in a numeric setting can no longer stop the board.  refresh_rate,
+  expiration_time, max_age and clock_max_age were written straight into the
+  page's javascript, so a value that is not a number -- or an empty one --
+  aborted the whole updater before it defined anything: nothing polled, and
+  the board froze at its report-cycle numbers with no label and no clock at
+  all.  Each is now parsed, and anything that is not a number greater than
+  zero falls back to that setting's default, exactly as if it had been left
+  out.
+- The readings now go on aging while the fetch is failing.  A failed poll
+  never reached the code that draws them, so every number held its last value
+  in the board's ordinary red for as long as the outage lasted -- a
+  ten-minute-old temperature presented exactly like a live one, with a blank
+  label and a blue clock as the only signs.  The board now keeps counting
+  from the last age it knew, and the readings fall back to question marks at
+  max_age just as they do when the file is still being served but has stopped
+  advancing.  A dropped poll or two changes nothing: at a two second refresh
+  the count has not reached max_age yet.
+- show_purple is now read as a boolean, as its name always implied.  It was
+  compared against the strings 'True' and 'true', so other spellings of true
+  turned the AQI reading off while looking like they turned it on.  Set it to
+  True to show the reading; a value that is not a boolean at all leaves the
+  reading off rather than failing the report.
+- New: the installer now adds the loopdata fields the board reads to the
+  [LoopData] [[Include]] fields line in weewx.conf, instead of asking you to
+  paste them in from the README.  It only ever adds: fields already there are
+  left alone, and nothing is removed or reordered, because that line is yours
+  and usually feeds other pages too.  The AQI fields are added for a station
+  that already has show_purple set; turning show_purple on later means adding
+  those four by hand or simply installing the extension again.  When
+  [LoopData] is not in weewx.conf at all -- the board installed before
+  loopdata -- the installer prints the list and says to install loopdata and
+  then install the board again, which adds the fields on the second run.  It
+  warns about the order too: loopdata's own installer writes a fields line for
+  its sample page, and WeeWX adds settings that are missing but never
+  overwrites ones already there, so installing loopdata second and stopping
+  there would leave the board's fields out entirely.
+- New: a manual, at https://chaunceygardiner.github.io/weewx-weatherboard/ --
+  installation, upgrading, every Extras setting, what each reading is, how
+  staleness is measured, and troubleshooting.  The README keeps the quick
+  version and links to it.
+
+## 3.3 08/19/2026
+- A fresh install now looks like a finished board rather than an unfilled
+  form.  The default title was my-weather-website.com, which reads as a
+  mistake on a wall-mounted display, and the logo cell at the left of the
+  title bar was empty, leaving the band lopsided against the live label on
+  the right.  The title is now Acme Weather -- still a placeholder, but an
+  unmistakable one -- and a generic weather icon, weatherboard_logo.png,
+  ships with the skin and is the default logo.  Both are ordinary Extras:
+  set title to your own site's name, and point logo at your own image, or
+  at '' for no mark at all.  An existing install that still carries title
+  and logo in weewx.conf keeps them, because weectl adds settings that are
+  missing but never overwrites ones already there; a board whose weewx.conf
+  has no logo line will pick the icon up, since skin.conf's defaults are
+  replaced along with the rest of the skin.  Edit the Extras by hand if you
+  want the new defaults.  The README's two screen shots are also recaptured
+  -- the previous pair dated from 2020 and predated the barometer trend
+  arrow, the 24-hour rain total and the current footer legend.
+- The AQI reading is now age-checked like every other reading on the board.
+  It was the one exception: when the loop data went stale every other
+  reading fell back to question marks while the AQI went on showing its
+  last value, in its last color, indefinitely.  It now shows ??? in the
+  board's red once the data is more than ten seconds old, or if the AQI
+  fields never arrive at all.
+- Also fixed: on a board without the AQI reading, the footer legend named
+  the rain line as "Rain 24h - Rain Rate" while the line itself showed
+  three numbers -- today's rainfall, the 24-hour total and the rain rate.
+  The legend now names all three, as it already did when the AQI reading
+  was shown.
+
+## 3.2 08/18/2026
+- The board now measures how stale the loop data is by the server's clock
+  instead of the browser's.  A wall-mounted tablet's clock can be badly
+  wrong, and when it was the board did not merely mislabel itself: the same
+  age gates every reading, so a skewed clock blanked the entire board to
+  question marks.  The age now comes from the HTTP Date header on the
+  loop-data response -- stamped by a server, checked against a timestamp
+  written by a server -- so the browser's clock never enters the
+  arithmetic.  If that header is missing, or if a cached response arrives
+  with its Date frozen alongside its body, the updater falls back on how
+  long the loop data has sat unchanged.  That fallback can only ever
+  understate the age -- the browser sees a record some moments after it was
+  written, and on a freshly loaded page it starts counting from zero -- so
+  it is a backstop for a server that sends no usable Date, not a substitute
+  for one.  Each poll now also carries a unique URL and asks for
+  revalidation, because loop-data.txt ships without cache headers and a
+  browser's heuristic freshness window widens exactly as the file goes
+  stale.
+
+## 3.1 07/24/2026
+- The board now names a config-shaped loop-data failure instead of wearing
+  the generic disconnected look.  An HTTP error status (the classic being a
+  404 because loopdata writes outside HTML_ROOT, say /dev/shm, with nothing
+  on the web server serving it) shows "HTTP 404" in the live label and
+  "check loop_data_file" in the activity clock; a 2xx whose body isn't json
+  shows "BAD DATA" with the same hint -- that case previously reached only
+  the browser console, with no disconnected styling at all.  Network-level
+  failures and timeouts keep the quiet look: blank label, last time in the
+  disconnected color.  A later successful poll restores everything, as
+  always.  The json parse also moves out of the rendering try, so a
+  rendering error can no longer masquerade as bad data (it logs and the
+  polling continues).  (Same fix family as weewx-celestial 7.1 and
+  weewx-loopdata 6.2.)
+
+## 3.0 07/17/2026
+Action required:
+1. WeatherBoard 3.0 reads more fields from loop-data.txt than 2.x.  Make sure
+   the LoopData `fields` list for the WeatherBoard report includes:
+   current.dateTime.raw, current.outTemp, current.dewpoint,
+   current.windSpeed.formatted, current.windSpeed.raw,
+   current.windDir.ordinal_compass, 10m.windGust.max.formatted,
+   day.windGust.max, current.UV.formatted, current.barometer,
+   current.barometer.formatted, trend.barometer.code, day.rain.sum.formatted,
+   24h.rain.sum.formatted, current.rainRate
+   (plus current.pm2_5_aqi.formatted and current.pm2_5_aqi_color.raw if
+   show_purple is enabled).
+2. The default `loop_data_file` is now `loop-data.txt` (relative to the
+   report's HTML_ROOT).  If your loop-data.txt lives elsewhere, set
+   `loop_data_file` in the Extras section of weewx.conf.
+3. `contact_email` and contact.inc have been removed.
+
+New features:
+1. UV index and barometer readings, with a barometer trend arrow.
+2. 24-hour rain total displayed alongside today's rain.
+3. All readings are now age-checked: if the loop record is more than 10
+   seconds old, question marks are shown instead of stale values.  A missing
+   or unreadable loop-data.txt marks the board disconnected (the time
+   display turns blue) instead of silently freezing the readings.
+4. The keep-alive URL parameter is now `?page_update_pwd=...` as documented
+   (the legacy `?pageUpdate=...` still works).
+5. Offline template checker: tests/check_templates.py.
+
+Other changes:
+1. All styling moved from the templates into weatherboard.css.
+2. Updater internals are shared in updater_common.inc.
+3. Fixed the expired-page CLICK-ME restart, the barometer trend symbol
+   table, and HTTP error/timeout handling in the updater.
+4. Documentation modernized for WeeWX 5 / weectl (WeeWX 4 still supported).
+
+## 2.0.1 9 Aug 2020
+Install now specifies a default `loop_data_file` of
+`../loopdata/loop-data.txt`.  This matches the
+latest loopdata extension's default location.
+
+## 2.0 07/23/2020
+Release (Same as 2.0.b4 with updated README.)
+
+## 2.0.b4 07/21/2020
+1. Fixed incorrect HTML_ROOT default on install.
+2. Default for location of loopdata file is not the WeatherBoard directory.
+
+## 2.0.b3 07/11/2020
+1. More of handling missing observations in loop-data.txt.
+
+## 2.0.b2 07/11/2020
+1. Better handling of missing observations in loop-data.txt.
+2. Note: required loop-data.txt fields have changed.
+   Now need current.windSpeed.raw (not current.windSpeed.formatted).
+
+## 2.0.b1 07/11/2020
+1. Changes needed to work with LoopData 2.x (i.e., switch to Cheetah style names.)
+
+## 1.3 07/07/2020
+Insert custom translations in WeatherBoard section of weewx.conf so they
+are easily modifiable.
+
+## 1.2 07/07/2020
+Use default labels where possible so that translation are used in then legend.
+Add generic labels in skin.conf so custom strings can be overridden in weewx.conf with translations.
+
+## 1.1 07/02/2020
+Use SUM_rain rather than rain_day_total as many drivers don't emit day_rain_total.
+
+## 1.0 01/21/2020
+Initial release of weatherboard.

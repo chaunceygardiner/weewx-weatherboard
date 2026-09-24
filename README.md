@@ -21,45 +21,53 @@ across the room.
 
 Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
 
-**WeatherBoard 4.1 and later require LoopData 7.0 or later.**
+**WeatherBoard 5.0 and later require WeeWX 5.2 or later, and LoopData 7.0 or later.**
 
-The WeatherBoard&trade; skin provides a simple one page report that shows:
-* Current Outside Temperature
-* Current Dew Point
-* Current Wind Speed and Direction
-* 10 Minute High Wind Gust
-* Today's High Wind Gust
-* Current UV Index
-* Current Barometer, with a trend arrow
-* Today's Total Rainfall
-* 24 Hour Total Rainfall
-* Current Rain Rate
-* Air Quality Index (if [weewx-purple](https://github.com/chaunceygardiner/weewx-purple) is installed)
+The skin makes two pages, and a tablet shows whichever its URL names.
 
-The page is generated once per archive interval, but the readings update continuously
-in the browser (every 2 seconds by default) from the loop-data.txt file written by the
-[weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) extension.  If the
-loop data goes stale or cannot be read, the board shows question marks rather than
-stale readings.
+**The LED board**, `index.html`, is a wall of seven-segment digits with
+their unlit segments showing:
 
-The inspiration for this skin is the RainWise LED Weather Oracle display.
+![The LED board](docs/images/LEDBoard.png)
 
-Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor is configured.
+**The split-flap board**, `splitflap.html`, shows the same station as an
+airport departure board, with a lamp at the end of each row that lights
+when the row has something to say:
 
-![WeatherBoard screen shot](WeatherBoard.png)
+![The split-flap board](docs/images/SplitFlapBoard.png)
 
-Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor is *NOT* configured.
+Between them they show, under a one-line title that is the station's
+location unless you set your own:
+* Outside temperature, dew point, humidity and feels like
+* Wind speed and direction, the 10 minute high gust and today's high gust
+* Barometer, with an arrow whose angle is its trend
+* Today's rainfall, the last 24 hours' rainfall and the rain rate
+* UV index and solar radiation, on a station that has them
+* Air quality index, on a station that has an air quality sensor
+* The station's time, which doubles as the status line
 
-![WeatherBoard (no AQI) screen shot](WeatherBoard_no_aqi.png)
+The pages are generated once per archive interval, but the readings update
+continuously in the browser (every 2 seconds by default) from the
+loop-data.txt file written by the
+[weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata)
+extension.  If the loop data goes stale or cannot be read, the LED board
+lights only the middle segment of each digit, the split-flap board turns
+to question marks, and the clock says how old the data is or what went
+wrong.
+
+The board speaks Danish, Dutch, English, French, German, Italian,
+Norwegian, Spanish and Swedish, chosen by the report's `lang` setting like
+any other WeeWX skin.
 
 ## Requirements
 
-* [WeeWX](https://weewx.com) 4.6 or later (WeeWX 5 recommended)
+* [WeeWX](https://weewx.com) 5.2 or later
 * Python 3.7 or later
 * [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 7.0 or later
 
 ## Additional Requirements for the Air Quality Index (AQI) Reading
-* [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
+* An air quality sensor, and an extension that computes its index, such as
+  [weewx-purple](https://github.com/chaunceygardiner/weewx-purple)
 * Optionally [purple-proxy](https://github.com/chaunceygardiner/purple-proxy), which
   returns averages over two minutes (as opposed to one shot readings) and
   catches up on AQI readings when WeeWX starts.
@@ -73,17 +81,9 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
 1. Download the latest release, weewx-weatherboard.zip, from the
    [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard/releases).
 
-1. Install the extension.
-
-   WeeWX 5:
+1. Install the extension:
 
    `weectl extension install weewx-weatherboard.zip`
-
-   WeeWX 4:
-
-   `sudo /home/weewx/bin/wee_extension --install weewx-weatherboard.zip`
-
-   (Adjust the path of wee_extension if WeeWX is installed elsewhere.)
 
 1. The skin declares the LoopData fields it reads, in
    `skins/WeatherBoard/skin.conf`, and LoopData writes them into
@@ -93,20 +93,22 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    line; a later LoopData release removes it.  The fields, for reference:
 
    ```
-   current.dateTime.raw, current.dateTime.format("%X"), current.outTemp,
-   current.dewpoint, current.windSpeed.formatted, current.windSpeed.raw,
+   current.dateTime.raw, current.dateTime.format("%H:%M:%S"),
+   current.outTemp.formatted, current.dewpoint.formatted,
+   current.appTemp.formatted, current.outHumidity.formatted,
+   day.outTemp.max.formatted, current.windSpeed.formatted,
    current.windDir.ordinal_compass, 10m.windGust.max.formatted,
-   day.windGust.max, current.UV.formatted, current.barometer.formatted,
+   day.windGust.max.formatted, 10m.windSpeed.max.formatted,
+   day.windSpeed.max.formatted, current.barometer.formatted,
    trend.barometer.code, day.rain.sum.formatted, 24h.rain.sum.formatted,
-   current.rainRate, current.pm2_5_aqi.formatted, current.pm2_5_aqi_color.raw
+   current.rainRate.formatted, current.UV.formatted,
+   current.radiation.formatted, current.pm2_5_aqi.formatted,
+   current.pm2_5_aqi_color.raw
    ```
 
-   The last two are the AQI reading, shown with `show_purple` set.  They are
-   declared regardless — LoopData omits a field whose observation the station
-   does not report — so turning `show_purple` on later needs nothing but the
-   setting.  Running purple-proxy needs nothing extra either: the proxy
-   averages over two minutes and weewx-purple averages the sensor's two
-   channels, so that field already carries the smoothed value.
+   The optional readings' fields are declared regardless — LoopData omits a
+   field whose observation the station does not report — so a sensor added
+   later needs nothing but a restart.
 
 1. The install creates the following section in `weewx.conf`:
 
@@ -116,16 +118,13 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
        enable = true
        skin = WeatherBoard
        [[[Extras]]]
-           meta_title = Acme Weather at a Glance WeatherBoard&trade;
-           title = Acme Weather WeatherBoard&trade;
-           subtitle = Updated continuously.
-           logo = weatherboard_logo.png
            loop_data_file = ../loopdata/loop-data.txt
            #max_age = 10
-           #clock_max_age = 120
            #expiration_time = 4
            #refresh_rate = 2
-           #show_purple = False
+           #show_uv = auto
+           #show_radiation = auto
+           #show_aqi = auto
            googleAnalyticsId = ""
            analytics_host = ""
            page_update_pwd = foobar
@@ -145,61 +144,64 @@ Following is a screen shot of the WeatherBoard&trade; skin if a PurpleAir sensor
    remove the `#` and edit the value.
 
    Go by what your own file shows rather than by which release you
-   installed: a station configured under an earlier release has these
-   settings live, with no `#` to remove, and one older still may not have
-   them at all — in which case add them inside `[[[Extras]]]`.  All three
+   installed: a station configured under an earlier release has some of
+   these settings live, with no `#` to remove, and may not have the newer
+   ones at all — in which case add them inside `[[[Extras]]]`.  All three
    are correct; WeeWX never rewrites a setting that is already there.
 
 1. Edit the `Extras` section to suit your site.
-   * `title`, `meta_title`, `subtitle`: your site's branding.  Acme Weather is a
-     placeholder; put your own site's name here.
-   * `loop_data_file`: where the updater fetches loop data from.  If not a full
+   * `title`: the line across the top of the boards.  Without it they show
+     the station's location, from `[Station]`; add it to show your site's
+     name.  `meta_title` sets the browser tab's title the same way, and
+     defaults to the title.
+   * `loop_data_file`: where the pages fetch loop data from.  If not a full
      path, it is interpreted as relative to this report's HTML_ROOT.  The
      shipped value is where a stock LoopData writes — its own sample report's
      directory, `loopdata`, beside this one — so with both extensions at their
      defaults it needs nothing.  Pointing it
      at another host needs that server to send `Access-Control-Allow-Origin`, or
-     the fetch fails and the board sits permanently disconnected; and even then
+     every fetch fails and the clock reads `NO CONNECT`; and even then
      the staleness check described below is weakened, because the `Date` header
      is not readable cross-origin unless that server also sends
      `Access-Control-Expose-Headers: Date`.
-   * `logo`: the mark shown at the left of the title bar.  A generic weather icon
-     (`weatherboard_logo.png`) ships with the skin; point this at your own logo if
-     you have one, or set it to `""` for no mark at all.  The value is a URL as the
-     browser sees it, so a bare filename must name a file in this report's
-     HTML_ROOT.
    * `refresh_rate`: seconds between updates in the browser.  A good choice is
      the rate at which your station's driver emits loop data.
-   * `max_age`: seconds a loop record may be before the readings it feeds show
-     question marks instead.  Default 10; raise it for a station that emits
-     loop data slowly.
-   * `clock_max_age`: seconds the clock in the lower right may fall behind
-     before it reads `??:??:??` in the disconnected blue.  Default 120, longer
-     than `max_age` on purpose: a stale reading has stopped being true, but a
-     clock a few seconds slow is still a good clock.
-   * `expiration_time`: hours after which the page stops polling (a click on the
-     time display restarts it).  To keep a permanently mounted tablet from ever
-     timing out, choose your own `page_update_pwd` and open the page as
-     `.../index.html?page_update_pwd=yourpassword`.  Note: the password is
-     visible in the page source; it is a keep-alive gate, not a secret.
+   * `max_age`: seconds a loop record may be before the readings it feeds are
+     shown as missing and the clock gives way to the data's age.  Default 10;
+     raise it for a station that emits loop data slowly.
+   * `expiration_time`: hours after which the page stops polling and says
+     `EXPIRED TAP`; a tap anywhere starts it again.  To keep a permanently
+     mounted tablet from ever timing out, choose your own `page_update_pwd`
+     and open the page as `.../index.html?page_update_pwd=yourpassword` (or
+     `splitflap.html?...`).  Note: the password is visible in the page
+     source; it is a keep-alive gate, not a secret.
+   * `show_uv`, `show_radiation`, `show_aqi`: `auto`, the default, shows a
+     reading when the station's current record carries it; `true` or
+     `false` forces it.  `show_purple`, from earlier releases, is still
+     honored while `show_aqi` is `auto`.
+   * `clock_format`: `12` or `24`.  Left unset, English shows a 12 hour
+     clock and the other languages a 24 hour one.
    * `googleAnalyticsId` and, optionally, `analytics_host` if you use Google
      Analytics.
-   * `show_purple`: set to `True` if weewx-purple is installed to show the AQI.
 
 1. Restart WeeWX.  LoopData reads each report's declaration when weewxd
    starts, so until the restart the board's entry is not in `loop-data.txt`
-   and the live label reads `NO ENTRY`.
+   and the clock reads `NO ENTRY`.
 
 ## About the missing-data behavior
 
-Every reading is age-checked.  If the loop record is older than `max_age` seconds
-(10 by default), the affected readings show question marks of the appropriate
-width.  The time display in the lower right keeps its own, longer threshold,
-`clock_max_age` (120 seconds by default), and shows `??:??:??` in blue past it.
-If loop-data.txt cannot be fetched at all, the time display turns blue too,
-until the next successful fetch, and the readings go on ageing while the
-fetch is failing: the board keeps counting from the last age it knew, so
-once that passes `max_age` the numbers fall back to question marks as well.
+Every reading is age-checked.  If the loop record is older than `max_age`
+seconds (10 by default), every reading is shown as missing, the way each
+display would show it: the LED board lights only the middle segment of
+each digit and leaves its decimal point dark, and the split-flap board
+turns each digit to a question mark.  The clock, at the same moment, gives
+way to the data's age — `47 S AGO` — in amber for the first minute and red
+after that.  If loop-data.txt cannot be fetched or used, the clock names the
+failure instead (`HTTP 404`, `BAD DATA`, `NO ENTRY`, `BAD URL`,
+`NO CONNECT` for a network failure, or `NO CLOCK` for a record with no
+usable timestamp), and the readings go on aging while
+the fetch is failing: the board keeps counting from the last age it knew,
+so once that passes `max_age` the numbers are shown as missing as well.
 The board never freezes silently on stale data.
 
 That age is measured against the server's clock, not the browser's: it is the
@@ -211,29 +213,13 @@ understate the age, so it is a backstop rather than a substitute.
 
 ## About the time display
 
-The clock in the lower right corner shows the time of the reading currently on
-the board, on the *station's* clock.  The string comes from loopdata, rendered
-through this report's own WeeWX formatter, so it carries the station's
-timezone and time format -- not the tablet's, which on a wall-mounted display
-can be another timezone entirely, or simply set wrong.
-
-The format travels with the field name in the skin's declaration:
-`current.dateTime.format("%X")`.  `%X` is the station's own time of day format:
-`09:44:14 PM` where the station runs a US locale, `21:44:14` under most others.
-That locale comes from weewxd's environment (`LANG`), not from a report's
-`lang` setting, and a weewxd started with no `LANG` at all -- common in
-containers -- falls back to the C locale and renders 24 hour times; setting
-`LANG` is the way to change that.  The format cannot be pinned by editing
-the declaration: the board looks for the `%X` spelling specifically, so a
-different strftime string there does not reformat the clock, it removes the
-field the board reads and the corner falls back to `??:??:??`.
-
-The clock ages out too, but on its own threshold: once the loop record is
-older than `clock_max_age` seconds it reads `??:??:??` in the disconnected
-blue.  That is longer than `max_age` deliberately -- a reading that is
-seconds stale has stopped being true, while a clock that is seconds slow is
-still worth reading -- so the blue is saved for a time that would mislead
-you.
+The clock shows the time of the reading currently on the board, on the
+*station's* clock.  It comes from loopdata as
+`current.dateTime.format("%H:%M:%S")`, rendered through this report's own
+WeeWX formatter, so it carries the station's timezone -- not the tablet's,
+which on a wall-mounted display can be another timezone entirely, or simply
+set wrong.  The board lays it out as a 12 or 24 hour clock itself, by
+`clock_format` or the report's language.
 
 ## The manual
 
@@ -245,3 +231,10 @@ staleness is measured, and troubleshooting.
 ## Licensing
 
 weewx-weatherboard is licensed under the GNU Public License v3.
+
+The LED board's lettering is the LCDMono2 Ultra font, Copyright 1999 by
+Samuel Reynolds (http://www.spinwardstars.com/scrfonts/), distributed
+under the terms in `skins/WeatherBoard/fonts/lcdmono2ultra/LICENSE.TXT`.
+The split-flap board's lettering is Jost, Copyright 2020 The Jost Project
+Authors, under the SIL Open Font License in
+`skins/WeatherBoard/fonts/jost/license.txt`.
