@@ -33,6 +33,7 @@ The panels, top to bottom, with the LoopData field behind each reading:
 | Panel | Reading | Field |
 |---|---|---|
 | Temperature | Outside | `current.outTemp.formatted` |
+| | Feels like | `current.appTemp.formatted` |
 | | Dew point | `current.dewpoint.formatted` |
 | Wind | Speed and direction | `current.windSpeed.formatted`, `current.windDir.ordinal_compass` |
 | | Ten-minute high gust | `10m.windGust.max.formatted` |
@@ -45,8 +46,8 @@ The panels, top to bottom, with the LoopData field behind each reading:
 | | Solar radiation | `current.radiation.formatted` |
 | Air quality | Index, in its level's color | `current.pm2_5_aqi.formatted`, `current.pm2_5_aqi_color.raw` |
 | Comfort | Humidity | `current.outHumidity.formatted` |
-| | Feels like | `current.appTemp.formatted` |
-| Clock | The station's time, and the status line | `current.dateTime.format("%H:%M:%S")` |
+| | Today's high | `day.outTemp.max.formatted` |
+| Clock | The station's time, and the status line, with the date under it | `current.dateTime.format("%H:%M:%S")`, `current.dateTime.format("%Y-%m-%d")` |
 
 The label under each reading names it and gives its unit, in the report's
 own units and language.  On a station whose driver reports no gusts, the
@@ -60,7 +61,8 @@ noise, not information.
 UV, solar radiation and air quality show only on a station that has them
 — see [`show_uv`, `show_radiation`, `show_aqi`](configuration.html#show_uv-show_radiation-show_aqi)
 — and feels like only where WeeWX can compute it.  A panel with nothing to
-show is left out, and its row closes up.
+show is left out, and its row closes up.  Without feels like, outside and
+dew point share the top row, a size larger.
 
 ## The split-flap board
 
@@ -169,6 +171,13 @@ when the reading was taken.
 The board lays the time out itself, 12 or 24 hour, by
 [`clock_format`](configuration.html#clock_format) or the report's
 language.
+
+On the readout board the clock sits in line with the readings beside it,
+and the date is its label.  That is the station's date as well, from
+`current.dateTime.format("%Y-%m-%d")`, so it always agrees with the time
+above it; the browser puts the day and month names to it in the report's
+language.  With no date to show, or once the data is too old to vouch
+for, the label is left blank.
 
 ## Colors
 

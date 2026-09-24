@@ -105,11 +105,20 @@ data they hold passes `max_age`.
 
 The report's entry has no usable `current.dateTime.raw`, so the board
 cannot tell how old the data is, and will not vouch for data it cannot
-age.  Both clock fields ship in the skin's declaration, so one is missing
+age.  The clock's fields ship in the skin's declaration, so one is missing
 only if the declaration was overridden — a `[[[LoopData]]] [[[[fields]]]]`
 group named `clock` under the report's stanza in `weewx.conf` replaces the
 skin's — or the shipped `skin.conf` was edited.  Put the field back and
 restart WeeWX.
+
+## The date under the clock is blank
+
+The readout board takes its date from `current.dateTime.format("%Y-%m-%d")`,
+and LoopData reads a report's fields only when weewxd starts.  Right after
+an upgrade to 5.2, restart WeeWX; running a report by hand is not enough.
+If the date is still blank, the declaration was overridden: a
+`[[[LoopData]]] [[[[fields]]]]` group named `clock` under the report's
+stanza in `weewx.conf` replaces the skin's, and needs the field added.
 
 ## The clock reads `EXPIRED TAP`
 

@@ -43,9 +43,8 @@ and an extension that computes its index, such as
 
 * A one-line title: the station's location, or your own
   [`title`](configuration.html#title)
-* Outside temperature and dew point
-* Humidity, and feels like (on the readout board; the split-flap board shows
-  humidity and today's high on its temperature rows)
+* Outside temperature and dew point, and feels like (readout board)
+* Humidity, and today's high
 * Wind speed and direction, the ten-minute high gust, and today's high
   gust (the split-flap board shows the ten-minute gust)
 * Barometer, with an arrow whose angle is its trend
@@ -53,7 +52,8 @@ and an extension that computes its index, such as
   board shows today's and the rate)
 * UV index and solar radiation, on a station that has them (readout board)
 * Air quality index, on a station with an air quality sensor
-* The station's time, which is also the status line
+* The station's time, which is also the status line, with the date under
+  it on the readout board
 
 UV, solar radiation and air quality show only on a station that has
 them, and the board closes up around what is missing:

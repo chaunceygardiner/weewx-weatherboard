@@ -37,13 +37,14 @@ when the row has something to say:
 
 Between them they show, under a one-line title that is the station's
 location unless you set your own:
-* Outside temperature, dew point, humidity and feels like
+* Outside temperature, feels like and dew point, humidity, and today's high
 * Wind speed and direction, the 10 minute high gust and today's high gust
 * Barometer, with an arrow whose angle is its trend
 * Today's rainfall, the last 24 hours' rainfall and the rain rate
 * UV index and solar radiation, on a station that has them
 * Air quality index, on a station that has an air quality sensor
-* The station's time, which doubles as the status line
+* The station's time, which doubles as the status line, with the date
+  under it on the readout board
 
 The pages are generated once per archive interval, but the readings update
 continuously in the browser (every 2 seconds by default) from the
@@ -111,6 +112,7 @@ any other WeeWX skin.
 
    ```
    current.dateTime.raw, current.dateTime.format("%H:%M:%S"),
+   current.dateTime.format("%Y-%m-%d"),
    current.outTemp.formatted, current.dewpoint.formatted,
    current.appTemp.formatted, current.outHumidity.formatted,
    day.outTemp.max.formatted, current.windSpeed.formatted,
@@ -230,6 +232,10 @@ WeeWX formatter, so it carries the station's timezone -- not the tablet's,
 which on a wall-mounted display can be another timezone entirely, or simply
 set wrong.  The board lays it out as a 12 or 24 hour clock itself, by
 `clock_format` or the report's language.
+
+The date under the readout board's clock is the station's date too, from
+`current.dateTime.format("%Y-%m-%d")`.  The browser puts the day and month
+names to it in the report's language.
 
 ## The manual
 

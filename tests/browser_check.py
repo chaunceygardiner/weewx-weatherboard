@@ -14,6 +14,13 @@ What it holds the boards to:
 
   - every reading shows what the loop data says, and the clock is the
     station's time in the language's 12 or 24 hour form
+  - the readout board's top row is outside, feels like and dew point, set
+    at the size for three; its bottom row is one line of figures, the
+    clock the size of the figures beside it and on their baseline
+  - the date under the clock is the station's, named in the page's
+    language, the same on a tablet eleven hours behind UTC; the widest,
+    Spanish, fits the narrowest screen; no date, or one that is not a
+    date, leaves a blank that keeps the label's height
   - the status line: the data's age once it is max_age old (amber for the
     first minute, then red), the failure when a fetch fails (HTTP 404, BAD
     DATA, NO ENTRY, NO CONNECT), and EXPIRED TAP once the page expires --
@@ -65,7 +72,10 @@ TYPES = {'css': 'text/css', 'ttf': 'font/ttf', 'woff2': 'font/woff2', 'ico': 'im
 
 def entry(**over):
     """One report's entry in loop-data.txt, US units."""
+    # The date is a Wednesday in September, the widest a date runs in
+    # English and in Spanish, the widest language.
     e = {'current.dateTime.raw': NOW, 'current.dateTime.format("%H:%M:%S")': '16:07:17',
+         'current.dateTime.format("%Y-%m-%d")': '2026-09-23',
          'current.outTemp.formatted': '78.4', 'current.dewpoint.formatted': '61.2',
          'current.appTemp.formatted': '79.9', 'current.outHumidity.formatted': '56',
          'day.outTemp.max.formatted': '81.0',
@@ -86,6 +96,7 @@ def entry(**over):
 # The widest a US or metric station's readings run.
 WIDE = entry(**{'current.outTemp.formatted': '-12.3', 'current.dewpoint.formatted': '-15.8',
                 'current.appTemp.formatted': '-20.5', 'current.outHumidity.formatted': '100',
+                'day.outTemp.max.formatted': '-11.9',
                 'current.windSpeed.formatted': '112', 'current.windDir.ordinal_compass': 'ØNØ',
                 '10m.windGust.max.formatted': '140', 'day.windGust.max.formatted': '152',
                 'current.barometer.formatted': '1013.2', 'day.rain.sum.formatted': '123.4',
@@ -99,6 +110,7 @@ WIDE = entry(**{'current.outTemp.formatted': '-12.3', 'current.dewpoint.formatte
 # is the case that proves the insurance pays: without the fit, panels
 # overflow.
 EXTREME = entry(**{'current.outTemp.formatted': '-112.34', 'current.dewpoint.formatted': '-115.87',
+                   'day.outTemp.max.formatted': '-110.12',
                    'current.barometer.formatted': '10132.55', 'day.rain.sum.formatted': '1234.56',
                    '24h.rain.sum.formatted': '1302.55', 'current.rainRate.formatted': '1456.66',
                    'current.windSpeed.formatted': '1122', '10m.windGust.max.formatted': '1400',
@@ -150,12 +162,13 @@ class Server:
 
 class Board:
     def __init__(self, browser, tmpl, size=(1280, 800), lang='en', missing=ct.ALL_PRESENT,
-                 overrides=None, query='?page_update_pwd=testpwd', unit=None):
+                 overrides=None, query='?page_update_pwd=testpwd', unit=None, timezone=None):
         extras = {'refresh_rate': '1'}
         extras.update(overrides or {})
         self.server = Server(ct.render(tmpl, missing, analytics=False, overrides=extras, lang=lang,
                                        unit=unit))
-        self.page = browser.new_page(viewport={'width': size[0], 'height': size[1]})
+        self.page = browser.new_page(viewport={'width': size[0], 'height': size[1]},
+                                     **({'timezone_id': timezone} if timezone else {}))
         self.errors = []
         self.page.on('pageerror', lambda e: self.errors.append(str(e)))
         self.page.route('**/*', self.server.handle)
@@ -192,6 +205,18 @@ RO_TEXT = """id => {
   }
   return s.trim();
 }"""
+
+# The bottom row's figures, each as its size and its baseline, in whole
+# pixels: one line of figures has one of each.
+RO_BASELINES = """(() => { const rows = document.querySelectorAll('.ro-row'), out = {};
+  for (const n of rows[rows.length - 1].querySelectorAll('.ro-n')) {
+    const probe = document.createElement('span');
+    probe.style.cssText = 'display: inline-block; width: 0; height: 0; vertical-align: baseline';
+    n.appendChild(probe);
+    out[n.closest('.ro-c').id] = getComputedStyle(n).fontSize + ' ' + Math.round(probe.getBoundingClientRect().top);
+    probe.remove();
+  }
+  return out; })()"""
 
 # Each row's --fit, top to bottom.
 FITS = "[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')"
@@ -239,6 +264,24 @@ def check_readout(browser):
         failures.append('Bebas Neue is %s, not loaded' % (faces or 'not declared'))
     if 'Bebas Neue' not in b.page.evaluate("getComputedStyle(document.querySelector('#ro-t .ro-n')).fontFamily"):
         failures.append('the readings are not set in Bebas Neue')
+    # Three temperatures across the top, feels like between the other two,
+    # each at the size for three.
+    top = b.page.evaluate("[...document.querySelectorAll('#ro-temp .ro-c')].map(c => c.id)")
+    if top != ['ro-t', 'ro-fl', 'ro-td']:
+        failures.append('the top row is %s, not outside, feels like, dew point' % top)
+    size = b.page.evaluate("""(() => { const n = document.querySelector('#ro-t .ro-n');
+        return parseFloat(getComputedStyle(n).fontSize) / parseFloat(getComputedStyle(document.documentElement).fontSize)
+               / Number(n.closest('.ro-row').style.getPropertyValue('--fit') || 1); })()""")
+    if abs(size - 24.9) > .05:
+        failures.append('three temperatures are set at %.1frem, not 24.9rem' % size)
+    # The date under the clock, and the clock in line with the figures
+    # beside it: the same size, on the same baseline.
+    shown = b.page.evaluate("(document.getElementById('ro-date') || {}).textContent")
+    if shown != 'Wednesday, September 23':
+        failures.append('the date reads %r' % shown)
+    line = b.page.evaluate(RO_BASELINES)
+    if len(set(line.values())) != 1:
+        failures.append('the bottom row is not one line of figures: %s' % line)
     fresh = ro_digits(b)
 
     # Aging, then old: the age on the status line, every reading dashes
@@ -252,6 +295,9 @@ def check_readout(browser):
             failures.append('missing %s reads %r, expected %r' % (cid, t(cid), want))
     if b.page.evaluate("!!document.querySelector('#ro-b .ro-trend')"):
         failures.append('the trend arrow outlived the data')
+    if b.page.evaluate("document.getElementById('ro-date').textContent") != '\u00a0':
+        failures.append('the date outlived the data: %r'
+                        % b.page.evaluate("document.getElementById('ro-date').textContent"))
     failures += ro_missing_pixels(b, fresh)
     b.server.set(age=420)
     b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-old') >= 0")
@@ -269,6 +315,9 @@ def check_readout(browser):
     # wind direction is the font's own letters.
     b.server.set(e=WIDE)
     b.wait("document.getElementById('ro-clock').className === 'ro-panel ro-status-live'")
+    if b.page.evaluate("document.getElementById('ro-date').textContent") != 'Wednesday, September 23':
+        failures.append('the date did not come back with the data: %r'
+                        % b.page.evaluate("document.getElementById('ro-date').textContent"))
     if t('ro-t') != '-12.3':
         failures.append('-12.3 reads %r' % t('ro-t'))
     if t('ro-w') != '112 ØNØ':
@@ -1038,6 +1087,44 @@ def check_flap(browser):
     return failures
 
 
+def check_readout_date(browser):
+    """The date under the clock is the station's, named in the page's
+    language: Spanish, whose dates run widest, on the narrowest screen,
+    fits; a tablet eleven hours behind UTC shows the station's date, not
+    the day before, even in a browser that ignores the time zone option;
+    and with no date, or one that is not a date, the label is a blank that
+    keeps its height."""
+    failures = []
+    date = "document.getElementById('ro-date').textContent"
+    b = Board(browser, 'index.html.tmpl', size=(1024, 768), lang='es', timezone='Pacific/Pago_Pago')
+    b.wait("document.getElementById('ro-date').textContent.length > 1")
+    if b.page.evaluate(date) != 'miércoles, 23 de septiembre':
+        failures.append('the Spanish date on a tablet at UTC-11 reads %r' % b.page.evaluate(date))
+    b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    for p in b.page.evaluate(RO_FIT):
+        failures.append('with the widest Spanish date, %s overflows' % p)
+    height = b.page.evaluate("document.getElementById('ro-date').getBoundingClientRect().height")
+    # A browser that ignores toLocaleDateString's language and options
+    # names the date in the tablet's own zone, eleven hours behind UTC here:
+    # it must still be the station's day.
+    b.page.evaluate("""() => { const plain = Date.prototype.toLocaleDateString;
+        Date.prototype.toLocaleDateString = function () { return plain.call(this, 'en-US'); }; }""")
+    b.server.set(e=entry(**{'current.dateTime.format("%Y-%m-%d")': '2026-09-24'}))
+    b.wait("document.getElementById('ro-date').textContent.indexOf('2026') >= 0")
+    if b.page.evaluate(date) != '9/24/2026':
+        failures.append('a browser that ignores the time zone option names 2026-09-24 %r' % b.page.evaluate(date))
+    for bad in ('', 'soon'):
+        b.server.set(e=entry(**{'current.dateTime.format("%Y-%m-%d")': bad}))
+        b.wait("document.getElementById('ro-date').textContent.length <= 1")
+        if b.page.evaluate(date) != '\u00a0':
+            failures.append('with the date %r the label reads %r, not a blank' % (bad, b.page.evaluate(date)))
+        if abs(b.page.evaluate("document.getElementById('ro-date').getBoundingClientRect().height") - height) > .5:
+            failures.append('with the date %r the label changes height' % bad)
+    failures += ['Spanish readout page: %s' % e for e in b.errors]
+    b.close()
+    return failures
+
+
 def check_languages(browser):
     """A 24 hour language shows the station's time as it came, and a Danish
     status line draws its letters."""
@@ -1066,6 +1153,7 @@ def main():
                          ('a file that stops changing goes stale', check_frozen_file),
                          ('the split-flap board: rows, lamps, missing data, failures', check_flap),
                          ('the clock and status line in other languages', check_languages),
+                         ('the date is the station\'s, in the page\'s language, and fits', check_readout_date),
                          ('Bebas Neue has every character the status line and wind use', check_font_covers),
                          ('the readout board fits again as each of its fonts arrives', check_readout_late_font),
                          ('a wider wind direction refits the board; a narrower one moves nothing', check_readout_widths),

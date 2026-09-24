@@ -1,5 +1,26 @@
 # weewx-weatherboard change history
 
+## 5.2 09/24/2026
+- Action required: restart WeeWX after upgrading.  The date under the
+  clock comes from a new field, current.dateTime.format("%Y-%m-%d"), and
+  LoopData reads a report's fields only when weewxd starts; running a
+  report by hand copies the new stylesheet but leaves the date blank.  A
+  weewx.conf stanza that overrides the skin's clock fields group needs the
+  field added to it.
+- The readout board's top row is three temperatures: feels like joins
+  outside and dew point, each a little smaller, so the row is no longer
+  two figures across the width of the screen.  Today's high takes feels
+  like's old place beside humidity.  Without feels like, outside and dew
+  point keep the top row at their old size.
+- The clock sits in line with the readings beside it, the same size and on
+  the same baseline, with the date as its label: the station's date, so it
+  always agrees with the time above it, with the day and month named in
+  the report's language.  Like the readings, it goes blank once the data
+  is older than max_age.
+- The readout board's title and labels are brighter, a step below the
+  readings rather than a dim red that faded from across a room; the air
+  quality label is a light gray in place of a mid gray.
+
 ## 5.1.1 09/24/2026
 - Action required: restart WeeWX after upgrading.  The stylesheet and the
   new font reach the web server only on the first report after weewxd

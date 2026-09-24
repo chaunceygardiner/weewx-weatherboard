@@ -24,7 +24,9 @@
     if (WB.show.radiation) { roSet('ro-rad', val('current.radiation.formatted')); }
     if (WB.show.aqi) { roAqi('ro-aqi', r, val('current.pm2_5_aqi.formatted')); }
     roSet('ro-rh', val('current.outHumidity.formatted'));
+    roSet('ro-hi', val('day.outTemp.max.formatted'));
     if (WB.show.feels) { roSet('ro-fl', val('current.appTemp.formatted')); }
+    roDate('ro-date', r, fresh);
     roStatus(status);
   }
 </script>

@@ -29,9 +29,16 @@
     #include "index_painter.inc"
     <h1 class="ro-title">$wb_title</h1>
     <div class="ro-row ro-top">
+      #if $wb_feels
+      <section class="ro-panel ro-three" id="ro-temp">
+      #else
       <section class="ro-panel" id="ro-temp">
+      #end if
         <h2 class="ro-hidden">$gettext("Temperature")</h2>
         <div class="ro-c" id="ro-t" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("OUTSIDE") <span class="ro-u">$unit.label.outTemp</span></div></div>
+        #if $wb_feels
+        <div class="ro-c" id="ro-fl" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("FEELS LIKE") <span class="ro-u">$unit.label.appTemp</span></div></div>
+        #end if
         <div class="ro-c" id="ro-td" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("DEW POINT") <span class="ro-u">$unit.label.dewpoint</span></div></div>
       </section>
     </div>
@@ -76,13 +83,11 @@
       <section class="ro-panel" id="ro-comfort">
         <h2 class="ro-hidden">$gettext("Comfort")</h2>
         <div class="ro-c" id="ro-rh" data-empty="--"><div class="ro-n"></div><div class="ro-l">$gettext("HUMIDITY") <span class="ro-u">$unit.label.outHumidity</span></div></div>
-        #if $wb_feels
-        <div class="ro-c" id="ro-fl" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("FEELS LIKE") <span class="ro-u">$unit.label.appTemp</span></div></div>
-        #end if
+        <div class="ro-c" id="ro-hi" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("HIGH TODAY") <span class="ro-u">$unit.label.outTemp</span></div></div>
       </section>
       <section class="ro-panel" id="ro-clock">
         <h2 class="ro-hidden">$gettext("Time")</h2>
-        <div class="ro-c" id="ro-clk" data-empty="--:--:--"><div class="ro-n"></div></div>
+        <div class="ro-c" id="ro-clk" data-empty="--:--:--"><div class="ro-n"></div><div class="ro-l" id="ro-date">&nbsp;</div></div>
       </section>
     </div>
     <footer class="ro-foot">WeatherBoard &copy;2019-2026 by John A Kline.</footer>

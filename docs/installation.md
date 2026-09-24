@@ -122,6 +122,7 @@ render them:
 
 ```
 current.dateTime.raw, current.dateTime.format("%H:%M:%S"),
+current.dateTime.format("%Y-%m-%d"),
 current.outTemp.formatted, current.dewpoint.formatted,
 current.appTemp.formatted, current.outHumidity.formatted,
 day.outTemp.max.formatted, current.windSpeed.formatted,
