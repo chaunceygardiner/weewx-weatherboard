@@ -5,17 +5,16 @@ nav_order: 1
 permalink: /
 ---
 
-# WeeWX WeatherBoard — the weather at a glance
+# WeeWX WeatherBoard — Read the weather from across the room
 
 [View on GitHub](https://github.com/chaunceygardiner/weewx-weatherboard){: .btn .btn-primary }
 [Download weewx-weatherboard.zip](https://github.com/chaunceygardiner/weewx-weatherboard/releases/latest/download/weewx-weatherboard.zip){: .btn }
 [Report an issue](https://github.com/chaunceygardiner/weewx-weatherboard/issues){: .btn }
 
-WeatherBoard&trade; is a WeeWX skin inspired by the RainWise LED Weather
-Oracle: the current weather in characters large enough to read from
-across the room.  It is meant to run full screen on a low-cost tablet
-mounted on the wall, and it never needs a reload — the numbers change every
-couple of seconds.
+WeatherBoard&trade; is a WeeWX skin that shows the current weather in
+figures big enough to read at a glance.  It is meant to run full screen on
+a low-cost tablet mounted on the wall, and it never needs a reload — the
+numbers change every couple of seconds.
 
 Does the wind sound ferocious?  Look up and see how fast it is gusting.  Is
 the rain coming down hard?  The rate and today's total are already on the
