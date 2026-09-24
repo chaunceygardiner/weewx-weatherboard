@@ -6,6 +6,12 @@
  * ALL styling lives here, not in the templates: hex colors in a Cheetah
  * template invite directive-parsing accidents.
  *
+ * BROWSERS.  The boards need Safari 14.1, Chrome 84 or Firefox 75, where
+ * everything here is native: min(), flex and grid gap, clip-path.  Below
+ * that, and not promised: every clip-path has a -webkit-clip-path twin,
+ * which is all Safari before 13.1 reads, and the root size is given plain
+ * before its min().
+ *
  * SIZES.  Everything is in rem, and a rem is the smaller of 1% of the
  * screen's height and 1/160 of its width: 1% of the height on a 16:10
  * tablet, less on a narrower one, so the board fills the screen without
@@ -29,6 +35,7 @@
     box-sizing: border-box;
 }
 html {
+    font-size: 1vh;                 /* best effort without min() */
     font-size: min(1vh, .625vw);
 }
 html, body {
@@ -172,6 +179,7 @@ body.led {
     width: 1px;
     height: 1px;
     overflow: hidden;
+    -webkit-clip-path: inset(50%);
     clip-path: inset(50%);
     white-space: nowrap;
     margin: 0;
@@ -191,6 +199,12 @@ body.led {
 .led-mid {
     display: inline-block;
     width: calc(1177em / 2048);
+    -webkit-clip-path: polygon(calc(250em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
+                               calc(383em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
+                               calc(825em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
+                               calc(926em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
+                               calc(793em / 2048) calc(var(--led-bl, .7em) - 702em / 2048),
+                               calc(350em / 2048) calc(var(--led-bl, .7em) - 702em / 2048));
     clip-path: polygon(calc(250em / 2048) calc(var(--led-bl, .7em) - 819em / 2048),
                        calc(383em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
                        calc(825em / 2048) calc(var(--led-bl, .7em) - 936em / 2048),
@@ -223,10 +237,10 @@ body.led {
     height: calc(2300em / 2048);
     background: currentColor;
 }
-.led-ac-uml::after { clip-path: polygon(evenodd, calc(372em / 2048) calc(367em / 2048), calc(385em / 2048) calc(273em / 2048), calc(490em / 2048) calc(180em / 2048), calc(570em / 2048) calc(273em / 2048), calc(557em / 2048) calc(367em / 2048), calc(452em / 2048) calc(460em / 2048), calc(372em / 2048) calc(367em / 2048), calc(852em / 2048) calc(367em / 2048), calc(865em / 2048) calc(273em / 2048), calc(970em / 2048) calc(180em / 2048), calc(1050em / 2048) calc(273em / 2048), calc(1037em / 2048) calc(367em / 2048), calc(932em / 2048) calc(460em / 2048), calc(852em / 2048) calc(367em / 2048)); }
-.led-ac-ring::after { clip-path: polygon(evenodd, calc(901em / 2048) calc(300em / 2048), calc(823em / 2048) calc(161em / 2048), calc(633em / 2048) calc(161em / 2048), calc(521em / 2048) calc(300em / 2048), calc(599em / 2048) calc(439em / 2048), calc(789em / 2048) calc(439em / 2048), calc(901em / 2048) calc(300em / 2048), calc(806em / 2048) calc(300em / 2048), calc(766em / 2048) calc(238em / 2048), calc(671em / 2048) calc(238em / 2048), calc(616em / 2048) calc(300em / 2048), calc(656em / 2048) calc(362em / 2048), calc(751em / 2048) calc(362em / 2048), calc(806em / 2048) calc(300em / 2048)); }
-.led-ac-acute::after { clip-path: polygon(calc(591em / 2048) calc(450em / 2048), calc(701em / 2048) calc(450em / 2048), calc(941em / 2048) calc(160em / 2048), calc(831em / 2048) calc(160em / 2048)); }
-.led-ac-slash::after { clip-path: polygon(calc(40em / 2048) calc(2210em / 2048), calc(190em / 2048) calc(2210em / 2048), calc(1170em / 2048) calc(450em / 2048), calc(1020em / 2048) calc(450em / 2048)); }
+.led-ac-uml::after { -webkit-clip-path: polygon(evenodd, calc(372em / 2048) calc(367em / 2048), calc(385em / 2048) calc(273em / 2048), calc(490em / 2048) calc(180em / 2048), calc(570em / 2048) calc(273em / 2048), calc(557em / 2048) calc(367em / 2048), calc(452em / 2048) calc(460em / 2048), calc(372em / 2048) calc(367em / 2048), calc(852em / 2048) calc(367em / 2048), calc(865em / 2048) calc(273em / 2048), calc(970em / 2048) calc(180em / 2048), calc(1050em / 2048) calc(273em / 2048), calc(1037em / 2048) calc(367em / 2048), calc(932em / 2048) calc(460em / 2048), calc(852em / 2048) calc(367em / 2048)); clip-path: polygon(evenodd, calc(372em / 2048) calc(367em / 2048), calc(385em / 2048) calc(273em / 2048), calc(490em / 2048) calc(180em / 2048), calc(570em / 2048) calc(273em / 2048), calc(557em / 2048) calc(367em / 2048), calc(452em / 2048) calc(460em / 2048), calc(372em / 2048) calc(367em / 2048), calc(852em / 2048) calc(367em / 2048), calc(865em / 2048) calc(273em / 2048), calc(970em / 2048) calc(180em / 2048), calc(1050em / 2048) calc(273em / 2048), calc(1037em / 2048) calc(367em / 2048), calc(932em / 2048) calc(460em / 2048), calc(852em / 2048) calc(367em / 2048)); }
+.led-ac-ring::after { -webkit-clip-path: polygon(evenodd, calc(901em / 2048) calc(300em / 2048), calc(823em / 2048) calc(161em / 2048), calc(633em / 2048) calc(161em / 2048), calc(521em / 2048) calc(300em / 2048), calc(599em / 2048) calc(439em / 2048), calc(789em / 2048) calc(439em / 2048), calc(901em / 2048) calc(300em / 2048), calc(806em / 2048) calc(300em / 2048), calc(766em / 2048) calc(238em / 2048), calc(671em / 2048) calc(238em / 2048), calc(616em / 2048) calc(300em / 2048), calc(656em / 2048) calc(362em / 2048), calc(751em / 2048) calc(362em / 2048), calc(806em / 2048) calc(300em / 2048)); clip-path: polygon(evenodd, calc(901em / 2048) calc(300em / 2048), calc(823em / 2048) calc(161em / 2048), calc(633em / 2048) calc(161em / 2048), calc(521em / 2048) calc(300em / 2048), calc(599em / 2048) calc(439em / 2048), calc(789em / 2048) calc(439em / 2048), calc(901em / 2048) calc(300em / 2048), calc(806em / 2048) calc(300em / 2048), calc(766em / 2048) calc(238em / 2048), calc(671em / 2048) calc(238em / 2048), calc(616em / 2048) calc(300em / 2048), calc(656em / 2048) calc(362em / 2048), calc(751em / 2048) calc(362em / 2048), calc(806em / 2048) calc(300em / 2048)); }
+.led-ac-acute::after { -webkit-clip-path: polygon(calc(591em / 2048) calc(450em / 2048), calc(701em / 2048) calc(450em / 2048), calc(941em / 2048) calc(160em / 2048), calc(831em / 2048) calc(160em / 2048)); clip-path: polygon(calc(591em / 2048) calc(450em / 2048), calc(701em / 2048) calc(450em / 2048), calc(941em / 2048) calc(160em / 2048), calc(831em / 2048) calc(160em / 2048)); }
+.led-ac-slash::after { -webkit-clip-path: polygon(calc(40em / 2048) calc(2210em / 2048), calc(190em / 2048) calc(2210em / 2048), calc(1170em / 2048) calc(450em / 2048), calc(1020em / 2048) calc(450em / 2048)); clip-path: polygon(calc(40em / 2048) calc(2210em / 2048), calc(190em / 2048) calc(2210em / 2048), calc(1170em / 2048) calc(450em / 2048), calc(1020em / 2048) calc(450em / 2048)); }
 
 /* The baseline probe led.inc measures --led-bl with; never seen. */
 .led-probe {
@@ -390,6 +404,7 @@ body.flapboard {
     width: 1px;
     height: 1px;
     overflow: hidden;
+    -webkit-clip-path: inset(50%);
     clip-path: inset(50%);
     white-space: nowrap;
     margin: 0;

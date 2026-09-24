@@ -94,7 +94,7 @@ say, judged by the figure the row shows:
 | Barometer | orange | Below 29.70 inHg (1005.8 mbar) |
 | | blue | Above 30.20 inHg (1022.7 mbar) |
 | Rain | blue | Rain is falling |
-| Air | the level's color | Always, in the color of the index's level |
+| Air | the level's color | Above 50, worse than good, in the color of the index's level |
 
 ## The barometer trend
 

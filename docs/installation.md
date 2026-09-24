@@ -42,6 +42,21 @@ that setting with it (step 3).
 Download the latest release,
 [weewx-weatherboard.zip](https://github.com/chaunceygardiner/weewx-weatherboard/releases/latest/download/weewx-weatherboard.zip).
 
+WeeWX 5, pip install (`weectl` lives in the virtual environment, so
+activate it first; yours may sit elsewhere, `~/weewx-venv` is the usual
+place):
+
+```
+source ~/weewx-venv/bin/activate
+weectl extension install weewx-weatherboard.zip
+```
+
+WeeWX 5, Debian or Red Hat package install (`weectl` is already on the
+path).  No `sudo`: that install put your account in the `weewx` group,
+which owns the files -- if you installed WeeWX in this same login
+session, log out and back in first so the group membership takes
+effect.
+
 ```
 weectl extension install weewx-weatherboard.zip
 ```
@@ -183,3 +198,10 @@ With the password present the page never expires.
 The password is visible in the page source, by design.  It is a keep-alive
 gate, not a secret — it exists so that a random visitor's browser tab
 expires and yours does not.
+
+{: .note }
+**Older tablets.**  The boards need Safari 14.1 or later (iOS 14.5 on an
+iPad), Chrome 84 or later, or Firefox 75 or later: the first versions of
+each that support everything the boards use.  They are tested in current
+Chrome and Firefox.  An iPad that cannot update past iOS 12 is below that
+line.

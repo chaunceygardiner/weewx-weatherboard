@@ -64,6 +64,8 @@ any other WeeWX skin.
 * [WeeWX](https://weewx.com) 5.2 or later
 * Python 3.7 or later
 * [weewx-loopdata](https://github.com/chaunceygardiner/weewx-loopdata) 7.0 or later
+* On the tablet: Safari 14.1 or later (iOS 14.5), Chrome 84 or later, or
+  Firefox 75 or later
 
 ## Additional Requirements for the Air Quality Index (AQI) Reading
 * An air quality sensor, and an extension that computes its index, such as
@@ -81,9 +83,26 @@ any other WeeWX skin.
 1. Download the latest release, weewx-weatherboard.zip, from the
    [GitHub Repository](https://github.com/chaunceygardiner/weewx-weatherboard/releases).
 
-1. Install the extension:
+1. Install the extension.
 
-   `weectl extension install weewx-weatherboard.zip`
+   WeeWX 5, pip install (`weectl` lives in the virtual environment, so
+   activate it first; yours may sit elsewhere, `~/weewx-venv` is the usual
+   place):
+
+   ```
+   source ~/weewx-venv/bin/activate
+   weectl extension install weewx-weatherboard.zip
+   ```
+
+   WeeWX 5, Debian or Red Hat package install (`weectl` is already on the
+   path).  No `sudo`: that install put your account in the `weewx` group,
+   which owns the files -- if you installed WeeWX in this same login
+   session, log out and back in first so the group membership takes
+   effect.
+
+   ```
+   weectl extension install weewx-weatherboard.zip
+   ```
 
 1. The skin declares the LoopData fields it reads, in
    `skins/WeatherBoard/skin.conf`, and LoopData writes them into

@@ -225,12 +225,20 @@
 
     // Today's rain and the rate on one line: "1.23 0.42/HR".
     var room = FLAP_WIDTH - FLAP.text.perHour.length - 1;
-    var today = q('rd', val('day.rain.sum.formatted'), '? ??');
+    var todayAll = q('rd', val('day.rain.sum.formatted'), '? ??');
+    var today = todayAll;
     var rate = q('rr', val('current.rainRate.formatted'), '? ??');
     var tw = Math.min(today.length, Math.max(1, room - Math.min(rate.length, 4)));
     today = squeeze(today, tw);
     rate = squeeze(rate, room - today.length);
-    flapShow('flap-rain', today + ' ' + rate + FLAP.text.perHour);
+    var rainRow = today + ' ' + rate + FLAP.text.perHour;
+    // A day's total so long it leaves the rate no room -- far past any
+    // rain ever recorded -- shows alone, rather than running off the end
+    // of the row and taking the rate's unit with it.
+    if (rainRow.length > FLAP_WIDTH) {
+      rainRow = squeeze(todayAll, FLAP_WIDTH);
+    }
+    flapShow('flap-rain', rainRow);
     // Lit by the rate as shown, for the same reason as calm: a raw rate
     // of 0.0000001 shows as 0.00, and a lamp over 0.00 says rain is falling.
     flapLamp('flap-rain', Number(val('current.rainRate.formatted')) > 0 ? FLAP_COLORS.rain : null);
@@ -238,7 +246,9 @@
     if (WB.show.aqi) {
       var aqi = val('current.pm2_5_aqi.formatted');
       flapShow('flap-air', padL(q('aqi', aqi, '??'), 3) + (aqi === null ? '' : ' ' + aqiWord(Number(aqi))));
-      flapLamp('flap-air', aqi !== null && has(r, 'current.pm2_5_aqi_color.raw')
+      // Lit only past good (above 50), in the level's color: on a good day
+      // the air has nothing to say.
+      flapLamp('flap-air', aqi !== null && Number(aqi) > 50 && has(r, 'current.pm2_5_aqi_color.raw')
                ? decodeRgb(r['current.pm2_5_aqi_color.raw']) : null);
     }
     flapFit();
@@ -270,8 +280,24 @@
   window.addEventListener('resize', function () { flapFit(true); });
   // The row names are set in Jost, and the first paint can come before it
   // has loaded; fit again once it has, since the names then measure true.
+  // A browser without document.fonts fits again at window load, which
+  // waits for the web fonts the page is using, and every two seconds until
+  // then, for up to a minute, since a hung analytics script can hold
+  // window load back for good and the font can arrive at any point.
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(function () { flapFit(true); });
+  } else {
+    var flapTries = 0;
+    var flapPoll = setInterval(function () {
+      flapFit(true);
+      if (++flapTries >= 30) {
+        clearInterval(flapPoll);
+      }
+    }, 2000);
+    window.addEventListener('load', function () {
+      clearInterval(flapPoll);
+      flapFit(true);
+    });
   }
   // Included at the end of the page's body, after its rows, so the flaps
   // exist before board.inc paints the first time.

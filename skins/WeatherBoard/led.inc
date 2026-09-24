@@ -147,7 +147,9 @@
         w += r.width;
         h = Math.max(h, r.height);
       }
-      w += Math.max(0, cells.length - 1) * parseFloat(cs.columnGap || 0);
+      // A browser that reports the gap as "normal" (no flex gap) has none:
+      // NaN here would stop the fit for good.
+      w += Math.max(0, cells.length - 1) * (parseFloat(cs.columnGap) || 0);
       if (innerW > 0) { need = Math.max(need, w / innerW); }
       if (innerH > 0) { need = Math.max(need, h / innerH); }
     }
@@ -181,23 +183,43 @@
   // Where the LCD font's baseline falls in a box of the board's line
   // height, as a fraction of the font size: the middle-segment clip and
   // the accents are placed from it (--led-bl).  Measured once the font has
-  // loaded, since it depends on the font's own metrics.
+  // loaded, since it depends on the font's own metrics.  A browser
+  // without document.fonts measures at window load instead, which waits
+  // for the web fonts the page is using.  Until then it measures every two
+  // seconds, for up to a minute: an analytics script that never finishes
+  // loading holds window load back for good, and the font can arrive at
+  // any point before that.  Left unmeasured, every dash and accent would
+  // sit where a guess put it.  Measuring again changes nothing once it is
+  // right.
+  function ledBaseline() {
+    var probe = document.createElement('span');
+    probe.className = 'led-probe';
+    probe.appendChild(document.createTextNode('8'));
+    var mark = document.createElement('span');
+    mark.className = 'led-probe-mark';
+    probe.appendChild(mark);
+    document.body.appendChild(probe);
+    var bl = mark.offsetTop / 100;
+    probe.parentNode.removeChild(probe);
+    if (bl > 0) {
+      document.documentElement.style.setProperty('--led-bl', bl + 'em');
+    }
+    ledFitDirty = true;
+    repaint();
+  }
   if (document.fonts && document.fonts.load) {
-    document.fonts.load('100px LCD').then(function () {
-      var probe = document.createElement('span');
-      probe.className = 'led-probe';
-      probe.appendChild(document.createTextNode('8'));
-      var mark = document.createElement('span');
-      mark.className = 'led-probe-mark';
-      probe.appendChild(mark);
-      document.body.appendChild(probe);
-      var bl = mark.offsetTop / 100;
-      probe.parentNode.removeChild(probe);
-      if (bl > 0) {
-        document.documentElement.style.setProperty('--led-bl', bl + 'em');
+    document.fonts.load('100px LCD').then(ledBaseline);
+  } else {
+    var ledTries = 0;
+    var ledPoll = setInterval(function () {
+      ledBaseline();
+      if (++ledTries >= 30) {
+        clearInterval(ledPoll);
       }
-      ledFitDirty = true;
-      repaint();
+    }, 2000);
+    window.addEventListener('load', function () {
+      clearInterval(ledPoll);
+      ledBaseline();
     });
   }
 

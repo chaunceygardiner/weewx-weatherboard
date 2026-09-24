@@ -830,6 +830,31 @@ def check_langs():
     return failures
 
 
+def check_css_fallbacks():
+    """The stylesheet's fallbacks for older browsers, which no browser
+    here can prove: every clip-path has a -webkit-clip-path twin of the
+    same value (all Safari before 13.1 reads), and the root size is given
+    plain before its min() (which Chrome before 79 cannot read)."""
+    failures = []
+    css = io.open(os.path.join(SKIN, 'weatherboard.css'), encoding='utf-8').read()
+    css = re.sub(r'/\*.*?\*/', '', css, flags=re.S)
+    # Each clip-path directly after its own twin: a value found elsewhere
+    # in the file does not count, since two rules can share one.
+    plain = re.findall(r'(?<!-webkit-)clip-path:([^;]+);', css)
+    paired = re.findall(r'-webkit-clip-path:([^;]+);\s*clip-path:([^;]+);', css)
+    if not plain:
+        failures.append('no clip-path found: the check has lost its subject')
+    if len(paired) != len(plain):
+        failures.append('%d clip-paths, %d of them directly after a -webkit-clip-path twin'
+                        % (len(plain), len(paired)))
+    for w, p in paired:
+        if re.sub(r'\s+', ' ', w) != re.sub(r'\s+', ' ', p):
+            failures.append('clip-path:%s has a twin of a different value' % p[:60])
+    if not re.search(r'html \{\s*font-size: 1vh;[^}]*font-size: min\(1vh, \.625vw\);', css):
+        failures.append('the root font-size min() has no plain fallback before it')
+    return failures
+
+
 def report(name, failures):
     print('%s %s' % ('FAIL' if failures else 'ok  ', name))
     for f in failures:
@@ -1005,6 +1030,7 @@ def main():
             failures.append('%s; wanted %r' % (what, expected))
     ok = report('both boards, hostile Extras', failures) and ok
     ok = report('skin.conf declares the loopdata fields the boards read', check_declared_fields()) and ok
+    ok = report("the stylesheet's fallbacks for older browsers", check_css_fallbacks()) and ok
     ok = report('the language files carry every string, and the boards can draw them', check_langs()) and ok
     ok = report('install.py requires weewx-loopdata 7.0, is the release changes.md names'
                 ' and installs every skin file',
