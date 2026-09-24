@@ -94,7 +94,8 @@ def version_tuple(version):
 # replaces -- to answer, so a later release can improve a default and have
 # it reach every station.  The options that stay live are HTML_ROOT, enable
 # and skin (weectl needs them), this site's title and tab title, its
-# analytics keys, loop_data_file and page_update_pwd.
+# analytics keys, loop_data_file, the indoor board's sidecar files and
+# page_update_pwd.
 # clock_format ships in neither place: left unset, the report's language
 # picks 12 or 24 hour.
 #
@@ -122,10 +123,26 @@ CONFIG = """
             # resolves.  This is the site's path, served from the web
             # server's own /loop-data, not relative to HTML_ROOT.
             loop_data_file = /loop-data/loop-data.txt
+            # The indoor board's (inout.html's) four sidecar files, each a
+            # single reading written outside this skin.  URL params
+            # inTempFile / inCO2File / inAQIFile / solarArrayFile override
+            # them.
+            in_temp_file = /loop-data/inTemp.txt
+            in_co2_file = /loop-data/inCO2.txt
+            in_aqi_file = /loop-data/inAQI.txt
+            solar_array_file = /loop-data/solar-array.json
             # The settings below only select the value skin.conf already
             # ships, so they ship commented out with that value shown.
             # Uncomment one and change it to override it.
             #
+            # How old each sidecar reading may be, in seconds, before it
+            # turns to dashes.  The AirGradient trio is written by a ~30 s
+            # cron; the solar file carries Enphase data already a minute
+            # old, hence its larger limit.
+            #in_temp_max_age = 120
+            #in_co2_max_age = 120
+            #in_aqi_max_age = 120
+            #solar_array_max_age = 150
             # How old the loop record may be, in seconds, before the
             # readings it feeds turn to dashes and the clock gives way to
             # the data's age.  The default suits a station emitting loop
@@ -193,6 +210,9 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/favicon.ico',
                 'skins/WeatherBoard/index.html.tmpl',
                 'skins/WeatherBoard/index_painter.inc',
+                'skins/WeatherBoard/inout.css',
+                'skins/WeatherBoard/inout.html.tmpl',
+                'skins/WeatherBoard/inout.inc',
                 'skins/WeatherBoard/jsstr.inc',
                 'skins/WeatherBoard/led.inc',
                 'skins/WeatherBoard/skin.conf',

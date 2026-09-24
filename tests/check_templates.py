@@ -278,7 +278,7 @@ def check(html, tmpl, missing=ALL_PRESENT):
                                 % (cell, 'there' if not want[key] else 'missing', key, want[key]))
         if ('id="led-sun"' in html) != (want['uv'] or want['radiation']):
             failures.append('the sun panel does not follow UV and radiation')
-    else:
+    elif tmpl == 'splitflap.html.tmpl':
         if ('id="flap-air"' in html) != want['aqi']:
             failures.append('the air row does not follow show_aqi')
     return failures
@@ -525,6 +525,8 @@ STANZA_LIVE = (
     # place; this branch writes them live, so a fresh install is turnkey.
     'title', 'meta_title',
     'loop_data_file', 'googleAnalyticsId', 'analytics_host', 'page_update_pwd',
+    # The indoor board's sidecar files: this site's own paths.
+    'in_temp_file', 'in_co2_file', 'in_aqi_file', 'solar_array_file',
     # Pinned deliberately: see the comment on [[[Units]]] in install.py.
     'mile_per_hour', 'degree_C', 'km_per_hour', 'degree_F',
 )
@@ -540,6 +542,11 @@ STANZA_COMMENTED = {
     'show_uv': 'auto',
     'show_radiation': 'auto',
     'show_aqi': 'auto',
+    # The indoor board's sidecar limits (this branch only).
+    'in_temp_max_age': '120',
+    'in_co2_max_age': '120',
+    'in_aqi_max_age': '120',
+    'solar_array_max_age': '150',
 }
 
 # A realistic merge target: a weewx.conf that ALREADY HAS [StdReport].  A

@@ -1,0 +1,89 @@
+## Copyright (C)2020-2026 by John A Kline (john@johnkline.com)
+## Distributed under the terms of the GNU Public License (GPLv3)
+## See LICENSE for your rights.
+##
+## inout.html -- the LED board for inside the house (paloaltoweather branch
+## only): the outdoor readings of index.html beside the indoor ones, the
+## solar array's output and the indoor air.  The data, the status line and
+## the expiry live in board.inc; the LEDs, and the fit to the screen, in
+## led.inc; the indoor readings and what goes in each cell, in inout.inc.
+##
+## The labels master's language files already carry are translated; the
+## few only this page has are English.
+#errorCatcher Echo
+#encoding UTF-8
+#include "title.inc"
+<!DOCTYPE html>
+<html lang="$gettext('en')">
+  <head>
+    #include "analytics.inc"
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon-180x180.png">
+    <link rel="stylesheet" type="text/css" href="weatherboard.css">
+    <link rel="stylesheet" type="text/css" href="inout.css">
+    <title>$wb_tab</title>
+    <meta name="description" content="Current weather conditions outside and in, on a board meant to be read across the room.">
+  </head>
+  <body class="led inout">
+    #include "board.inc"
+    #include "led.inc"
+    #include "inout.inc"
+    <h1 class="led-title">$wb_title</h1>
+    <div class="led-row led-top">
+      <section class="led-panel" id="led-temp">
+        <h2 class="led-hidden">$gettext("Temperature")</h2>
+        <div class="led-c" id="led-t" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("OUTSIDE") <span class="led-u">$unit.label.outTemp</span></div></div>
+        <div class="led-c" id="led-td" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("DEW POINT") <span class="led-u">$unit.label.dewpoint</span></div></div>
+        <div class="led-c" id="led-in" data-empty="--.-"><div class="led-n"></div><div class="led-l">INSIDE <span class="led-u">$unit.label.outTemp</span></div></div>
+      </section>
+    </div>
+    <div class="led-row">
+      <section class="led-panel" id="led-wind">
+        <h2 class="led-hidden">$gettext("Wind")</h2>
+        <div class="led-c" id="led-w" data-empty="-- ---"><div class="led-n"></div><div class="led-l">$gettext("WIND") <span class="led-u">$unit.label.windSpeed</span></div></div>
+        <div class="led-c" id="led-g" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("GUST 10M")</div></div>
+        <div class="led-c" id="led-gd" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("PEAK TODAY")</div></div>
+      </section>
+      <section class="led-panel" id="led-baro">
+        <h2 class="led-hidden">$gettext("Barometer")</h2>
+        <div class="led-c" id="led-b" data-empty="--.---"><div class="led-n"></div><div class="led-l">$gettext("BAROMETER") <span class="led-u">$unit.label.barometer</span></div></div>
+      </section>
+    </div>
+    <div class="led-row">
+      <section class="led-panel" id="led-sun">
+        <h2 class="led-hidden">$gettext("Sun")</h2>
+        #if $wb_uv
+        <div class="led-c" id="led-uv" data-empty="-.-"><div class="led-n"></div><div class="led-l">$gettext("UV")</div></div>
+        #end if
+        #if $wb_rad
+        <div class="led-c" id="led-rad" data-empty="---"><div class="led-n"></div><div class="led-l">$gettext("SUN") <span class="led-u">$unit.label.radiation</span></div></div>
+        #end if
+        <div class="led-c" id="led-sol" data-empty="-.-"><div class="led-n"></div><div class="led-l">SOLAR <span class="led-u">kW</span></div></div>
+      </section>
+      <section class="led-panel" id="led-rain">
+        <h2 class="led-hidden">$gettext("Rain")</h2>
+        <div class="led-c" id="led-rd" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RAIN TODAY") <span class="led-u">$unit.label.rain</span></div></div>
+        <div class="led-c" id="led-r24" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RAIN 24H") <span class="led-u">$unit.label.rain</span></div></div>
+        <div class="led-c" id="led-rr" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RATE") <span class="led-u">$unit.label.rainRate</span></div></div>
+      </section>
+    </div>
+    <div class="led-row">
+      <section class="led-panel" id="led-air">
+        <h2 class="led-hidden">$gettext("Air quality")</h2>
+        <div class="led-c inout-white" id="led-co2" data-empty="---"><div class="led-n"></div><div class="led-l">CO₂ INSIDE</div></div>
+        <div class="led-c inout-white" id="led-iaq" data-empty="--"><div class="led-n"></div><div class="led-l">AQI INSIDE</div></div>
+        #if $wb_aqi
+        <div class="led-c" id="led-aqi" data-empty="--"><div class="led-n"></div><div class="led-l">AQI OUTSIDE</div></div>
+        #end if
+      </section>
+      <section class="led-panel" id="led-clock">
+        <h2 class="led-hidden">$gettext("Time")</h2>
+        <div class="led-c" id="led-clk" data-empty="--:--:--"><div class="led-n"></div></div>
+      </section>
+    </div>
+    <footer class="led-foot">WeatherBoard &copy;2019-2026 by John A Kline.</footer>
+  </body>
+</html>

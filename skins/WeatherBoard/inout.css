@@ -1,0 +1,23 @@
+/* CSS for inout.html, the LED board for inside the house (paloaltoweather
+ * branch only), loaded after weatherboard.css.  Everything else about the
+ * page is the LED board's own; these are the places it differs.
+ * Copyright (C)2019-2026 by John A Kline.  Distributed under terms of
+ * GPLv3.  See LICENSE for your rights.
+ */
+
+/* Three temperatures across the top row rather than two. */
+body.inout #led-temp {
+    --sy: 1.3;
+}
+body.inout #led-temp .led-n {
+    font-size: calc(17rem * var(--fit));
+}
+/* The clock shares its row with the air panel, and fills its panel. */
+body.inout #led-clock .led-n {
+    font-size: calc(11.4rem * var(--fit));
+}
+/* The indoor CO2 and air quality wear their file's color, and white with
+ * no data. */
+.inout-white .led-n {
+    color: #fff;
+}
