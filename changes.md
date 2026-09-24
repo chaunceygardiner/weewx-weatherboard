@@ -5,8 +5,9 @@
   anything older; a station on WeeWX 4, or 5.0 or 5.1, can stay on 4.2.
 - Action required, and only if weewx.conf sets any of these under
   [[WeatherBoardReport]] [[[Extras]]]: subtitle, logo and clock_max_age no
-  longer do anything and can be deleted, and show_purple is better written
-  show_aqi.  A [[[Labels]]] section is no longer read either: the wording
+  longer do anything and can be deleted, and so can show_purple: show_aqi,
+  which it stood for, now finds the air quality reading by itself.  A
+  [[[Labels]]] section is no longer read either: the wording
   is in the language files, and [[[Texts]]] rewords it.  A title or
   meta_title still reading the Acme Weather placeholder is ignored; set
   your own, or delete it and the board shows the station's location.
@@ -62,6 +63,10 @@
   current.dateTime.format("%H:%M:%S"), and the board lays it out, so a
   locale that puts a timezone in its time no longer runs the clock onto a
   second line.
+- Each page asks for its stylesheet with the release on the URL,
+  weatherboard.css?v=5.0, so a tablet that cached the old stylesheet
+  fetches the new one instead of drawing the new page with the old one,
+  which could leave it blank.
 - Internal: the change history is now changes.md, in Markdown, so it
   reads as formatted text on GitHub; it was changes.txt.
 
