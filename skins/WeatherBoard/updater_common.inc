@@ -314,10 +314,10 @@
   }
 
   // The live label wears an age-tier color (classes in weatherboard.css),
-  // liveseasons' tiers, but measured against max_age rather than the fixed
-  // minute liveseasons uses: green for as long as the label says LIVE,
+  // tempestas' tiers, but measured against max_age rather than the fixed
+  // minute tempestas uses: green for as long as the label says LIVE,
   // white to five minutes, red beyond -- with white standing in for
-  // liveseasons' neutral black on this board's black background.  See
+  // tempestas' neutral black on this board's black background.  See
   // getActivityClass for the cuts themselves.
   // 'failed' is the disconnected blue for the named fetch failures.
   function setLiveLabelClass(cls) {
@@ -348,7 +348,7 @@
   }
 
   // What the live label says about the age of the loop record.  Same
-  // progressive formatting as liveseasons' getActivityStr: a board that
+  // progressive formatting as tempestas' getActivityStr: a board that
   // has been behind since yesterday should say so in days, not in eighty
   // thousand seconds.
   function getActivityStr(age) {
@@ -359,7 +359,7 @@
       // Say what the readings beside it say.
       return "??";
     }
-    // The LIVE cut comes before the ladder, not after it as liveseasons
+    // The LIVE cut comes before the ladder, not after it as tempestas
     // has it.  That order was harmless while the cut was a hardcoded six
     // seconds, always below the one-minute rung; with max_age
     // configurable, a board set to 120 would read "1.5m ago" at ninety

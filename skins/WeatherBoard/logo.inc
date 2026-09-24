@@ -5,7 +5,7 @@
 #encoding UTF-8
 ##
 ## The PaloAltoWeather.com live logo: El Palo Alto under the real Palo
-## Alto sky, shared with weewx-liveseasons (introduced there in skin 7.9;
+## Alto sky, shared with weewx-tempestas (introduced there as LiveSeasons 7.9;
 ## this is the mark only, without the wordmark lockup).  Static SVG
 ## markup here (ids pl-*); all dynamic rendering lives in paw_logo.js.
 ## The pawLogoInit call below paints the report-time sky, so the logo is

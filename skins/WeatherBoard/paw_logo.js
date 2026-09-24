@@ -3,7 +3,7 @@
  * See LICENSE.txt for your rights
  *
  * The live logo: El Palo Alto under the real Palo Alto sky, shared with
- * weewx-liveseasons (introduced there in skin 7.9) -- keep the two
+ * weewx-tempestas (introduced there as LiveSeasons 7.9) -- keep the two
  * copies in sync.  Static markup lives in logo.inc (ids pl-*); this
  * file owns all dynamic rendering.  logo.inc calls pawLogoInit with
  * report-time values, so the sky is correct as soon as the page loads;

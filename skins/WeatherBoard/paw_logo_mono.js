@@ -8,7 +8,7 @@
  * repaints the logo pure red after every render: the scene logic
  * (sun/moon position, moon phase, cloud cover, rain, star fade) stays
  * paw_logo.js's own -- that file remains a verbatim copy of the
- * liveseasons renderer -- this wrapper only swaps the palette.
+ * tempestas renderer -- this wrapper only swaps the palette.
  * Polarity follows daylight: a light red panel with a dark drawing by
  * day, a dark panel with a bright drawing by night.  (A straight
  * luminance mapping can't keep daytime light: the sun and clouds are

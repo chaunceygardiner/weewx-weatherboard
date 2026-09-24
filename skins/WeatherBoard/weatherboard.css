@@ -75,9 +75,9 @@ body {
 }
 
 /* Age-tier colors, set by the updaters (updater_common.inc).  The tiers
- * are liveseasons': green while the loop record is under a minute old,
+ * are tempestas': green while the loop record is under a minute old,
  * neutral to five minutes, red beyond -- white standing in for
- * liveseasons' neutral black on this board's black background.
+ * tempestas' neutral black on this board's black background.
  * 'failed' matches the activity clock's disconnected blue for the named
  * fetch failures (HTTP nnn / BAD DATA).  Expired keeps the base red. */
 #live-label.live {
@@ -263,8 +263,8 @@ body {
 }
 
 /* Live logo (logo.inc / paw_logo.js): the El Palo Alto mark shared with
- * weewx-liveseasons.  paw_logo.js sets positions, colors, and opacities;
- * only the ambient animations live here.  Liveseasons staggers the rain
+ * weewx-tempestas.  paw_logo.js sets positions, colors, and opacities;
+ * only the ambient animations live here.  Tempestas staggers the rain
  * drops with inline styles; this skin allows no inline styles, so the
  * per-drop delays are the nth-child rules below (9 drops, .13s apart). */
 

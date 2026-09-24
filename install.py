@@ -107,7 +107,7 @@ CONFIG = """
         enable = true
         skin = WeatherBoard
         [[[Extras]]]
-            # NOTE (paloaltoweather branch): these are John's SITE values so
+            # NOTE (paloaltoweather branch): these are the live site's values so
             # a fresh install comes up as PaloAltoWeather.com turnkey -- only
             # page_update_pwd needs editing.  Master carries generic public
             # defaults here instead.
