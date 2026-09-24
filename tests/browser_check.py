@@ -25,7 +25,7 @@ What it holds the boards to:
     measured in pixels against the digits that stood there; on the
     split-flap board, question marks with a blank flap for the decimal
     point
-  - the readings are set in League Gothic, loaded from the skin, and the
+  - the readings are set in Bebas Neue, loaded from the skin, and the
     font has every character the status line and the wind directions use
     in every language
   - the split-flap lamps light for gusts, low and high pressure, rain, and
@@ -224,16 +224,21 @@ def check_readout(browser):
         failures.append('the air quality reading is not in its level color')
     if b.page.evaluate("!!document.querySelector('#ro-b .ro-trend')") is not True:
         failures.append('the barometer has no trend arrow')
-    # The readings are in League Gothic, fetched from the skin: a font the
+    # The arrow takes no height: were the barometer's cell taller for it,
+    # the row would fit differently with the arrow than without.
+    heights = b.page.evaluate("['#ro-b', '#ro-w'].map(c => document.querySelector(c + ' .ro-n').getBoundingClientRect().height)")
+    if abs(heights[0] - heights[1]) > .5:
+        failures.append('the barometer with its trend arrow is %.1f px tall, the wind beside it %.1f' % tuple(heights))
+    # The readings are in Bebas Neue, fetched from the skin: a font the
     # stylesheet names at a path that is not there leaves the board in
     # whatever fallback the tablet has.
     b.page.evaluate('document.fonts.ready')
-    faces = b.page.evaluate("[...document.fonts].filter(f => f.family.replace(/\"/g, '') === 'League Gothic')"
+    faces = b.page.evaluate("[...document.fonts].filter(f => f.family.replace(/\"/g, '') === 'Bebas Neue')"
                             ".map(f => f.status)")
     if faces != ['loaded']:
-        failures.append('League Gothic is %s, not loaded' % (faces or 'not declared'))
-    if 'League Gothic' not in b.page.evaluate("getComputedStyle(document.querySelector('#ro-t .ro-n')).fontFamily"):
-        failures.append('the readings are not set in League Gothic')
+        failures.append('Bebas Neue is %s, not loaded' % (faces or 'not declared'))
+    if 'Bebas Neue' not in b.page.evaluate("getComputedStyle(document.querySelector('#ro-t .ro-n')).fontFamily"):
+        failures.append('the readings are not set in Bebas Neue')
     fresh = ro_digits(b)
 
     # Aging, then old: the age on the status line, every reading dashes
@@ -428,7 +433,7 @@ def check_readout_widths(browser):
 
 
 def check_readout_no_font(browser):
-    """League Gothic never arrives -- not yet synced to the web server, or
+    """Bebas Neue never arrives -- not yet synced to the web server, or
     blocked: the figures fall back to a wider face, and each digit's box
     widens to hold its digit rather than letting it run into the next."""
     failures = []
@@ -438,7 +443,7 @@ def check_readout_no_font(browser):
     b.page = browser.new_page(viewport={'width': 1280, 'height': 800})
 
     def route(r, request):
-        if request.url.endswith('leaguegothic.woff2'):
+        if request.url.endswith('bebasneue.woff2'):
             return r.fulfill(status=404, body='')
         return b.server.handle(r, request)
     b.page.route('**/*', route)
@@ -447,22 +452,22 @@ def check_readout_no_font(browser):
     spill = b.page.evaluate("[...document.querySelectorAll('.ro-d')].filter(d => d.scrollWidth > d.clientWidth)"
                             ".map(d => d.closest('.ro-c').id)")
     if spill:
-        failures.append('with no League Gothic, digits spill out of their boxes in %s' % sorted(set(spill)))
+        failures.append('with no Bebas Neue, digits spill out of their boxes in %s' % sorted(set(spill)))
     for p in b.page.evaluate(RO_FIT):
-        failures.append('with no League Gothic, %s overflows' % p)
+        failures.append('with no Bebas Neue, %s overflows' % p)
     b.close()
     return failures
 
 
 def check_font_covers(browser):
-    """Every character the readout board sets in League Gothic, in every
+    """Every character the readout board sets in Bebas Neue, in every
     language, is in the font: the status words, the wind directions, the
     clock's AM and PM, the digits, the decimal point, the colon and the
     minus sign.  A character it lacks would be drawn in whatever face the
     tablet falls back to.  (Read from the font itself: a browser shows no
     sign of a fallback it made.)"""
     from fontTools.ttLib import TTFont
-    cmap = TTFont(os.path.join(SKIN, 'fonts', 'leaguegothic', 'leaguegothic.woff2')).getBestCmap()
+    cmap = TTFont(os.path.join(SKIN, 'fonts', 'bebasneue', 'bebasneue.woff2')).getBestCmap()
     need = set('0123456789.:/− AMP')
     for lang in ct.LANGS:
         conf = ct.lang_texts(lang)
@@ -471,7 +476,7 @@ def check_font_covers(browser):
         need |= set(''.join(conf['Units']['Ordinates']['directions'][:16]).upper())
     missing = sorted(ch for ch in need if ord(ch) not in cmap)
     if missing:
-        return ['League Gothic has no %s' % ', '.join('%r (U+%04X)' % (ch, ord(ch)) for ch in missing)]
+        return ['Bebas Neue has no %s' % ', '.join('%r (U+%04X)' % (ch, ord(ch)) for ch in missing)]
     return []
 
 
@@ -737,7 +742,7 @@ def check_readout_without_font_api(browser):
 def check_readout_late_font(browser):
     """Each of the readout board's fonts held back until the board has
     painted in a fallback: once it arrives the board fits again, and ends
-    where a board that had its fonts from the start does.  League Gothic
+    where a board that had its fonts from the start does.  Bebas Neue
     sets the readings and Jost the labels; the fit measures both, so each
     is held alone.  Dutch, whose labels run longest, and readings too wide
     for the design, so the fit has rows to shrink."""
@@ -748,7 +753,7 @@ def check_readout_late_font(browser):
     ref.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
     want = ref.page.evaluate(FITS)
     ref.close()
-    for font in ('leaguegothic.woff2', 'jost.woff2'):
+    for font in ('bebasneue.woff2', 'jost.woff2'):
         held = []
         b = Board.__new__(Board)
         b.server = Server(ct.render('index.html.tmpl', analytics=False, lang='nl', overrides={'refresh_rate': '1'}))
@@ -783,7 +788,7 @@ def check_readout_late_font(browser):
 def check_font_late_without_load(browser):
     """Without document.fonts, with the analytics script hung so window
     load never comes, and each board's font held back eight seconds: the
-    readout board still ends fitted to League Gothic, and the split-flap
+    readout board still ends fitted to Bebas Neue, and the split-flap
     board refits to Jost once it arrives.  Both pages load together and the
     fonts are released from here, so the wait is paid once."""
     failures = []
@@ -809,7 +814,7 @@ def check_font_late_without_load(browser):
     ro.errors = []
     ro.page = browser.new_page(viewport={'width': 1024, 'height': 768})
     ro.page.add_init_script(NO_FONT_API)
-    ro.page.route('**/*', holding(ro.server.handle, 'leaguegothic.woff2'))
+    ro.page.route('**/*', holding(ro.server.handle, 'bebasneue.woff2'))
     texts = ct.lang_texts('en')
     texts['Texts']['BAROMETER'] = 'ATMOSPHERIC PRESSURE AT SEA LEVEL'
     real = ct.lang_texts
@@ -832,7 +837,7 @@ def check_font_late_without_load(browser):
     ro.page.wait_for_timeout(max(0, 7000 - (time.time() - start) * 1000))
     early = ro.page.evaluate(FITS)
     if early == want:
-        failures.append('the fallback font fit the board just as League Gothic does: the test proves nothing')
+        failures.append('the fallback font fit the board just as Bebas Neue does: the test proves nothing')
     ro.page.wait_for_timeout(max(0, 8000 - (time.time() - start) * 1000))
     for r, handle in held:
         handle(r, r.request)
@@ -1061,10 +1066,10 @@ def main():
                          ('a file that stops changing goes stale', check_frozen_file),
                          ('the split-flap board: rows, lamps, missing data, failures', check_flap),
                          ('the clock and status line in other languages', check_languages),
-                         ('League Gothic has every character the status line and wind use', check_font_covers),
+                         ('Bebas Neue has every character the status line and wind use', check_font_covers),
                          ('the readout board fits again as each of its fonts arrives', check_readout_late_font),
                          ('a wider wind direction refits the board; a narrower one moves nothing', check_readout_widths),
-                         ('with no League Gothic, each digit keeps to its own box', check_readout_no_font),
+                         ('with no Bebas Neue, each digit keeps to its own box', check_readout_no_font),
                          ('both boards fit every screen size, metric and in Dutch', check_fit),
                          ('the split-flap board refits once its font has loaded', check_flap_late_font),
                          ('without document.fonts, window load or not: the readout and split-flap refits',

@@ -30,6 +30,18 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 5.1.1
+
+**Restart WeeWX after upgrading.**  The readout board's readings are now
+set in Bebas Neue, and the new stylesheet and font are copied to the web
+server only on the first report after weewxd starts.  Until you restart,
+the board is drawn with 5.1's stylesheet, in League Gothic.
+
+Nothing in `weewx.conf` needs changing.  An upgrade leaves behind the
+`fonts/leaguegothic` folder 5.1 installed, in `skins/WeatherBoard/` and in
+the board's web directory.  Delete it whenever it suits you, or leave it;
+nothing reads it.
+
 ## Upgrading to 5.1
 
 **Restart WeeWX after upgrading.**  `index.html` is now the readout board,
@@ -51,7 +63,7 @@ on anything older.  A station staying on WeeWX 4, or on 5.0 or 5.1, can
 stay on WeatherBoard 4.2, which goes on working with LoopData 7.
 
 The board is new: a board of tall figures at `index.html` (the LED board
-in 5.0, set in League Gothic since 5.1 as the readout board), and a
+in 5.0, the readout board since 5.1), and a
 split-flap departure board beside it at `splitflap.html`.  A tablet
 already pointed at the board shows the readout board after the upgrade;
 point it at

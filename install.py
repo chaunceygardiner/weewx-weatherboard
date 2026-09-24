@@ -184,7 +184,7 @@ def installer_config():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "5.1",
+            version = "5.1.1",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -210,9 +210,9 @@ class WeatherBoardInstaller(ExtensionInstaller):
             ]), ('skins/WeatherBoard/fonts/jost', [
                 'skins/WeatherBoard/fonts/jost/jost.woff2',
                 'skins/WeatherBoard/fonts/jost/license.txt',
-            ]), ('skins/WeatherBoard/fonts/leaguegothic', [
-                'skins/WeatherBoard/fonts/leaguegothic/leaguegothic.woff2',
-                'skins/WeatherBoard/fonts/leaguegothic/license.txt',
+            ]), ('skins/WeatherBoard/fonts/bebasneue', [
+                'skins/WeatherBoard/fonts/bebasneue/bebasneue.woff2',
+                'skins/WeatherBoard/fonts/bebasneue/license.txt',
             ]), ('skins/WeatherBoard/lang', [
                 'skins/WeatherBoard/lang/da.conf',
                 'skins/WeatherBoard/lang/de.conf',

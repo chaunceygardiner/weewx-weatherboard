@@ -1,5 +1,22 @@
 # weewx-weatherboard change history
 
+## 5.1.1 09/24/2026
+- Action required: restart WeeWX after upgrading.  The stylesheet and the
+  new font reach the web server only on the first report after weewxd
+  starts, and until then index.html is served with 5.1's stylesheet and
+  drawn in League Gothic.
+- index.html's readings are set in Bebas Neue instead of League Gothic:
+  rounder and a little wider, at the same height.  With everyday
+  readings the board comes out the same size, or a step smaller; a row
+  whose readings already fill their panels' width, such as long rain
+  totals, fits about an eighth smaller.  An upgrade leaves behind the
+  fonts/leaguegothic folder 5.1 installed, in the skin and in the web
+  directory.  Nothing uses it, and it can be deleted.
+- The readout board fits to the same size in Chrome whatever order its
+  fonts arrive in.  Chrome drew each letter to whole pixels, so a width the
+  board had held at one size could be a pixel or two short at the next,
+  and the fit could end a step apart.
+
 ## 5.1 09/24/2026
 - Action required: restart WeeWX after upgrading.  The stylesheet and the
   new font reach the web server only on the first report after weewxd

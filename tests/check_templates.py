@@ -28,7 +28,7 @@ nothing reads is rendered on every loop packet for nobody.
 And it holds the language files to the pages: en.conf carries exactly the
 strings the pages render, every other language carries all of them and
 nothing else, and the strings the boards draw in their own lettering fit
-the split-flap board's twelve flaps.  (That League Gothic, the readout
+the split-flap board's twelve flaps.  (That Bebas Neue, the readout
 board's lettering, has every letter they use is read from the font by
 tests/browser_check.py, which has fontTools.)
 

@@ -160,7 +160,7 @@ whose observation is not in the loop packet.  Look in the
 
 ## A status word has a letter in the wrong typeface on the readout board
 
-The readout board sets the status line in League Gothic, which has the
+The readout board sets the status line in Bebas Neue, which has the
 Latin letters and the accented capitals of the Western European
 languages.  A `[[[Texts]]]` override in `weewx.conf` that uses any other
 letter draws it in whatever typeface the tablet falls back to.  See

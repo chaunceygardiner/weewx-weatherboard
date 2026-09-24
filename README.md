@@ -242,9 +242,9 @@ staleness is measured, and troubleshooting.
 
 weewx-weatherboard is licensed under the GNU Public License v3.
 
-The readout board's figures are set in League Gothic, Copyright 2010 The
-League Gothic Project Authors, under the SIL Open Font License in
-`skins/WeatherBoard/fonts/leaguegothic/license.txt`.  Its labels, and the
+The readout board's figures are set in Bebas Neue, Copyright 2010 Dharma
+Type, under the SIL Open Font License in
+`skins/WeatherBoard/fonts/bebasneue/license.txt`.  Its labels, and the
 split-flap board's lettering, are Jost, Copyright 2020 The Jost Project
 Authors, under the SIL Open Font License in
 `skins/WeatherBoard/fonts/jost/license.txt`.
