@@ -1,7 +1,7 @@
 # Copyright (C)2026 by John A Kline <john@johnkline.com>
 # Distributed under the terms of the GNU Public License (GPLv3)
 # See LICENSE for your rights.
-"""inout.html, the indoor LED board (paloaltoweather branch only), run in
+"""inout.html, the indoor readout board (paloaltoweather branch only), run in
 a real browser the way tests/browser_check.py runs the other two boards,
 and with its harness: the page, the skin's stylesheets and fonts, the loop
 data AND the four sidecar files are all answered from here.
@@ -95,15 +95,15 @@ class Board(bc.Board):
         self.page.evaluate('document.fonts.ready')
 
     def text(self, cid):
-        return self.page.evaluate(bc.LED_TEXT, cid)
+        return self.page.evaluate(bc.RO_TEXT, cid)
 
     def wait_text(self, cid, want, timeout=6000):
-        """Until the cell reads want, as LED_TEXT reads it."""
-        self.page.wait_for_function('([id, want]) => (%s)(id) === want' % bc.LED_TEXT,
+        """Until the cell reads want, as RO_TEXT reads it."""
+        self.page.wait_for_function('([id, want]) => (%s)(id) === want' % bc.RO_TEXT,
                                     arg=[cid, want], timeout=timeout)
 
     def color(self, cid):
-        return self.page.evaluate("id => getComputedStyle(document.querySelector('#' + id + ' .led-n')).color", cid)
+        return self.page.evaluate("id => getComputedStyle(document.querySelector('#' + id + ' .ro-n')).color", cid)
 
 
 def check_readings(browser):
@@ -111,17 +111,17 @@ def check_readings(browser):
     can fail, with the board carrying on around it."""
     failures = []
     b = Board(browser)
-    b.wait("document.querySelector('#led-sol .led-v') && document.querySelector('#led-sol .led-v').textContent.trim() === '2.6'")
-    b.wait("document.querySelector('#led-t .led-v').textContent.trim() === '78.4'")
-    for cid, want in (('led-t', '78.4'), ('led-td', '61.2'), ('led-in', '73.8'), ('led-w', '4 NNE'),
-                      ('led-g', '9'), ('led-gd', '14'), ('led-b', '29.912'), ('led-uv', '5.4'),
-                      ('led-rad', '612'), ('led-sol', '2.6'), ('led-rd', '0.00'), ('led-r24', '0.00'),
-                      ('led-rr', '0.00'), ('led-co2', '450'), ('led-iaq', '29'), ('led-aqi', '42'),
-                      ('led-clk', '4:07:17 PM')):
+    b.wait("document.querySelector('#ro-sol .ro-v') && document.querySelector('#ro-sol .ro-v').textContent.trim() === '2.6'")
+    b.wait("document.querySelector('#ro-t .ro-v').textContent.trim() === '78.4'")
+    for cid, want in (('ro-t', '78.4'), ('ro-td', '61.2'), ('ro-in', '73.8'), ('ro-w', '4 NNE'),
+                      ('ro-g', '9'), ('ro-gd', '14'), ('ro-b', '29.912'), ('ro-uv', '5.4'),
+                      ('ro-rad', '612'), ('ro-sol', '2.6'), ('ro-rd', '0.00'), ('ro-r24', '0.00'),
+                      ('ro-rr', '0.00'), ('ro-co2', '450'), ('ro-iaq', '29'), ('ro-aqi', '42'),
+                      ('ro-clk', '4:07:17 PM')):
         if b.text(cid) != want:
             failures.append('%s reads %r, expected %r' % (cid, b.text(cid), want))
-    for cid, want in (('led-co2', 'rgb(0, 200, 0)'), ('led-iaq', 'rgb(0, 228, 0)'),
-                      ('led-aqi', 'rgb(0, 228, 0)'), ('led-in', 'rgb(255, 45, 31)')):
+    for cid, want in (('ro-co2', 'rgb(0, 200, 0)'), ('ro-iaq', 'rgb(0, 228, 0)'),
+                      ('ro-aqi', 'rgb(0, 228, 0)'), ('ro-in', 'rgb(255, 45, 31)')):
         if b.color(cid) != want:
             failures.append('%s is %s, expected %s' % (cid, b.color(cid), want))
     # Each failure, one file at a time, the next poll forced through the
@@ -129,8 +129,8 @@ def check_readings(browser):
     # leaves the good reading up; the reading is then aged past its limit
     # -- its arrival moved back, and the page repainted -- and must go to
     # dashes, CO2 and indoor AQI in white.
-    kept = {'inTemp': ('led-in', '73.8', '--_-', False), 'inCO2': ('led-co2', '450', '---', True),
-            'inAQI': ('led-iaq', '29', '--', True), 'solar': ('led-sol', '2.6', '-_-', False)}
+    kept = {'inTemp': ('ro-in', '73.8', '--_-', False), 'inCO2': ('ro-co2', '450', '---', True),
+            'inAQI': ('ro-iaq', '29', '--', True), 'solar': ('ro-sol', '2.6', '-_-', False)}
     for what, name, doc in (
             ('a missing file', 'inTemp', None),
             ('a file that is not json', 'inCO2', '{not json'),
@@ -153,8 +153,8 @@ def check_readings(browser):
             failures.append('%s: %s reads %r once too old, expected %r' % (what, cid, b.text(cid), dashes))
         if white and b.color(cid) != 'rgb(255, 255, 255)':
             failures.append('%s: %s is %s with no data, expected white' % (what, cid, b.color(cid)))
-        if b.text('led-t') != '78.4':
-            failures.append('%s stopped the rest of the board: led-t reads %r' % (what, b.text('led-t')))
+        if b.text('ro-t') != '78.4':
+            failures.append('%s stopped the rest of the board: ro-t reads %r' % (what, b.text('ro-t')))
         b.server.docs = sidecars()
         b.page.evaluate('pollSidecars()')
         b.wait_text(cid, good)
@@ -166,12 +166,12 @@ def check_readings(browser):
         b.server.docs = sidecars(solar=doc)
         b.page.evaluate('pollSidecars()')
         try:
-            b.wait_text('led-sol', want, timeout=3000)
+            b.wait_text('ro-sol', want, timeout=3000)
         except Exception:
-            failures.append('%s: led-sol reads %r, expected %r' % (what, b.text('led-sol'), want))
+            failures.append('%s: ro-sol reads %r, expected %r' % (what, b.text('ro-sol'), want))
         b.server.docs = sidecars()
         b.page.evaluate('pollSidecars()')
-        b.wait_text('led-sol', '2.6')
+        b.wait_text('ro-sol', '2.6')
     failures += ['page error: %s' % e for e in b.errors]
     b.close()
     return failures
@@ -183,13 +183,13 @@ def check_age_between_polls(browser):
     failures = []
     b = Board(browser, overrides={'in_temp_max_age': '3'},
               docs=sidecars(inTemp={'ts': int(time.time()) - 1, 'inTemp': 73.8}))
-    b.wait("document.querySelector('#led-in .led-v') && document.querySelector('#led-in .led-v').textContent.trim() === '73.8'")
+    b.wait("document.querySelector('#ro-in .ro-v') && document.querySelector('#ro-in .ro-v').textContent.trim() === '73.8'")
     fetched = b.server.fetches['inTemp']
-    b.wait("!!document.querySelector('#led-in .led-mid')", timeout=5000)
+    b.wait("(%s)('ro-in') === '--_-'" % bc.RO_TEXT, timeout=5000)
     if b.server.fetches['inTemp'] != fetched:
         failures.append('the reading went stale only after another fetch')
-    if b.text('led-t') != '78.4':
-        failures.append('the outdoor temperature went with it: %r' % b.text('led-t'))
+    if b.text('ro-t') != '78.4':
+        failures.append('the outdoor temperature went with it: %r' % b.text('ro-t'))
     b.close()
     return failures
 
@@ -200,14 +200,14 @@ def check_expiry(browser):
     two seconds.)"""
     failures = []
     b = Board(browser, overrides={'expiration_time': '0.0006'}, query='')
-    b.wait("document.getElementById('led-clock').className.indexOf('led-status-expired') >= 0", timeout=8000)
+    b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-expired') >= 0", timeout=8000)
     before = dict(b.server.fetches)
     b.page.evaluate('pollSidecars()')
     b.page.wait_for_timeout(300)
     if b.server.fetches != before:
         failures.append('an expired page fetched the sidecar files: %s -> %s' % (before, b.server.fetches))
     b.page.mouse.click(10, 10)
-    b.wait("document.getElementById('led-clock').className.indexOf('led-status-expired') < 0")
+    b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-expired') < 0")
     b.page.wait_for_timeout(300)
     for name, n in sorted(b.server.fetches.items()):
         if n != before[name] + 1:
@@ -225,12 +225,12 @@ def check_fit(browser):
                     solar={'total_watts': 12345, 'total_timestamp': time.time()})
     b = Board(browser, size=bc.SIZES[0], docs=wide)
     b.server.set(e=bc.WIDE)
-    b.wait("document.querySelector('#led-co2 .led-v') && document.querySelector('#led-co2 .led-v').textContent.trim() === '4800'")
-    b.wait("document.querySelector('#led-t .led-v').textContent.indexOf('12.3') >= 0")
+    b.wait("document.querySelector('#ro-co2 .ro-v') && document.querySelector('#ro-co2 .ro-v').textContent.trim() === '4800'")
+    b.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('12.3') >= 0")
     for size in bc.SIZES:
         b.page.set_viewport_size({'width': size[0], 'height': size[1]})
         b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
-        for p in b.page.evaluate(bc.LED_FIT):
+        for p in b.page.evaluate(bc.RO_FIT):
             failures.append('%dx%d: %s overflows' % (size[0], size[1], p))
     b.close()
     return failures

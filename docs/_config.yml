@@ -1,6 +1,6 @@
 title: WeeWX WeatherBoard
 description: >-
-  A WeeWX skin for a wall-mounted tablet — an LED board and a split-flap
+  A WeeWX skin for a wall-mounted tablet — a readout board and a split-flap
   board showing temperature, dew point, humidity, wind, gusts, barometer,
   rain, UV, solar radiation and air quality in characters you can read
   across the room, updating every couple of seconds.

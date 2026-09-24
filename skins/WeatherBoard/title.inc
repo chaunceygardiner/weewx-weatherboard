@@ -31,6 +31,6 @@
 #end if
 #return $v
 #end def
-#set global $wb_version = '5.0'
+#set global $wb_version = '5.1'
 #set global $wb_title = $wb_setting('title', ('Acme Weather WeatherBoard&trade;', 'Acme Weather WeatherBoard™')) or str($station.location)
 #set global $wb_tab = $wb_setting('meta_title', ('Acme Weather at a Glance WeatherBoard&trade;', 'Acme Weather at a Glance WeatherBoard™', 'Acme Weather at a Glance')) or $wb_title

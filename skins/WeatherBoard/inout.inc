@@ -161,7 +161,7 @@
 
   // A sidecar value as the board shows it, or null for none.  Never
   // "-0.0": a few watts of inverter noise at night round to zero, and a
-  // minus sign would be lit for it.
+  // minus sign would show for it.
   function sidecarText(v, digits) {
     if (v === null) {
       return null;
@@ -173,7 +173,7 @@
   // cleared, and the cell's inout-white class (inout.css) shows through.
   function inoutColored(id, s, digits) {
     var v = sidecarValue(s);
-    ledSet(id, sidecarText(v, digits), v === null ? null : s.color);
+    roSet(id, sidecarText(v, digits), v === null ? null : s.color);
   }
 
   function boardPaint(r, fresh, status) {
@@ -181,24 +181,24 @@
       return numericReading(r, key, fresh);
     }
     var v;
-    ledSet('led-t', val('current.outTemp.formatted'));
-    ledSet('led-td', val('current.dewpoint.formatted'));
-    ledSet('led-in', sidecarText(sidecarValue(SIDECARS.inTemp), 1));
-    ledWind('led-w', r, val('current.windSpeed.formatted'));
-    ledSet('led-g', val(gustField(r, '10m')));
-    ledSet('led-gd', val(gustField(r, 'day')));
-    ledBarometer('led-b', r, fresh, val('current.barometer.formatted'));
-    if (WB.show.uv) { ledSet('led-uv', val('current.UV.formatted')); }
-    if (WB.show.radiation) { ledSet('led-rad', val('current.radiation.formatted')); }
+    roSet('ro-t', val('current.outTemp.formatted'));
+    roSet('ro-td', val('current.dewpoint.formatted'));
+    roSet('ro-in', sidecarText(sidecarValue(SIDECARS.inTemp), 1));
+    roWind('ro-w', r, val('current.windSpeed.formatted'));
+    roSet('ro-g', val(gustField(r, '10m')));
+    roSet('ro-gd', val(gustField(r, 'day')));
+    roBarometer('ro-b', r, fresh, val('current.barometer.formatted'));
+    if (WB.show.uv) { roSet('ro-uv', val('current.UV.formatted')); }
+    if (WB.show.radiation) { roSet('ro-rad', val('current.radiation.formatted')); }
     v = sidecarValue(SIDECARS.solar);
-    ledSet('led-sol', sidecarText(v === null ? null : v / 1000, 1));
-    ledSet('led-rd', val('day.rain.sum.formatted'));
-    ledSet('led-r24', val('24h.rain.sum.formatted'));
-    ledSet('led-rr', val('current.rainRate.formatted'));
-    inoutColored('led-co2', SIDECARS.inCO2, 0);
-    inoutColored('led-iaq', SIDECARS.inAQI, 0);
-    if (WB.show.aqi) { ledAqi('led-aqi', r, val('current.pm2_5_aqi.formatted')); }
+    roSet('ro-sol', sidecarText(v === null ? null : v / 1000, 1));
+    roSet('ro-rd', val('day.rain.sum.formatted'));
+    roSet('ro-r24', val('24h.rain.sum.formatted'));
+    roSet('ro-rr', val('current.rainRate.formatted'));
+    inoutColored('ro-co2', SIDECARS.inCO2, 0);
+    inoutColored('ro-iaq', SIDECARS.inAQI, 0);
+    if (WB.show.aqi) { roAqi('ro-aqi', r, val('current.pm2_5_aqi.formatted')); }
     inoutLastKind = status.kind;
-    ledStatus(status);
+    roStatus(status);
   }
 </script>

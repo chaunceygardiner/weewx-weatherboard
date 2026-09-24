@@ -1,7 +1,7 @@
 # Copyright (C)2026 by John A Kline <john@johnkline.com>
 # Distributed under the terms of the GNU Public License (GPLv3)
 # See LICENSE for your rights.
-"""Offline check for inout.html, the indoor LED board (paloaltoweather
+"""Offline check for inout.html, the indoor readout board (paloaltoweather
 branch only).  check_templates.py holds the skin as a whole -- the fields
 declared against what every page reads, the language files, the installer
 -- and this renders inout.html.tmpl through the same stub searchList:
@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import check_templates as ct                              # noqa: E402
 
 TMPL = 'inout.html.tmpl'
-SIDECAR_CELLS = ('led-in', 'led-sol', 'led-co2', 'led-iaq')
+SIDECAR_CELLS = ('ro-in', 'ro-sol', 'ro-co2', 'ro-iaq')
 
 
 def check_renders():
@@ -46,15 +46,15 @@ def check_renders():
             failures.append('%s: render error: %s' % (label, e))
             continue
         failures += ['%s: %s' % (label, f) for f in ct.check(html, TMPL, missing)]
-        # check() finds the ids painted through led.inc's helpers; the ids
+        # check() finds the ids painted through readout.inc's helpers; the ids
         # this page paints through its own inoutColored() are checked here.
         declared = set(re.findall(r'id=["\']([^"\']+)["\']', html))
         for cid in re.findall(r"""inoutColored\(\s*'([^']+)'""", html):
             if cid not in declared:
                 failures.append('%s: inoutColored paints %s, which the page does not have'
                                 % (label, cid))
-        present = {'led-uv': 'UV' not in missing, 'led-rad': 'radiation' not in missing,
-                   'led-aqi': 'pm2_5_aqi' not in missing}
+        present = {'ro-uv': 'UV' not in missing, 'ro-rad': 'radiation' not in missing,
+                   'ro-aqi': 'pm2_5_aqi' not in missing}
         for cell in SIDECAR_CELLS:
             present[cell] = True
         for cell, want in sorted(present.items()):

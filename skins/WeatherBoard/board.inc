@@ -171,8 +171,8 @@
   }
   // The trend drawn: one arrow whose angle is its pace -- flat for steady,
   // 22.5 degrees more per step, straight up or down at +/-4.  Both boards
-  // draw it, the LED board beside its figure and the split-flap board on
-  // a flap of its own; cls is the class each styles it by.
+  // draw it, the readout board beside its figure and the split-flap board
+  // on a flap of its own; cls is the class each styles it by.
   function trendSvg(code, cls) {
     return '<svg class="' + cls + '" viewBox="-11 -11 22 22" aria-hidden="true">'
         + '<g transform="rotate(' + (-code * 22.5) + ')" fill="none" stroke="currentColor"'

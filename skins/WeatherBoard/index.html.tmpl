@@ -2,11 +2,11 @@
 ## Distributed under the terms of the GNU Public License (GPLv3)
 ## See LICENSE for your rights.
 ##
-## index.html -- the LED board.  Its sibling, splitflap.html, shows the
-## same station as a split-flap departure board; a tablet shows whichever
-## its URL names.  The data, the status line and the expiry live in
-## board.inc; the LEDs, and the fit to the screen, in led.inc; what goes
-## in each of this page's cells, in index_painter.inc.
+## index.html -- the readout board.  Its sibling, splitflap.html, shows
+## the same station as a split-flap departure board; a tablet shows
+## whichever its URL names.  The data, the status line and the expiry live
+## in board.inc; the lettering, and the fit to the screen, in readout.inc;
+## what goes in each of this page's cells, in index_painter.inc.
 #errorCatcher Echo
 #encoding UTF-8
 #include "title.inc"
@@ -23,68 +23,68 @@
     <title>$wb_tab</title>
     <meta name="description" content="$gettext('Current weather conditions, on a board meant to be read across the room.')">
   </head>
-  <body class="led">
+  <body class="readout">
     #include "board.inc"
-    #include "led.inc"
+    #include "readout.inc"
     #include "index_painter.inc"
-    <h1 class="led-title">$wb_title</h1>
-    <div class="led-row led-top">
-      <section class="led-panel" id="led-temp">
-        <h2 class="led-hidden">$gettext("Temperature")</h2>
-        <div class="led-c" id="led-t" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("OUTSIDE") <span class="led-u">$unit.label.outTemp</span></div></div>
-        <div class="led-c" id="led-td" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("DEW POINT") <span class="led-u">$unit.label.dewpoint</span></div></div>
+    <h1 class="ro-title">$wb_title</h1>
+    <div class="ro-row ro-top">
+      <section class="ro-panel" id="ro-temp">
+        <h2 class="ro-hidden">$gettext("Temperature")</h2>
+        <div class="ro-c" id="ro-t" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("OUTSIDE") <span class="ro-u">$unit.label.outTemp</span></div></div>
+        <div class="ro-c" id="ro-td" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("DEW POINT") <span class="ro-u">$unit.label.dewpoint</span></div></div>
       </section>
     </div>
-    <div class="led-row">
-      <section class="led-panel" id="led-wind">
-        <h2 class="led-hidden">$gettext("Wind")</h2>
-        <div class="led-c" id="led-w" data-empty="-- ---"><div class="led-n"></div><div class="led-l">$gettext("WIND") <span class="led-u">$unit.label.windSpeed</span></div></div>
-        <div class="led-c" id="led-g" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("GUST 10M")</div></div>
-        <div class="led-c" id="led-gd" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("PEAK TODAY")</div></div>
+    <div class="ro-row">
+      <section class="ro-panel" id="ro-wind">
+        <h2 class="ro-hidden">$gettext("Wind")</h2>
+        <div class="ro-c" id="ro-w" data-empty="-- ---"><div class="ro-n"></div><div class="ro-l">$gettext("WIND") <span class="ro-u">$unit.label.windSpeed</span></div></div>
+        <div class="ro-c" id="ro-g" data-empty="--"><div class="ro-n"></div><div class="ro-l">$gettext("GUST 10M")</div></div>
+        <div class="ro-c" id="ro-gd" data-empty="--"><div class="ro-n"></div><div class="ro-l">$gettext("PEAK TODAY")</div></div>
       </section>
-      <section class="led-panel" id="led-baro">
-        <h2 class="led-hidden">$gettext("Barometer")</h2>
-        <div class="led-c" id="led-b" data-empty="--.---"><div class="led-n"></div><div class="led-l">$gettext("BAROMETER") <span class="led-u">$unit.label.barometer</span></div></div>
+      <section class="ro-panel" id="ro-baro">
+        <h2 class="ro-hidden">$gettext("Barometer")</h2>
+        <div class="ro-c" id="ro-b" data-empty="--.---"><div class="ro-n"></div><div class="ro-l">$gettext("BAROMETER") <span class="ro-u">$unit.label.barometer</span></div></div>
       </section>
     </div>
-    <div class="led-row">
-      <section class="led-panel" id="led-rain">
-        <h2 class="led-hidden">$gettext("Rain")</h2>
-        <div class="led-c" id="led-rd" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RAIN TODAY") <span class="led-u">$unit.label.rain</span></div></div>
-        <div class="led-c" id="led-r24" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RAIN 24H") <span class="led-u">$unit.label.rain</span></div></div>
-        <div class="led-c" id="led-rr" data-empty="-.--"><div class="led-n"></div><div class="led-l">$gettext("RATE") <span class="led-u">$unit.label.rainRate</span></div></div>
+    <div class="ro-row">
+      <section class="ro-panel" id="ro-rain">
+        <h2 class="ro-hidden">$gettext("Rain")</h2>
+        <div class="ro-c" id="ro-rd" data-empty="-.--"><div class="ro-n"></div><div class="ro-l">$gettext("RAIN TODAY") <span class="ro-u">$unit.label.rain</span></div></div>
+        <div class="ro-c" id="ro-r24" data-empty="-.--"><div class="ro-n"></div><div class="ro-l">$gettext("RAIN 24H") <span class="ro-u">$unit.label.rain</span></div></div>
+        <div class="ro-c" id="ro-rr" data-empty="-.--"><div class="ro-n"></div><div class="ro-l">$gettext("RATE") <span class="ro-u">$unit.label.rainRate</span></div></div>
       </section>
       #if $wb_uv or $wb_rad
-      <section class="led-panel" id="led-sun">
-        <h2 class="led-hidden">$gettext("Sun")</h2>
+      <section class="ro-panel" id="ro-sun">
+        <h2 class="ro-hidden">$gettext("Sun")</h2>
         #if $wb_uv
-        <div class="led-c" id="led-uv" data-empty="-.-"><div class="led-n"></div><div class="led-l">$gettext("UV")</div></div>
+        <div class="ro-c" id="ro-uv" data-empty="-.-"><div class="ro-n"></div><div class="ro-l">$gettext("UV")</div></div>
         #end if
         #if $wb_rad
-        <div class="led-c" id="led-rad" data-empty="---"><div class="led-n"></div><div class="led-l">$gettext("SUN") <span class="led-u">$unit.label.radiation</span></div></div>
+        <div class="ro-c" id="ro-rad" data-empty="---"><div class="ro-n"></div><div class="ro-l">$gettext("SUN") <span class="ro-u">$unit.label.radiation</span></div></div>
         #end if
       </section>
       #end if
     </div>
-    <div class="led-row">
+    <div class="ro-row">
       #if $wb_aqi
-      <section class="led-panel" id="led-air">
-        <h2 class="led-hidden">$gettext("Air quality")</h2>
-        <div class="led-c" id="led-aqi" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("AIR QUALITY")</div></div>
+      <section class="ro-panel" id="ro-air">
+        <h2 class="ro-hidden">$gettext("Air quality")</h2>
+        <div class="ro-c" id="ro-aqi" data-empty="--"><div class="ro-n"></div><div class="ro-l">$gettext("AIR QUALITY")</div></div>
       </section>
       #end if
-      <section class="led-panel" id="led-comfort">
-        <h2 class="led-hidden">$gettext("Comfort")</h2>
-        <div class="led-c" id="led-rh" data-empty="--"><div class="led-n"></div><div class="led-l">$gettext("HUMIDITY") <span class="led-u">$unit.label.outHumidity</span></div></div>
+      <section class="ro-panel" id="ro-comfort">
+        <h2 class="ro-hidden">$gettext("Comfort")</h2>
+        <div class="ro-c" id="ro-rh" data-empty="--"><div class="ro-n"></div><div class="ro-l">$gettext("HUMIDITY") <span class="ro-u">$unit.label.outHumidity</span></div></div>
         #if $wb_feels
-        <div class="led-c" id="led-fl" data-empty="--.-"><div class="led-n"></div><div class="led-l">$gettext("FEELS LIKE") <span class="led-u">$unit.label.appTemp</span></div></div>
+        <div class="ro-c" id="ro-fl" data-empty="--.-"><div class="ro-n"></div><div class="ro-l">$gettext("FEELS LIKE") <span class="ro-u">$unit.label.appTemp</span></div></div>
         #end if
       </section>
-      <section class="led-panel" id="led-clock">
-        <h2 class="led-hidden">$gettext("Time")</h2>
-        <div class="led-c" id="led-clk" data-empty="--:--:--"><div class="led-n"></div></div>
+      <section class="ro-panel" id="ro-clock">
+        <h2 class="ro-hidden">$gettext("Time")</h2>
+        <div class="ro-c" id="ro-clk" data-empty="--:--:--"><div class="ro-n"></div></div>
       </section>
     </div>
-    <footer class="led-foot">WeatherBoard &copy;2019-2026 by John A Kline.</footer>
+    <footer class="ro-foot">WeatherBoard &copy;2019-2026 by John A Kline.</footer>
   </body>
 </html>

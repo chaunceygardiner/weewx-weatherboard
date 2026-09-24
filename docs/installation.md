@@ -160,7 +160,7 @@ channels besides.
 sudo systemctl restart weewx
 ```
 
-The boards appear at `<your weewx url>/weatherboard/` (the LED board) and
+The boards appear at `<your weewx url>/weatherboard/` (the readout board) and
 `<your weewx url>/weatherboard/splitflap.html` (the split-flap board)
 after the next report cycle — typically within five minutes.
 

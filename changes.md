@@ -1,6 +1,25 @@
 # weewx-weatherboard change history
 
-## 5.1 (in progress)
+## 5.1 09/24/2026
+- Action required: restart WeeWX after upgrading.  The stylesheet and the
+  new font reach the web server only on the first report after weewxd
+  starts, and until then index.html is served with 5.0's stylesheet and
+  draws without its layout.
+- index.html is now the readout board: every reading is set in League
+  Gothic, a tall, narrow typeface that reads more easily across a room
+  than the seven-segment digits it replaces, at the same height.  A
+  missing digit is a dash in the digit's place, so a placeholder is
+  exactly as wide as the reading, and the decimal point dims.  Accented
+  capitals in a status word or wind direction are the font's own.  The
+  LCD font is no longer shipped.  An upgrade leaves behind what an earlier
+  release installed and this one does not: the fonts/lcdmono2ultra folder,
+  in the skin and in the web directory, and skins/WeatherBoard/led.inc.
+  None of it is used, and it can be deleted.
+- The readout board's fit settles on the largest size that fits.  A row
+  could stop a step smaller than it needed, and a board drawn before its
+  fonts arrived could end a step smaller than one that had them from the
+  start.  It now also fits again when the labels' font arrives, not only
+  the figures'.
 - A fresh install no longer writes a [[[Units]]] section into weewx.conf.
   It pinned the wind and temperature formats for 4.x's fixed-width
   columns; since 5.0 both boards fit whatever width they are given, so the

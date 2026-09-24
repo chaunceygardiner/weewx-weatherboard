@@ -184,7 +184,7 @@ def installer_config():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "5.0",
+            version = "5.1",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",
@@ -201,7 +201,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/inout.html.tmpl',
                 'skins/WeatherBoard/inout.inc',
                 'skins/WeatherBoard/jsstr.inc',
-                'skins/WeatherBoard/led.inc',
+                'skins/WeatherBoard/readout.inc',
                 'skins/WeatherBoard/skin.conf',
                 'skins/WeatherBoard/splitflap.html.tmpl',
                 'skins/WeatherBoard/splitflap.inc',
@@ -210,9 +210,9 @@ class WeatherBoardInstaller(ExtensionInstaller):
             ]), ('skins/WeatherBoard/fonts/jost', [
                 'skins/WeatherBoard/fonts/jost/jost.woff2',
                 'skins/WeatherBoard/fonts/jost/license.txt',
-            ]), ('skins/WeatherBoard/fonts/lcdmono2ultra', [
-                'skins/WeatherBoard/fonts/lcdmono2ultra/LICENSE.TXT',
-                'skins/WeatherBoard/fonts/lcdmono2ultra/lcdmono2ultra-webfont.ttf',
+            ]), ('skins/WeatherBoard/fonts/leaguegothic', [
+                'skins/WeatherBoard/fonts/leaguegothic/leaguegothic.woff2',
+                'skins/WeatherBoard/fonts/leaguegothic/license.txt',
             ]), ('skins/WeatherBoard/lang', [
                 'skins/WeatherBoard/lang/da.conf',
                 'skins/WeatherBoard/lang/de.conf',

@@ -30,15 +30,31 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 5.1
+
+**Restart WeeWX after upgrading.**  `index.html` is now the readout board,
+set in League Gothic, and it needs 5.1's stylesheet and the new font.
+Both are copied to the web server only on the first report after weewxd
+starts, so until you restart, the new page is served with 5.0's
+stylesheet and draws without its layout.
+
+Nothing in `weewx.conf` needs changing.  An upgrade leaves behind two
+things 5.0 installed and 5.1 does not use: the `fonts/lcdmono2ultra`
+folder, in `skins/WeatherBoard/` and in the board's web directory, and
+`skins/WeatherBoard/led.inc`.  Delete them whenever it suits you, or
+leave them; nothing reads them.
+
 ## Upgrading to 5.0
 
 **WeeWX 5.2 or later is now required**, and the installer refuses to run
 on anything older.  A station staying on WeeWX 4, or on 5.0 or 5.1, can
 stay on WeatherBoard 4.2, which goes on working with LoopData 7.
 
-The board is new: an LED display at `index.html`, and a split-flap
-departure board beside it at `splitflap.html`.  A tablet already pointed
-at the board shows the LED board after the upgrade; point it at
+The board is new: a board of tall figures at `index.html` (the LED board
+in 5.0, set in League Gothic since 5.1 as the readout board), and a
+split-flap departure board beside it at `splitflap.html`.  A tablet
+already pointed at the board shows the readout board after the upgrade;
+point it at
 `splitflap.html` instead if you prefer that one.  See
 [Reading the board](reading-the-board.html).
 
@@ -73,8 +89,8 @@ the index now stays off until you delete that line or set
 `show_aqi = true`.  See
 [`show_uv`, `show_radiation`, `show_aqi`](configuration.html#show_uv-show_radiation-show_aqi).
 
-**Missing data looks different.**  The LED board lights only the middle
-segment of each missing digit, the split-flap board shows question marks,
+**Missing data looks different.**  The readout board shows a dash for
+each missing digit, the split-flap board shows question marks,
 and the clock says how old the data is or names the failure — the codes
 the live label used to show, `HTTP 404`, `BAD DATA`, `NO ENTRY`,
 `BAD URL`, and `NO CONNECT` for a failure that has no code of its own.

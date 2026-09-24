@@ -15,20 +15,20 @@ studied.  Nothing on it is a link, and nothing needs a tap — except an
 expired page, which a tap starts again.
 
 There are two boards, and they show the same station.  Open whichever you
-prefer on the tablet: `index.html` for the LED board, `splitflap.html` for
+prefer on the tablet: `index.html` for the readout board, `splitflap.html` for
 the split-flap board.
 
 Across the top of both is one line of title: the station's `location`
 from `weewx.conf`, or the board's own [`title`](configuration.html#title)
 if one is set.  A title too long for the screen ends in an ellipsis.
 
-## The LED board
+## The readout board
 
-![The LED board](images/LEDBoard.png)
+![The readout board](images/ReadoutBoard.png)
 
-Every reading is set in seven-segment digits over their own unlit
-segments, the way a real LED display looks.  The panels, top to bottom,
-with the LoopData field behind each reading:
+Every reading is set in League Gothic, a tall, narrow typeface, so the
+figures stand as tall as the panels allow and read from across the room.
+The panels, top to bottom, with the LoopData field behind each reading:
 
 | Panel | Reading | Field |
 |---|---|---|

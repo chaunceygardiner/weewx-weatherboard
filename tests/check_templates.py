@@ -3,7 +3,7 @@
 # See LICENSE for your rights.
 """Offline check for the WeatherBoard templates.
 
-Renders both boards -- index.html (the LED board) and splitflap.html
+Renders both boards -- index.html (the readout board) and splitflap.html
 (the split-flap board) -- with a stub searchList, once with every
 optional reading present and once with none, and validates the output:
 
@@ -27,9 +27,10 @@ nothing reads is rendered on every loop packet for nobody.
 
 And it holds the language files to the pages: en.conf carries exactly the
 strings the pages render, every other language carries all of them and
-nothing else, and the strings the boards draw in their own lettering use
-only the letters the LED board can set and fit the split-flap board's
-twelve flaps.
+nothing else, and the strings the boards draw in their own lettering fit
+the split-flap board's twelve flaps.  (That League Gothic, the readout
+board's lettering, has every letter they use is read from the font by
+tests/browser_check.py, which has fontTools.)
 
 And it loads install.py with a stubbed user.loopdata and exercises
 loader(): an install must be refused on a station with no loopdata or one
@@ -216,7 +217,7 @@ def render(tmpl, missing=ALL_PRESENT, analytics=True, overrides=None,
 # The ids each board's painter reaches the page through: every helper that
 # takes a cell's id first.  A helper missing here takes its ids out of the
 # check without failing anything.
-PAINTED = re.compile(r"""(?:getElementById|ledSet|ledWind|ledBarometer|ledAqi|flapShow|flapLamp)"""
+PAINTED = re.compile(r"""(?:getElementById|roSet|roWind|roBarometer|roAqi|flapShow|flapLamp)"""
                      r"""\(\s*(?:"([^"]+)"|'([^']+)')""")
 
 
@@ -244,8 +245,8 @@ def check(html, tmpl, missing=ALL_PRESENT):
     # flapLamp names the row; its lamp is the row's id plus -lamp.
     used |= set((dq or sq) + '-lamp' for dq, sq in
                 re.findall(r"""flapLamp\(\s*(?:"([^"]+)"|'([^']+)')""", js_all))
-    optional = {'led-uv': 'UV', 'led-rad': 'radiation', 'led-aqi': 'pm2_5_aqi',
-                'led-fl': 'appTemp', 'flap-air': 'pm2_5_aqi', 'flap-air-lamp': 'pm2_5_aqi'}
+    optional = {'ro-uv': 'UV', 'ro-rad': 'radiation', 'ro-aqi': 'pm2_5_aqi',
+                'ro-fl': 'appTemp', 'flap-air': 'pm2_5_aqi', 'flap-air-lamp': 'pm2_5_aqi'}
     missing_ids = sorted(i for i in used - declared
                          if not (i in optional and optional[i] in missing))
     if missing_ids:
@@ -282,11 +283,11 @@ def check(html, tmpl, missing=ALL_PRESENT):
         if got != want:
             failures.append('show flags are %s, expected %s' % (got, want))
     if tmpl == 'index.html.tmpl':
-        for cell, key in (('led-uv', 'uv'), ('led-rad', 'radiation'), ('led-aqi', 'aqi'), ('led-fl', 'feels')):
+        for cell, key in (('ro-uv', 'uv'), ('ro-rad', 'radiation'), ('ro-aqi', 'aqi'), ('ro-fl', 'feels')):
             if (('id="%s"' % cell) in html) != want[key]:
                 failures.append('the %s panel is %s but %s is %s'
                                 % (cell, 'there' if not want[key] else 'missing', key, want[key]))
-        if ('id="led-sun"' in html) != (want['uv'] or want['radiation']):
+        if ('id="ro-sun"' in html) != (want['uv'] or want['radiation']):
             failures.append('the sun panel does not follow UV and radiation')
     elif tmpl == 'splitflap.html.tmpl':
         if ('id="flap-air"' in html) != want['aqi']:
@@ -759,10 +760,6 @@ def check_stanza():
 
 
 LANGS = ('da', 'de', 'en', 'es', 'fr', 'it', 'nl', 'no', 'sv')
-# The LED board sets these itself (the font's own), and draws these accented
-# capitals from a base letter and a mark (led.inc's LED_MARKS).
-LED_NATIVE = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .:/?')
-LED_DRAWN = set('ÄÖÜÅØÁÉÍÓÚ')
 # Strings the boards draw in their own lettering, and on the split-flap
 # board's flaps.  {n} at its widest for each: seconds and minutes run to
 # 59, hours to 23, days as far as 99.
@@ -784,15 +781,10 @@ def gettext_keys():
     return keys
 
 
-def led_settable(text):
-    text = text.upper().replace('ß', 'SS')
-    return sorted(set(ch for ch in text if ch not in LED_NATIVE and ch not in LED_DRAWN))
-
-
 def check_langs():
     """en.conf is exactly the strings the pages render; every language has
     them all and nothing else; and what the boards draw in their own
-    lettering can be drawn, and fits."""
+    lettering fits."""
     failures = []
     rendered = gettext_keys()
     files = sorted(f[:-5] for f in os.listdir(os.path.join(SKIN, 'lang')) if f.endswith('.conf'))
@@ -819,9 +811,6 @@ def check_langs():
             if len(shown) > 12:
                 failures.append('%s.conf %r reads %r, %d characters: the split-flap board has 12'
                                 % (lang, key, shown, len(shown)))
-            if led_settable(shown):
-                failures.append('%s.conf %r uses %s, which the LED board cannot set'
-                                % (lang, key, led_settable(shown)))
         clock = texts.get('%-I:%M:%S %p', '')
         if re.sub(r'%-?[IHMSp]', '', clock).strip(': ') != '':
             failures.append('%s.conf clock format %r uses more than %%-I %%I %%H %%M %%S %%p'
@@ -835,8 +824,8 @@ def check_langs():
             failures.append('%s.conf needs [Units] [[Ordinates]] directions, 17 of them' % lang)
         else:
             for d in dirs[:16]:
-                if led_settable(d) or len(d) > 3:
-                    failures.append('%s.conf direction %r cannot be set in three LED characters'
+                if len(d) > 3:
+                    failures.append('%s.conf direction %r runs past the wind cell\'s three characters'
                                     % (lang, d))
     return failures
 
@@ -913,7 +902,7 @@ def main():
             failures.append('%s with %s: aqi is %s, expected %s'
                             % (overrides, 'everything' if not missing else 'nothing',
                                m and m.group(3), want))
-        if want is None and (not m or m.group(1) != 'true' or 'id="led-uv"' not in html):
+        if want is None and (not m or m.group(1) != 'true' or 'id="ro-uv"' not in html):
             failures.append('show_uv = true did not force the UV panel on a station without UV')
     ok = report('the show_ settings, auto and forced, and show_purple as show_aqi', failures) and ok
     # The title: the title Extra, else the station's location; the tab:
@@ -926,7 +915,7 @@ def main():
               'meta_title': 'Acme Weather at a Glance WeatherBoard&trade;'}, 'Test Station', 'Test Station'),
             ({'title': 'Casa Kline&trade;', 'meta_title': ''}, 'Casa Kline&trade;', 'Casa Kline&trade;'),
             ({'title': 'Casa Kline', 'meta_title': 'The Tab'}, 'Casa Kline', 'The Tab')):
-        for tmpl, cls in ((templates[0], 'led-title'), (templates[1], 'flap-title')):
+        for tmpl, cls in ((templates[0], 'ro-title'), (templates[1], 'flap-title')):
             html = render(tmpl, overrides=overrides)
             h1 = re.search(r'<h1 class="%s"[^>]*>(.*?)</h1>' % cls, html)
             tab = re.search(r'<title>(.*?)</title>', html)
@@ -1042,7 +1031,7 @@ def main():
     ok = report('both boards, hostile Extras', failures) and ok
     ok = report('skin.conf declares the loopdata fields the boards read', check_declared_fields()) and ok
     ok = report("the stylesheet's fallbacks for older browsers", check_css_fallbacks()) and ok
-    ok = report('the language files carry every string, and the boards can draw them', check_langs()) and ok
+    ok = report('the language files carry every string, and what the boards draw fits', check_langs()) and ok
     ok = report('install.py requires weewx-loopdata 7.0, is the release changes.md names'
                 ' and installs every skin file',
                 check_installer()) and ok

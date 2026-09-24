@@ -22,10 +22,10 @@ the rain coming down hard?  The rate and today's total are already on the
 wall.
 
 The skin makes two pages of the same station, and a tablet shows whichever
-its URL names.  **The LED board**, `index.html`, is a wall of
-seven-segment digits with their unlit segments showing:
+its URL names.  **The readout board**, `index.html`, is a wall of tall
+figures in panels:
 
-![The LED board](images/LEDBoard.png)
+![The readout board](images/ReadoutBoard.png)
 
 **The split-flap board**, `splitflap.html`, is an airport departure
 board, its flaps turning as the readings change, with a lamp at the end
@@ -44,21 +44,21 @@ and an extension that computes its index, such as
 * A one-line title: the station's location, or your own
   [`title`](configuration.html#title)
 * Outside temperature and dew point
-* Humidity, and feels like (on the LED board; the split-flap board shows
+* Humidity, and feels like (on the readout board; the split-flap board shows
   humidity and today's high on its temperature rows)
 * Wind speed and direction, the ten-minute high gust, and today's high
   gust (the split-flap board shows the ten-minute gust)
 * Barometer, with an arrow whose angle is its trend
 * Rain today, rain in the last 24 hours, and the rain rate (the split-flap
   board shows today's and the rate)
-* UV index and solar radiation, on a station that has them (LED board)
+* UV index and solar radiation, on a station that has them (readout board)
 * Air quality index, on a station with an air quality sensor
 * The station's time, which is also the status line
 
 UV, solar radiation and air quality show only on a station that has
 them, and the board closes up around what is missing:
 
-![The LED board, on a station without UV, solar radiation or air quality](images/LEDBoard_basic.png)
+![The readout board, on a station without UV, solar radiation or air quality](images/ReadoutBoard_basic.png)
 
 ## How it stays live
 
@@ -76,8 +76,8 @@ own units and formats, so an ordinary install has nothing to edit.  See
 [Installation](installation.html).
 
 Everything on the board is age-checked.  If the loop data stops advancing —
-or stops arriving at all — every reading is shown as missing, the way the
-display would show it, and the clock says how old the data is or what went
+or stops arriving at all — every reading is shown as missing, and the
+clock says how old the data is or what went
 wrong, rather than showing you a number that stopped being true ten minutes
 ago.  See [When data goes missing](missing-data.html).
 
@@ -85,10 +85,9 @@ ago.  See [When data goes missing](missing-data.html).
 
 The board speaks Danish, Dutch, English, French, German, Italian,
 Norwegian, Spanish and Swedish, chosen by the report's `lang` setting like
-any other WeeWX skin.  The LED board draws the accented capitals it needs
-as more lit segments:
+any other WeeWX skin:
 
-![The LED board in German](images/LEDBoard_de.png)
+![The readout board in German](images/ReadoutBoard_de.png)
 
 ## Where to go next
 

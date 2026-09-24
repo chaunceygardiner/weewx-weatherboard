@@ -158,12 +158,12 @@ whose observation is not in the loop packet.  Look in the
 `WeatherBoardReport` entry of `loop-data.txt` for the field named on the
 [Reading the board](reading-the-board.html) page.
 
-## A status word has a gap in it on the LED board
+## A status word has a letter in the wrong typeface on the readout board
 
-The LED board draws the status line in its own lettering, which has the
-capitals A to Z, the digits, and the accented capitals it draws itself.
-A `[[[Texts]]]` override in `weewx.conf` that uses any other letter shows
-a gap where that letter would be.  See
+The readout board sets the status line in League Gothic, which has the
+Latin letters and the accented capitals of the Western European
+languages.  A `[[[Texts]]]` override in `weewx.conf` that uses any other
+letter draws it in whatever typeface the tablet falls back to.  See
 [Languages](configuration.html#languages).
 
 ## A CSS change has not taken effect
