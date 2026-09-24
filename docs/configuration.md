@@ -249,7 +249,7 @@ The stanza outranks the language file, and unlike the skin it survives an
 upgrade.
 
 {: .note }
-The readout board sets its status words in League Gothic, which has the
+The readout board sets its status words in Bebas Neue, which has the
 Latin letters and the accented capitals of the Western European
 languages.  A status word reworded with a letter outside that set is
 drawn in whatever typeface the tablet falls back to.  The labels under

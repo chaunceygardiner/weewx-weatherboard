@@ -26,7 +26,7 @@ if one is set.  A title too long for the screen ends in an ellipsis.
 
 ![The readout board](images/ReadoutBoard.png)
 
-Every reading is set in League Gothic, a tall, narrow typeface, so the
+Every reading is set in Bebas Neue, a tall, narrow typeface, so the
 figures stand as tall as the panels allow and read from across the room.
 The panels, top to bottom, with the LoopData field behind each reading:
 

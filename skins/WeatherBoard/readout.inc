@@ -9,11 +9,12 @@
 ## after every poll and every failure, which sets each of the page's cells
 ## by id and ends with roStatus(status).
 ##
-## THE LETTERING.  Every reading is set in League Gothic, a tall condensed
-## face, so the figures stand tall in the width the panels have.  Its
-## digits are not all the same width, so each digit sits in a box as wide
-## as the widest (.ro-d): a figure does not shift as it changes, and a
-## placeholder is exactly as wide as the reading it stands for.
+## THE LETTERING.  Every reading is set in Bebas Neue, a tall condensed
+## face, so the figures stand tall in the width the panels have.  Each
+## digit sits in a box as wide as the font's digits (.ro-d): a figure does
+## not shift as it changes, a placeholder is exactly as wide as the
+## reading it stands for, and a fallback face whose digits are not all one
+## width keeps both promises too.
 ##   - A missing digit, and a minus sign, is a minus sign in a digit's box.
 ##   - With no data the decimal point is dimmed.
 #errorCatcher Echo
@@ -205,7 +206,7 @@
   }
   window.addEventListener('resize', function () { roFitDirty = true; repaint(); });
 
-  // The fit measures the board in its fonts -- League Gothic for the
+  // The fit measures the board in its fonts -- Bebas Neue for the
   // readings, Jost for the labels -- and a first paint made before they
   // arrive is measured in a fallback, which runs wider.  So the board
   // fits again as each one loads, and when it is the figures' font
@@ -231,7 +232,7 @@
     repaint();
   }
   if (document.fonts && document.fonts.load) {
-    document.fonts.load('100px "League Gothic"').then(function () { roFontReady(true); });
+    document.fonts.load('100px "Bebas Neue"').then(function () { roFontReady(true); });
     document.fonts.load('500 100px Jost').then(function () { roFontReady(false); });
   } else {
     var roProbe = function () {

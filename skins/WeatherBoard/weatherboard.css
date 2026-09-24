@@ -22,8 +22,8 @@
  */
 
 @font-face {
-    font-family: "League Gothic";
-    src: url("fonts/leaguegothic/leaguegothic.woff2") format("woff2");
+    font-family: "Bebas Neue";
+    src: url("fonts/bebasneue/bebasneue.woff2") format("woff2");
 }
 @font-face {
     font-family: "Jost";
@@ -87,29 +87,34 @@ body.readout {
     flex-direction: column;
     align-items: center;
 }
-/* The readings.  League Gothic's 8 stands .743 of its size, so 15.5rem
- * sets figures 11.5rem tall, and the temperatures' 27rem sets them 20rem
+/* The readings.  Bebas Neue's 8 stands .710 of its size, so 16.2rem
+ * sets figures 11.5rem tall, and the temperatures' 28.3rem sets them 20rem
  * tall.  The line is the 8's height and a little over; the padding keeps
- * the tallest letters clear of the panel's edge. */
+ * the tallest letters clear of the panel's edge.  Geometric precision
+ * keeps a figure's width in ems the same at every size: Chrome otherwise
+ * rounds each letter to whole pixels, so a width readout.inc held (roEm)
+ * at one size could be a pixel or two short at the next, and the fit
+ * would end a step apart depending on the size it was measured at. */
 .ro-n {
     position: relative;
-    font-family: "League Gothic", "Arial Narrow", sans-serif;
-    font-size: calc(15.5rem * var(--fit));
-    line-height: .8;
+    font-family: "Bebas Neue", "Arial Narrow", sans-serif;
+    font-size: calc(16.2rem * var(--fit));
+    line-height: .77;
     white-space: pre;
     padding-top: .08em;
+    text-rendering: geometricPrecision;
 }
 #ro-temp .ro-n {
-    font-size: calc(27rem * var(--fit));
+    font-size: calc(28.3rem * var(--fit));
 }
-/* Each digit in a box as wide as the font's widest (.363 of its size),
- * a hair over, so a figure does not shift as its digits change.  A
- * minimum, not a width: every League Gothic digit fits it exactly, and a
- * fallback font's wider digits, should League Gothic never arrive, widen
+/* Each digit in a box as wide as the font's digits (.400 of its size, all
+ * one width), a hair over, so a figure does not shift as its digits
+ * change.  A minimum, not a width: every Bebas Neue digit fits it, and a
+ * fallback font's wider digits, should Bebas Neue never arrive, widen
  * their boxes rather than run into one another. */
 .ro-d {
     display: inline-block;
-    min-width: .383em;
+    min-width: .42em;
     text-align: center;
 }
 /* With no data the decimal point is dimmed. */
@@ -119,8 +124,12 @@ body.readout {
 .ro-v {
     position: relative;
 }
-/* The trend arrow beside the barometer.  Its line takes no height, or it
- * would make the barometer's cell taller than the figure. */
+/* The trend arrow beside the barometer.  Neither its line nor the arrow
+ * takes any height, or it would make the barometer's cell taller than the
+ * figure, and the cell would shrink when the arrow goes: a line of .77em
+ * reaches less than .715em above the baseline in some fonts, Bebas Neue
+ * among them.  The arrow's negative top margin, its own height, leaves it
+ * drawn where it stands on the baseline but counted as nothing. */
 .ro-t {
     font-family: "Jost", sans-serif;
     font-size: .55em;
@@ -131,6 +140,7 @@ body.readout {
 .ro-trend {
     width: 1.3em;
     height: 1.3em;
+    margin-top: -1.3em;
     vertical-align: 0;
 }
 .ro-l {
@@ -189,7 +199,7 @@ body.readout {
     position: absolute;
     visibility: hidden;
     white-space: pre;
-    font: 100px/1 "League Gothic", "Arial Narrow", sans-serif;
+    font: 100px/1 "Bebas Neue", "Arial Narrow", sans-serif;
 }
 .ro-foot {
     text-align: center;
