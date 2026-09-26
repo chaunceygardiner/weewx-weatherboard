@@ -114,6 +114,7 @@
   var lastChangeAt = performance.now();
   var cacheBuster = Date.now();
   var expiryTimer = null;
+  var started = false;        // startUpdating has run: the page and its painter exist
 
   function getUrlParam(paramName) {
     var name = paramName.replace(/(\[|\])/g, '\\$1');
@@ -139,15 +140,24 @@
   function isJsonObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
   }
+  // Whether the entry carries a field with something in it.
+  function hasValue(r, key) {
+    return r.hasOwnProperty(key) && r[key] !== null && r[key] !== '';
+  }
+  // s, padded with spaces on the left to w characters.
+  function padLeft(s, w) {
+    s = String(s);
+    while (s.length < w) {
+      s = ' ' + s;
+    }
+    return s;
+  }
   // The ten-minute and today's gusts, or on a station whose driver
   // reports no gusts, the highest wind speed over the same period -- which
   // is what a gust there would have been.
   function gustField(r, span) {
     var gust = span + '.windGust.max.formatted', speed = span + '.windSpeed.max.formatted';
-    if (r.hasOwnProperty(gust) && r[gust] !== null && r[gust] !== '') {
-      return gust;
-    }
-    return speed;
+    return hasValue(r, gust) ? gust : speed;
   }
   // A reading, as the painters take it: the field's text when the data is
   // fresh and the field holds a NUMBER, else null, which each board paints
@@ -236,15 +246,59 @@
     }
     return { kind: 'live', text: clockText(lastResult['current.dateTime.format("%H:%M:%S")']) };
   }
+  // Nothing is painted before startUpdating: a font that is already
+  // cached can call for a paint while the page is still being read, before
+  // its cells or its painter exist.  A painter that throws must not stop
+  // the polling, so the error is caught -- and thrown again on its own,
+  // so it still reaches the browser as an error rather than a line in the
+  // console nobody reads.
   function repaint() {
+    if (!started) {
+      return;
+    }
     var age = dataAge();
     var fresh = lastResult !== null && age < max_age;
     try {
       boardPaint(lastResult === null ? {} : lastResult, fresh, boardStatus());
     } catch (e) {
-      console.log(e);
+      setTimeout(function () { throw e; }, 0);
     }
   }
+
+  // THE WINDOW CHANGING SIZE.  Dragging a window's edge fires a resize
+  // every frame, and a refit lays the page out many times over.  So a
+  // board refits at the first resize, and again once the window has held
+  // its size for a tenth of a second -- not at every step between.  A page
+  // hands its refit to onResized.  resizeFits counts the refits, for the
+  // tests.
+  var resizeFns = [];
+  var resizeTimer = null;
+  var resizeAgain = false;
+  var resizeFits = 0;
+  function onResized(fn) {
+    resizeFns.push(fn);
+  }
+  function runResized() {
+    resizeFits++;
+    for (var i = 0; i < resizeFns.length; i++) {
+      resizeFns[i]();
+    }
+  }
+  window.addEventListener('resize', function () {
+    if (resizeTimer === null) {
+      runResized();
+    } else {
+      clearTimeout(resizeTimer);
+      resizeAgain = true;
+    }
+    resizeTimer = setTimeout(function () {
+      resizeTimer = null;
+      if (resizeAgain) {
+        resizeAgain = false;
+        runResized();
+      }
+    }, 100);
+  });
 
   // THE PAGE'S EXPIRY.  Without the keep-alive password on its URL the
   // page stops fetching after expiration_time hours and says so; a tap
@@ -369,6 +423,7 @@
   // every subresource, and an analytics script that never finishes
   // loading on a tablet with no route out would hold the board blank.
   function startUpdating() {
+    started = true;
     setPageExpirationTimer();
     repaint();
     setInterval(updateCurrent, clampDelay(Math.max(refresh_rate, 1) * 1000));

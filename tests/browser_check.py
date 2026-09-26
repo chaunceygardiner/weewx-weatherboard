@@ -160,6 +160,35 @@ class Server:
         return route.fulfill(status=404, body='')
 
 
+# Every error any page throws, for the check that is running: main()
+# reports them as that check's failures.  A painter's error is caught, so
+# the board keeps polling, and thrown again on its own, so it lands here.
+PAGE_ERRORS = []
+
+
+def new_page(browser, **kw):
+    """A page that reports its errors to PAGE_ERRORS -- every page the
+    suite opens is made here, so none of them can throw unseen."""
+    page = browser.new_page(**kw)
+    page.on('pageerror', lambda e: PAGE_ERRORS.append(str(e)))
+    return page
+
+
+def next_frame(page):
+    page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+
+
+def resize(page, size):
+    """The window to size, and the board refitted to it: a board refits at
+    the first resize and once more when the window has held its size, so
+    this waits for that refit rather than the next frame."""
+    if page.viewport_size != {'width': size[0], 'height': size[1]}:
+        n = page.evaluate('resizeFits')
+        page.set_viewport_size({'width': size[0], 'height': size[1]})
+        page.wait_for_function('resizeFits > %d && resizeTimer === null' % n, timeout=3000)
+    next_frame(page)
+
+
 class Board:
     def __init__(self, browser, tmpl, size=(1280, 800), lang='en', missing=ct.ALL_PRESENT,
                  overrides=None, query='?page_update_pwd=testpwd', unit=None, timezone=None):
@@ -167,10 +196,8 @@ class Board:
         extras.update(overrides or {})
         self.server = Server(ct.render(tmpl, missing, analytics=False, overrides=extras, lang=lang,
                                        unit=unit))
-        self.page = browser.new_page(viewport={'width': size[0], 'height': size[1]},
-                                     **({'timezone_id': timezone} if timezone else {}))
-        self.errors = []
-        self.page.on('pageerror', lambda e: self.errors.append(str(e)))
+        self.page = new_page(browser, viewport={'width': size[0], 'height': size[1]},
+                             **({'timezone_id': timezone} if timezone else {}))
         self.page.route('**/*', self.server.handle)
         self.page.goto('http://board.test/board.html' + query)
         self.page.evaluate('document.fonts.ready')
@@ -343,7 +370,6 @@ def check_readout(browser):
     b.wait("document.querySelector('#ro-w .ro-v').textContent.trim().charAt(0) === '0'")
     if t('ro-w') != '0':
         failures.append('a wind that shows 0 reads %r: a direction beside a calm' % t('ro-w'))
-    failures += ['readout page: %s' % e for e in b.errors]
     b.close()
     return failures
 
@@ -435,7 +461,7 @@ def check_readout_widths(browser):
     for d in ('NNN', 'WWW', 'III'):
         b.server.set(e=entry(**dict(EXTREME, **{'current.windDir.ordinal_compass': d})))
         b.wait("document.querySelector('#ro-w .ro-v') && document.querySelector('#ro-w .ro-v').textContent.indexOf('%s') >= 0" % d)
-        b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        next_frame(b.page)
         for p in b.page.evaluate(RO_FIT):
             failures.append('the wind direction %s: %s overflows' % (d, p))
         widths.append(b.page.evaluate(w))
@@ -453,8 +479,7 @@ def check_readout_widths(browser):
     # later the cell is still as wide as WWW made it.
     b = Board.__new__(Board)
     b.server = Server(ct.render('index.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
-    b.errors = []
-    b.page = browser.new_page(viewport={'width': 1280, 'height': 800})
+    b.page = new_page(browser, viewport={'width': 1280, 'height': 800})
     b.page.add_init_script(NO_FONT_API)
     b.page.route('**/*', hang_analytics(b.server.handle))
     # The page's clock is the test's: each two-second tick is run on demand.
@@ -484,12 +509,12 @@ def check_readout_widths(browser):
 def check_readout_no_font(browser):
     """Bebas Neue never arrives -- not yet synced to the web server, or
     blocked: the figures fall back to a wider face, and each digit's box
-    widens to hold its digit rather than letting it run into the next."""
+    widens to hold its digit rather than letting it run into the next.
+    Its load rejects, and the board handles that: nothing throws."""
     failures = []
     b = Board.__new__(Board)
     b.server = Server(ct.render('index.html.tmpl', analytics=False, overrides={'refresh_rate': '1'}))
-    b.errors = []
-    b.page = browser.new_page(viewport={'width': 1280, 'height': 800})
+    b.page = new_page(browser, viewport={'width': 1280, 'height': 800})
 
     def route(r, request):
         if request.url.endswith('bebasneue.woff2'):
@@ -726,8 +751,7 @@ def check_flap_late_font(browser, font_api=True, hang=False):
         if request.url.endswith('jost.woff2'):
             time.sleep(1.0)
         return plain(route, request)
-    b.errors = []
-    b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    b.page = new_page(browser, viewport={'width': 1024, 'height': 768})
     if not font_api:
         b.page.add_init_script(NO_FONT_API)
     b.page.route('**/*', late)
@@ -738,7 +762,7 @@ def check_flap_late_font(browser, font_api=True, hang=False):
     if hang:
         # The two-second timer, after the font's one-second hold.
         b.page.wait_for_timeout(2500)
-    b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    next_frame(b.page)
     for p in b.page.evaluate(FLAP_FIT):
         failures.append('a long row name, font late: %s' % p)
     full = b.page.evaluate("""(() => { const b = document.getElementById('flap-board').getBoundingClientRect(),
@@ -763,8 +787,7 @@ def check_readout_without_font_api(browser):
         b = Board.__new__(Board)
         b.server = Server(ct.render('index.html.tmpl', analytics=hang, overrides={'refresh_rate': '1'}))
         b.server.set(e=EXTREME)
-        b.errors = []
-        b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+        b.page = new_page(browser, viewport={'width': 1024, 'height': 768})
         if not font_api:
             b.page.add_init_script(NO_FONT_API)
         b.page.route('**/*', hang_analytics(b.server.handle) if hang else b.server.handle)
@@ -773,7 +796,7 @@ def check_readout_without_font_api(browser):
         b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
         if want is None:
             b.page.evaluate('document.fonts.ready')
-            b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+            next_frame(b.page)
             want = b.page.evaluate(FITS)
             if all(f == '1' for f in want):
                 failures.append('readings too wide for the design shrank no row: the test proves nothing')
@@ -799,7 +822,7 @@ def check_readout_late_font(browser):
     ref = Board(browser, 'index.html.tmpl', size=(1024, 768), lang='nl')
     ref.server.set(e=EXTREME)
     ref.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
-    ref.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    next_frame(ref.page)
     want = ref.page.evaluate(FITS)
     ref.close()
     for font in ('bebasneue.woff2', 'jost.woff2'):
@@ -807,8 +830,7 @@ def check_readout_late_font(browser):
         b = Board.__new__(Board)
         b.server = Server(ct.render('index.html.tmpl', analytics=False, lang='nl', overrides={'refresh_rate': '1'}))
         b.server.set(e=EXTREME)
-        b.errors = []
-        b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+        b.page = new_page(browser, viewport={'width': 1024, 'height': 768})
 
         def route(r, request, handle=b.server.handle, font=font):
             if request.url.endswith(font):
@@ -818,7 +840,7 @@ def check_readout_late_font(browser):
         b.page.route('**/*', route)
         b.page.goto('http://board.test/board.html?page_update_pwd=testpwd', wait_until='domcontentloaded')
         b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
-        b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        next_frame(b.page)
         early = b.page.evaluate(FITS)
         if early == want:
             failures.append('with %s held the fallback fit the board just as the font does: the test'
@@ -844,7 +866,7 @@ def check_font_late_without_load(browser):
     ref = Board(browser, 'index.html.tmpl', size=(1024, 768))
     ref.server.set(e=EXTREME)
     ref.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
-    ref.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    next_frame(ref.page)
     want = ref.page.evaluate(FITS)
     ref.close()
     held = []
@@ -860,8 +882,7 @@ def check_font_late_without_load(browser):
     ro = Board.__new__(Board)
     ro.server = Server(ct.render('index.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
     ro.server.set(e=EXTREME)
-    ro.errors = []
-    ro.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    ro.page = new_page(browser, viewport={'width': 1024, 'height': 768})
     ro.page.add_init_script(NO_FONT_API)
     ro.page.route('**/*', holding(ro.server.handle, 'bebasneue.woff2'))
     texts = ct.lang_texts('en')
@@ -873,8 +894,7 @@ def check_font_late_without_load(browser):
         flap.server = Server(ct.render('splitflap.html.tmpl', analytics=True, overrides={'refresh_rate': '1'}))
     finally:
         ct.lang_texts = real
-    flap.errors = []
-    flap.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    flap.page = new_page(browser, viewport={'width': 1024, 'height': 768})
     flap.page.add_init_script(NO_FONT_API)
     flap.page.route('**/*', holding(flap.server.handle, 'jost.woff2'))
     start = time.time()
@@ -918,13 +938,12 @@ def check_readout_fit_gap_normal(browser):
     b = Board.__new__(Board)
     b.server = Server(ct.render('index.html.tmpl', analytics=False, overrides={'refresh_rate': '1'}))
     b.server.set(e=EXTREME)
-    b.errors = []
-    b.page = browser.new_page(viewport={'width': 1024, 'height': 768})
+    b.page = new_page(browser, viewport={'width': 1024, 'height': 768})
     b.page.add_init_script(GAP_NORMAL)
     b.page.route('**/*', b.server.handle)
     b.page.goto('http://board.test/board.html?page_update_pwd=testpwd')
     b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
-    b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    next_frame(b.page)
     fits = b.page.evaluate("[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
     if all(f == '1' for f in fits):
         failures.append('with the gap reported as "normal" no row shrank: %s' % fits)
@@ -937,7 +956,7 @@ def check_readout_fit_gap_normal(browser):
 def check_fit(browser):
     """Both boards, at every size, with the widest readings, in English and
     in the language with the longest words.  One page per board and
-    language, resized: the fit reruns on every resize."""
+    language, resized: the fit reruns when the window changes size."""
     failures = []
     for lang in ('en', 'nl'):
         ro = Board(browser, 'index.html.tmpl', size=SIZES[0], lang=lang)
@@ -947,8 +966,7 @@ def check_fit(browser):
         flap.wait("document.querySelector('#flap-temp .flap')")
         for size in SIZES:
             for b in (ro, flap):
-                b.page.set_viewport_size({'width': size[0], 'height': size[1]})
-                b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+                resize(b.page, size)
             for p in ro.page.evaluate(RO_FIT):
                 failures.append('readout %s %dx%d: %s overflows' % (lang, size[0], size[1], p))
             for p in flap.page.evaluate(FLAP_FIT):
@@ -959,9 +977,9 @@ def check_fit(browser):
         # row at its full size.  (At 16:10 the title's line comes out of
         # the temperature row: that is its cost.)
         ro.server.set()
-        ro.page.set_viewport_size({'width': 1024, 'height': 768})
+        resize(ro.page, (1024, 768))
         ro.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('78.4') >= 0")
-        ro.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        next_frame(ro.page)
         if lang == 'en':
             fits = ro.page.evaluate("[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
             if any(f != '1' for f in fits):
@@ -969,8 +987,7 @@ def check_fit(browser):
         # The case that needs the fit: at 1024x768 every panel still holds.
         ro.server.set(e=EXTREME)
         ro.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")
-        ro.page.set_viewport_size({'width': 1024, 'height': 768})
-        ro.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        resize(ro.page, (1024, 768))
         for p in ro.page.evaluate(RO_FIT):
             failures.append('readout %s, readings too wide for the design: %s overflows' % (lang, p))
         tight = ro.page.evaluate(RO_TIGHT)
@@ -1082,7 +1099,6 @@ def check_flap(browser):
         failures.append('a rain total with no room for the rate reads %r' % row('flap-rain'))
     b.server.set(mode='status', status=404)
     b.wait("document.getElementById('flap-time-lamp').style.getPropertyValue('--flap-lamp') === '#ff3b30'")
-    failures += ['split-flap page: %s' % e for e in b.errors]
     b.close()
     return failures
 
@@ -1100,7 +1116,7 @@ def check_readout_date(browser):
     b.wait("document.getElementById('ro-date').textContent.length > 1")
     if b.page.evaluate(date) != 'miércoles, 23 de septiembre':
         failures.append('the Spanish date on a tablet at UTC-11 reads %r' % b.page.evaluate(date))
-    b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+    next_frame(b.page)
     for p in b.page.evaluate(RO_FIT):
         failures.append('with the widest Spanish date, %s overflows' % p)
     height = b.page.evaluate("document.getElementById('ro-date').getBoundingClientRect().height")
@@ -1120,7 +1136,6 @@ def check_readout_date(browser):
             failures.append('with the date %r the label reads %r, not a blank' % (bad, b.page.evaluate(date)))
         if abs(b.page.evaluate("document.getElementById('ro-date').getBoundingClientRect().height") - height) > .5:
             failures.append('with the date %r the label changes height' % bad)
-    failures += ['Spanish readout page: %s' % e for e in b.errors]
     b.close()
     return failures
 
@@ -1135,11 +1150,73 @@ def check_languages(browser):
     b.wait("document.getElementById('ro-clock').className.indexOf('aging') >= 0")
     if b.page.evaluate(RO_TEXT, 'ro-clk') != '47 S SIDEN':
         failures.append('Danish 47 s old reads %r' % b.page.evaluate(RO_TEXT, 'ro-clk'))
-    failures += ['Danish readout page: %s' % e for e in b.errors]
     b.close()
     b = Board(browser, 'index.html.tmpl', overrides={'clock_format': '24'})
     b.wait("document.querySelector('#ro-clk .ro-v') && document.querySelector('#ro-clk .ro-v').textContent.trim() === '16:07:17'")
     b.close()
+    return failures
+
+
+def check_errors_reach_the_browser(browser):
+    """A painter that throws leaves the board polling, and its error still
+    reaches the browser.  And a font already in hand when the page is read
+    -- its promise settles before the cells or the painter exist -- paints
+    nothing early, so it throws nothing."""
+    failures = []
+    b = Board(browser, 'index.html.tmpl')
+    b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.trim() === '78.4'")
+    b.page.evaluate("() => { window.boardPaint = function () { throw new Error('planted painter fault'); }; }")
+    # Two in a row: each poll paints, so the second proves the polling
+    # went on after the first throw.
+    for n in (1, 2):
+        try:
+            err = b.page.wait_for_event('pageerror', timeout=4000)
+        except Exception:
+            failures.append('a painter that threw left no error in the browser (poll %d after the fault)' % n)
+            break
+        if 'planted painter fault' not in str(err):
+            failures.append('a painter that threw surfaced as %r' % str(err))
+    b.close()
+    PAGE_ERRORS[:] = [e for e in PAGE_ERRORS if 'planted painter fault' not in e]
+    # The font settled before the page is read past readout.inc.  The
+    # stub's own callback runs first and records when it ran: were that
+    # not while the page is still loading, this would test nothing.
+    b = Board.__new__(Board)
+    b.server = Server(ct.render('index.html.tmpl', analytics=False, overrides={'refresh_rate': '1'}))
+    b.page = new_page(browser, viewport={'width': 1280, 'height': 800})
+    b.page.add_init_script("""document.fonts.load = function () {
+        return Promise.resolve([]).then(r => { window.fontSettled = document.readyState; return r; }); };""")
+    b.page.route('**/*', b.server.handle)
+    b.page.goto('http://board.test/board.html?page_update_pwd=testpwd')
+    b.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.trim() === '78.4'")
+    if b.page.evaluate('window.fontSettled') != 'loading':
+        failures.append('the stubbed font settled at readyState %r, not while loading: this tests nothing'
+                        % b.page.evaluate('window.fontSettled'))
+    b.close()
+    return failures
+
+
+def check_resize_coalesced(browser):
+    """A burst of resizes -- a window's edge dragged -- refits each board
+    at the first and once more after the last, not at every one."""
+    failures = []
+    burst = "() => { for (let i = 0; i < 50; i++) window.dispatchEvent(new Event('resize')); }"
+    for tmpl, fit, counted in (('index.html.tmpl', 'roFit', 'true'),
+                               ('splitflap.html.tmpl', 'flapFit', 'force === true')):
+        b = Board(browser, tmpl)
+        b.wait("document.querySelector('.ro-v, .flap[data-ch]')")
+        b.page.evaluate('document.fonts.ready')
+        b.page.evaluate("""(() => { window.fits = 0; const real = window.%s;
+            window.%s = function (force) { if (%s) window.fits++; return real.apply(this, arguments); }; })()"""
+                        % (fit, fit, counted))
+        b.page.evaluate(burst)
+        if b.page.evaluate('fits') != 1:
+            failures.append('%s: 50 resizes refit it %d times at once, not 1' % (tmpl, b.page.evaluate('fits')))
+        try:
+            b.wait('resizeTimer === null && fits >= 2', timeout=2000)
+        except Exception:
+            failures.append('%s: after 50 resizes it never refit a second time (%d)' % (tmpl, b.page.evaluate('fits')))
+        b.close()
     return failures
 
 
@@ -1166,12 +1243,17 @@ def main():
                          ('the readout fit, in a browser that reports its gap as "normal"', check_readout_fit_gap_normal),
                          ('without document.fonts or window load, a font that arrives after eight seconds',
                           check_font_late_without_load),
-                         ('a long title is cut short, and moves nothing off the screen', check_long_title)):
+                         ('a long title is cut short, and moves nothing off the screen', check_long_title),
+                         ('a painter that throws is seen, and nothing paints before the page is read',
+                          check_errors_reach_the_browser),
+                         ('a burst of resizes refits each board twice, not at every one', check_resize_coalesced)):
             t0 = time.time()
+            del PAGE_ERRORS[:]
             try:
                 failures = fn(browser)
             except Exception as e:
                 failures = ['%s: %s' % (type(e).__name__, str(e).split('\n')[0])]
+            failures += ['page error: %s' % e for e in PAGE_ERRORS]
             ok = ct.report('%s (%.1f s)' % (name, time.time() - t0), failures) and ok
         browser.close()
     print('%.1f s' % (time.time() - start))

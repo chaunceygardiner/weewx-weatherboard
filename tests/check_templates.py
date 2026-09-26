@@ -327,11 +327,11 @@ def declared_fields():
 def fields_read_by_updaters():
     """Every loopdata field the javascript looks up in a poll result:
     result["f"], r['f'] and lastResult['f'] directly, and val('f') and
-    has(r, 'f') -- the painters' two helpers."""
+    hasValue(r, 'f') -- the painters' two helpers."""
     patterns = [
         re.compile(r"""\b(?:result|lastResult|r)\[\s*(?:"([^"]+)"|'([^']+)')\s*\]"""),
         re.compile(r"""\bval\(\s*(?:"([^"]+)"|'([^']+)')\s*\)"""),
-        re.compile(r"""\bhas\(\s*r\s*,\s*(?:"([^"]+)"|'([^']+)')\s*\)"""),
+        re.compile(r"""\bhasValue\(\s*r\s*,\s*(?:"([^"]+)"|'([^']+)')\s*\)"""),
     ]
     fields = set()
     for name in sorted(os.listdir(SKIN)):
@@ -979,7 +979,7 @@ def main():
         [('the analytics block did not render',
           lambda html: 'googletagmanager' not in html),
          ('the gtag calls were wrapped in a test against the empty host',
-          lambda html: 'host == ""' in html),
+          lambda html: 'location.host === ""' in html),
          ('gtag was not configured with the id',
           lambda html: 'gtag(\'config\', "G-HOSTLESS")' not in html)])
     ok = report('%s analytics absent' % templates[0], failures) and ok
@@ -1025,7 +1025,7 @@ def main():
     # Exact bytes, deliberately: these pin how jsstr escapes, and a
     # near-miss is a real failure.
     for expected, what in (
-            ('if (host == "h\',\\u003c/script>")',
+            ('if (location.host === "h\',\\u003c/script>")',
              'a list-valued analytics_host was not joined back with commas'),
             ('gtag/js?id=G-1%27%262%223%3Cx%2Cy"',
              'the analytics src URL is not the percent-encoded list-valued id'),

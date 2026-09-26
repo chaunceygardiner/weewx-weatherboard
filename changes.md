@@ -1,5 +1,12 @@
 # weewx-weatherboard change history
 
+## 5.2.1 (in progress)
+- Dragging the window's edge no longer refits the board at every step:
+  it refits as the drag begins and once more when the window holds its
+  size.  A tablet turned on its side refits at once, as before.
+- A board whose font is missing from the web server no longer leaves an
+  error in the browser's console; it still draws in the fallback face.
+
 ## 5.2 09/24/2026
 - Action required: restart WeeWX after upgrading.  The date under the
   clock comes from a new field, current.dateTime.format("%Y-%m-%d"), and

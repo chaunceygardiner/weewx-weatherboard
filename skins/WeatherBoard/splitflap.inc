@@ -148,10 +148,9 @@
     }
   }
 
-  function padL(s, w) { s = String(s); while (s.length < w) { s = ' ' + s; } return s; }
-  function padR(s, w) { s = String(s); while (s.length < w) { s += ' '; } return s; }
+  function flapPadRight(s, w) { s = String(s); while (s.length < w) { s += ' '; } return s; }
   // A figure squeezed to a width: fewer decimals until it fits.
-  function squeeze(s, w) {
+  function flapSqueeze(s, w) {
     s = String(s);
     var v = Number(s), d = (s.split('.')[1] || '').length;
     while (s.length > w && d > 0 && isFinite(v)) {
@@ -163,40 +162,37 @@
   // Two halves of a row: the left one padded, the right one pushed to the
   // row's end; the gap closes up if the two together run long.
   function flapPair(left, lw, right) {
-    var s = padR(left, lw) + padL(right, FLAP_WIDTH - lw);
+    var s = flapPadRight(left, lw) + padLeft(right, FLAP_WIDTH - lw);
     return s.length > FLAP_WIDTH ? (left + ' ' + right).slice(0, FLAP_WIDTH) : s;
   }
   // A placeholder: the reading's shape with its digits as question marks
   // and its decimal point a blank flap.
   var flapShape = {};
-  function q(key, text, dflt) {
+  function flapHeld(key, text, dflt) {
     if (text !== null) {
       flapShape[key] = String(text).replace(/[0-9]/g, '?').replace(/\./g, ' ');
       return String(text);
     }
     return flapShape[key] || dflt;
   }
-  function aqiWord(v) {
+  function flapAqiWord(v) {
     var t = FLAP.text.aqi;
     return v <= 50 ? t[0] : v <= 100 ? t[1] : v <= 150 ? t[2] : v <= 200 ? t[3] : v <= 300 ? t[4] : t[5];
   }
 
-  function has(r, key) {
-    return r.hasOwnProperty(key) && r[key] !== null && r[key] !== '';
-  }
   function boardPaint(r, fresh, status) {
     function val(key) {
       return numericReading(r, key, fresh);
     }
     var st = status.text === null ? '??:??:??' : status.text;
-    flapShow('flap-time', padL(st, Math.min(FLAP_WIDTH, Math.max(st.length, 11))));
+    flapShow('flap-time', padLeft(st, Math.min(FLAP_WIDTH, Math.max(st.length, 11))));
     flapLamp('flap-time', FLAP_COLORS[status.kind] || null);
 
-    flapShow('flap-temp', flapPair(q('t', val('current.outTemp.formatted'), '?? ?') + '\u00b0', 6,
-                                   FLAP.text.hi + ' ' + q('hi', val('day.outTemp.max.formatted') === null ? null
+    flapShow('flap-temp', flapPair(flapHeld('t', val('current.outTemp.formatted'), '?? ?') + '\u00b0', 6,
+                                   FLAP.text.hi + ' ' + flapHeld('hi', val('day.outTemp.max.formatted') === null ? null
                                        : String(Math.round(Number(val('day.outTemp.max.formatted')))), '??')));
-    flapShow('flap-dew', flapPair(q('td', val('current.dewpoint.formatted'), '?? ?') + '\u00b0', 6,
-                                  FLAP.text.rh + ' ' + q('rh', val('current.outHumidity.formatted'), '??')));
+    flapShow('flap-dew', flapPair(flapHeld('td', val('current.dewpoint.formatted'), '?? ?') + '\u00b0', 6,
+                                  FLAP.text.rh + ' ' + flapHeld('rh', val('current.outHumidity.formatted'), '??')));
 
     var speed = val('current.windSpeed.formatted'), left;
     if (speed === null) {
@@ -207,15 +203,15 @@
       left = FLAP.text.calm;
     } else {
       flapShape.ws = speed.replace(/[0-9]/g, '?');
-      left = padR(has(r, 'current.windDir.ordinal_compass') ? String(r['current.windDir.ordinal_compass']) : '', 3)
-          + ' ' + padL(speed, 3);
+      left = flapPadRight(hasValue(r, 'current.windDir.ordinal_compass') ? String(r['current.windDir.ordinal_compass']) : '', 3)
+          + ' ' + padLeft(speed, 3);
     }
     var gust = val(gustField(r, '10m'));
-    flapShow('flap-wind', flapPair(left, 7, FLAP.text.gust + ' ' + q('g', gust, '??')));
+    flapShow('flap-wind', flapPair(left, 7, FLAP.text.gust + ' ' + flapHeld('g', gust, '??')));
     flapLamp('flap-wind', gust !== null && Number(gust) >= FLAP.gustWarn ? FLAP_COLORS.wind : null);
 
     var baro = val('current.barometer.formatted');
-    var items = (q('b', baro, '?? ???') + ' ').split('');
+    var items = (flapHeld('b', baro, '?? ???') + ' ').split('');
     if (baro !== null && trendCode(r) !== null) {
       items.push('>' + trendCode(r));
     }
@@ -225,18 +221,18 @@
 
     // Today's rain and the rate on one line: "1.23 0.42/HR".
     var room = FLAP_WIDTH - FLAP.text.perHour.length - 1;
-    var todayAll = q('rd', val('day.rain.sum.formatted'), '? ??');
+    var todayAll = flapHeld('rd', val('day.rain.sum.formatted'), '? ??');
     var today = todayAll;
-    var rate = q('rr', val('current.rainRate.formatted'), '? ??');
+    var rate = flapHeld('rr', val('current.rainRate.formatted'), '? ??');
     var tw = Math.min(today.length, Math.max(1, room - Math.min(rate.length, 4)));
-    today = squeeze(today, tw);
-    rate = squeeze(rate, room - today.length);
+    today = flapSqueeze(today, tw);
+    rate = flapSqueeze(rate, room - today.length);
     var rainRow = today + ' ' + rate + FLAP.text.perHour;
     // A day's total so long it leaves the rate no room -- far past any
     // rain ever recorded -- shows alone, rather than running off the end
     // of the row and taking the rate's unit with it.
     if (rainRow.length > FLAP_WIDTH) {
-      rainRow = squeeze(todayAll, FLAP_WIDTH);
+      rainRow = flapSqueeze(todayAll, FLAP_WIDTH);
     }
     flapShow('flap-rain', rainRow);
     // Lit by the rate as shown, for the same reason as calm: a raw rate
@@ -245,10 +241,10 @@
 
     if (WB.show.aqi) {
       var aqi = val('current.pm2_5_aqi.formatted');
-      flapShow('flap-air', padL(q('aqi', aqi, '??'), 3) + (aqi === null ? '' : ' ' + aqiWord(Number(aqi))));
+      flapShow('flap-air', padLeft(flapHeld('aqi', aqi, '??'), 3) + (aqi === null ? '' : ' ' + flapAqiWord(Number(aqi))));
       // Lit only past good (above 50), in the level's color: on a good day
       // the air has nothing to say.
-      flapLamp('flap-air', aqi !== null && Number(aqi) > 50 && has(r, 'current.pm2_5_aqi_color.raw')
+      flapLamp('flap-air', aqi !== null && Number(aqi) > 50 && hasValue(r, 'current.pm2_5_aqi_color.raw')
                ? decodeRgb(r['current.pm2_5_aqi_color.raw']) : null);
     }
     flapFit();
@@ -277,7 +273,7 @@
       root.style.setProperty('--flap-fit', String(Math.min(1, Math.floor(scale * worst * 100) / 100)));
     }
   }
-  window.addEventListener('resize', function () { flapFit(true); });
+  onResized(function () { flapFit(true); });
   // The row names are set in Jost, and the first paint can come before it
   // has loaded; fit again once it has, since the names then measure true.
   // A browser without document.fonts fits again at window load, which
