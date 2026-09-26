@@ -24,9 +24,8 @@
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=$_ga_id_url"></script>
 <script>
-  var host = location.host;
 #if $_ga_host
-  if (host == $jsstr($_ga_host)) {
+  if (location.host === $jsstr($_ga_host)) {
 #end if
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}

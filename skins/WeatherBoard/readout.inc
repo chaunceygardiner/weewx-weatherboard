@@ -72,12 +72,6 @@
   var roPattern = {};
   var roShown = {};
   var roFitDirty = true;
-  function padTo(s, w) {
-    while (s.length < w) {
-      s = ' ' + s;
-    }
-    return s;
-  }
   // text: what to show, or null for a missing reading.  The placeholder
   // is the last reading's shape with every character a dash -- "--.-" for
   // a temperature, "--.---" for the barometer, "- ---" for the wind --
@@ -99,7 +93,7 @@
       roWidth[id] = text.length;
       roFitDirty = true;
     }
-    text = padTo(text, roWidth[id]);
+    text = padLeft(text, roWidth[id]);
     var html = '<span class="ro-v">' + roHtml(text, ok) + '</span>'
         + (tail ? '<span class="ro-t">' + tail + '</span>' : '');
     // Most polls change nothing; leave an unchanged cell alone rather
@@ -204,7 +198,7 @@
       }
     }
   }
-  window.addEventListener('resize', function () { roFitDirty = true; repaint(); });
+  onResized(function () { roFitDirty = true; repaint(); });
 
   // The fit measures the board in its fonts -- Bebas Neue for the
   // readings, Jost for the labels -- and a first paint made before they
@@ -218,7 +212,10 @@
   // any point before that.  It cannot be told when the figures' font
   // arrives, so it sets a line of figures in their font stack each time
   // (roProbe) and takes a change in its width for the arrival.  Fitting
-  // again changes nothing once the fonts are in.
+  // again changes nothing once the fonts are in.  A font that never
+  // arrives -- missing from the server, or blocked -- rejects its load:
+  // that leaves the board in the fallback it has already been fitted to,
+  // so there is nothing to do but not let the rejection go unhandled.
   function roFontReady(figures) {
     if (figures) {
       for (var id in roEm) {
@@ -232,8 +229,8 @@
     repaint();
   }
   if (document.fonts && document.fonts.load) {
-    document.fonts.load('100px "Bebas Neue"').then(function () { roFontReady(true); });
-    document.fonts.load('500 100px Jost').then(function () { roFontReady(false); });
+    document.fonts.load('100px "Bebas Neue"').then(function () { roFontReady(true); }, function () {});
+    document.fonts.load('500 100px Jost').then(function () { roFontReady(false); }, function () {});
   } else {
     var roProbe = function () {
       var probe = document.createElement('span');
@@ -263,18 +260,15 @@
     });
   }
 
-  function has(r, key) {
-    return r.hasOwnProperty(key) && r[key] !== null && r[key] !== '';
-  }
   // The wind cell: the speed, and beside it the direction, "4 NNE".  Calm
   // by the speed as shown: a raw 0.00009 is not zero, but it shows as 0,
   // and a direction beside a 0 claims a wind there is not.
   function roWind(id, r, speed) {
     var dir = '   ';
-    if (speed !== null && Number(speed) !== 0 && has(r, 'current.windDir.ordinal_compass')) {
+    if (speed !== null && Number(speed) !== 0 && hasValue(r, 'current.windDir.ordinal_compass')) {
       dir = (String(r['current.windDir.ordinal_compass']) + '   ').slice(0, 3);
     }
-    roSet(id, speed === null ? null : padTo(speed, 2) + ' ' + dir);
+    roSet(id, speed === null ? null : padLeft(speed, 2) + ' ' + dir);
   }
   // The barometer, with the trend arrow beside it while the data is fresh.
   function roBarometer(id, r, fresh, value) {
@@ -283,7 +277,7 @@
   }
   // The outdoor air quality index, in its level's color.
   function roAqi(id, r, value) {
-    roSet(id, value, value !== null && has(r, 'current.pm2_5_aqi_color.raw')
+    roSet(id, value, value !== null && hasValue(r, 'current.pm2_5_aqi_color.raw')
           ? decodeRgb(r['current.pm2_5_aqi_color.raw']) : null);
   }
   // The date under the clock, the clock's label: the station's date, as
@@ -304,7 +298,7 @@
       return;
     }
     var text = '\u00a0';
-    var ymd = fresh && has(r, 'current.dateTime.format("%Y-%m-%d")')
+    var ymd = fresh && hasValue(r, 'current.dateTime.format("%Y-%m-%d")')
         ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(r['current.dateTime.format("%Y-%m-%d")']) : null;
     if (ymd !== null) {
       var day = new Date(Date.UTC(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]), 11));

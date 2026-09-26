@@ -90,9 +90,7 @@ class Board(bc.Board):
         self.server = Server(ct.render(TMPL, missing, analytics=False, overrides=extras))
         if docs is not None:
             self.server.docs = docs
-        self.page = browser.new_page(viewport={'width': size[0], 'height': size[1]})
-        self.errors = []
-        self.page.on('pageerror', lambda e: self.errors.append(str(e)))
+        self.page = bc.new_page(browser, viewport={'width': size[0], 'height': size[1]})
         self.page.route('**/*', self.server.handle)
         self.page.goto('http://board.test/board.html' + query)
         self.page.evaluate('document.fonts.ready')
@@ -189,7 +187,6 @@ def check_readings(browser):
         b.server.docs = sidecars()
         b.page.evaluate('pollSidecars()')
         b.wait_text('ro-sol', '2.6')
-    failures += ['page error: %s' % e for e in b.errors]
     b.close()
     return failures
 
@@ -245,8 +242,7 @@ def check_fit(browser):
     b.wait("document.querySelector('#ro-co2 .ro-v') && document.querySelector('#ro-co2 .ro-v').textContent.trim() === '4800'")
     b.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('12.3') >= 0")
     for size in bc.SIZES:
-        b.page.set_viewport_size({'width': size[0], 'height': size[1]})
-        b.page.evaluate('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
+        bc.resize(b.page, size)
         for p in b.page.evaluate(bc.RO_FIT):
             failures.append('%dx%d: %s overflows' % (size[0], size[1], p))
     b.close()
@@ -263,10 +259,12 @@ def main():
                          ('inout.html: no sidecar polls while expired; the tap polls at once', check_expiry),
                          ('inout.html fits every screen size', check_fit)):
             t0 = time.time()
+            del bc.PAGE_ERRORS[:]
             try:
                 failures = fn(browser)
             except Exception as e:
                 failures = ['%s: %s' % (type(e).__name__, str(e).split('\n')[0])]
+            failures += ['page error: %s' % e for e in bc.PAGE_ERRORS]
             ok = ct.report('%s (%.1f s)' % (name, time.time() - t0), failures) and ok
         browser.close()
     print('%.1f s' % (time.time() - start))
