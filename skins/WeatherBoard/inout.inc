@@ -10,14 +10,15 @@
 ##   in_temp_file      {"ts": 1790221564, "inTemp": 73.8}
 ##   in_co2_file       {"ts": ..., "inCO2": 450.0, "inColor": "rgb(0,200,0)"}
 ##   in_aqi_file       {"ts": ..., "inAQI": 29, "inColor": "rgb(0,228,0)"}
-##   solar_array_file  {"total_watts": 2583, "total_timestamp": 1790221501.865, ...}
+##   franklinwh_file   {"solar_watts": 2583, "timestamp": 1790221500, ...}
 ## The indoor temperature is in the station's own temperature unit.  Each
 ## file is polled every eighth refresh (about 16 seconds): they are written
 ## far more slowly than the loop data -- the AirGradient trio on a ~30 s
-## cron, the solar file every 15 s carrying Enphase data already the
-## better part of a minute old -- so each has its own max age.  URL
-## parameters inTempFile, inCO2File, inAQIFile and solarArrayFile override
-## the paths.
+## cron, the FranklinWH file every 10 s from a battery gateway polled
+## once a minute -- so each has its own max age.  The solar reading is
+## aged by the gateway's poll (timestamp), not by when the file was
+## written.  URL parameters inTempFile, inCO2File, inAQIFile and
+## franklinwhFile override the paths.
 ##
 ## A reading's age keeps counting between polls, so it goes to dashes on
 ## its own once it passes its max age, whether the file went stale, the
@@ -44,9 +45,9 @@
                    $jsstr($Extras.get('in_co2_max_age', '')), 120, 'inCO2', 'ts', true),
     inAQI: sidecar('inAQIFile', $jsstr($Extras.get('in_aqi_file', '') or 'inAQI.txt'),
                    $jsstr($Extras.get('in_aqi_max_age', '')), 120, 'inAQI', 'ts', true),
-    solar: sidecar('solarArrayFile', $jsstr($Extras.get('solar_array_file', '') or 'solar-array.json'),
-                   $jsstr($Extras.get('solar_array_max_age', '')), 150,
-                   'total_watts', 'total_timestamp', false)
+    solar: sidecar('franklinwhFile', $jsstr($Extras.get('franklinwh_file', '') or 'franklinwh.json'),
+                   $jsstr($Extras.get('franklinwh_max_age', '')), 150,
+                   'solar_watts', 'timestamp', false)
   };
 
   // Leaves the last good reading to age out; see the header.

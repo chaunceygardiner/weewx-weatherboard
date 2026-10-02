@@ -69,9 +69,9 @@ def check_renders():
 
 
 SIDECAR_EXTRAS = (('in_temp_file', 'inTemp.txt'), ('in_co2_file', 'inCO2.txt'),
-                  ('in_aqi_file', 'inAQI.txt'), ('solar_array_file', 'solar-array.json'),
+                  ('in_aqi_file', 'inAQI.txt'), ('franklinwh_file', 'franklinwh.json'),
                   ('in_temp_max_age', None), ('in_co2_max_age', None),
-                  ('in_aqi_max_age', None), ('solar_array_max_age', None))
+                  ('in_aqi_max_age', None), ('franklinwh_max_age', None))
 
 
 def literal(value):

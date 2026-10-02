@@ -125,24 +125,24 @@ CONFIG = """
             loop_data_file = /loop-data/loop-data.txt
             # The indoor board's (inout.html's) four sidecar files, each a
             # single reading written outside this skin.  URL params
-            # inTempFile / inCO2File / inAQIFile / solarArrayFile override
+            # inTempFile / inCO2File / inAQIFile / franklinwhFile override
             # them.
             in_temp_file = /loop-data/inTemp.txt
             in_co2_file = /loop-data/inCO2.txt
             in_aqi_file = /loop-data/inAQI.txt
-            solar_array_file = /loop-data/solar-array.json
+            franklinwh_file = /loop-data/franklinwh.json
             # The settings below only select the value skin.conf already
             # ships, so they ship commented out with that value shown.
             # Uncomment one and change it to override it.
             #
             # How old each sidecar reading may be, in seconds, before it
             # turns to dashes.  The AirGradient trio is written by a ~30 s
-            # cron; the solar file carries Enphase data already a minute
-            # old, hence its larger limit.
+            # cron; the FranklinWH file carries a gateway polled once a
+            # minute, hence its larger limit.
             #in_temp_max_age = 120
             #in_co2_max_age = 120
             #in_aqi_max_age = 120
-            #solar_array_max_age = 150
+            #franklinwh_max_age = 150
             # How old the loop record may be, in seconds, before the
             # readings it feeds turn to dashes and the clock gives way to
             # the data's age.  The default suits a station emitting loop

@@ -537,7 +537,7 @@ STANZA_LIVE = (
     'title', 'meta_title',
     'loop_data_file', 'googleAnalyticsId', 'analytics_host', 'page_update_pwd',
     # The indoor board's sidecar files: this site's own paths.
-    'in_temp_file', 'in_co2_file', 'in_aqi_file', 'solar_array_file',
+    'in_temp_file', 'in_co2_file', 'in_aqi_file', 'franklinwh_file',
 )
 
 # Every option that ships commented out, with the value shown beside it.
@@ -555,7 +555,7 @@ STANZA_COMMENTED = {
     'in_temp_max_age': '120',
     'in_co2_max_age': '120',
     'in_aqi_max_age': '120',
-    'solar_array_max_age': '150',
+    'franklinwh_max_age': '150',
 }
 
 # A realistic merge target: a weewx.conf that ALREADY HAS [StdReport].  A

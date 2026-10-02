@@ -42,7 +42,7 @@ from playwright.sync_api import sync_playwright           # noqa: E402
 
 TMPL = 'inout.html.tmpl'
 FILES = {'inTemp.txt': 'inTemp', 'inCO2.txt': 'inCO2', 'inAQI.txt': 'inAQI',
-         'solar-array.json': 'solar'}
+         'franklinwh.json': 'solar'}
 
 
 def sidecars(**over):
@@ -52,7 +52,7 @@ def sidecars(**over):
     docs = {'inTemp': {'ts': int(now), 'inTemp': 73.8},
             'inCO2': {'ts': int(now), 'inCO2': 450.0, 'inColor': 'rgb(0,200,0)'},
             'inAQI': {'ts': int(now), 'inAQI': 29, 'inColor': 'rgb(0,228,0)'},
-            'solar': {'total_watts': 2583, 'total_timestamp': now}}
+            'solar': {'solar_watts': 2583, 'timestamp': int(now), 'written': now}}
     docs.update(over)
     return docs
 
@@ -85,7 +85,7 @@ class Board(bc.Board):
     def __init__(self, browser, size=(1280, 800), overrides=None, docs=None,
                  query='?page_update_pwd=testpwd', missing=ct.ALL_PRESENT):
         extras = {'refresh_rate': '1', 'in_temp_file': 'inTemp.txt', 'in_co2_file': 'inCO2.txt',
-                  'in_aqi_file': 'inAQI.txt', 'solar_array_file': 'solar-array.json'}
+                  'in_aqi_file': 'inAQI.txt', 'franklinwh_file': 'franklinwh.json'}
         extras.update(overrides or {})
         self.server = Server(ct.render(TMPL, missing, analytics=False, overrides=extras))
         if docs is not None:
@@ -152,7 +152,8 @@ def check_readings(browser):
             ('a file without its value', 'inAQI', {'ts': int(time.time()), 'inColor': 'rgb(0,228,0)'}),
             ('a file without its color', 'inCO2', {'ts': int(time.time()), 'inCO2': 450.0}),
             ('a file without a timestamp', 'inTemp', {'inTemp': 73.8}),
-            ('a file that is not a number', 'solar', {'total_watts': 'n/a', 'total_timestamp': time.time()})):
+            ('a file that is not a number', 'solar', {'solar_watts': 'n/a', 'timestamp': int(time.time())}),
+            ('a file with no solar reading', 'solar', {'solar_watts': None, 'timestamp': int(time.time())})):
         cid, good, dashes, white = kept[name]
         b.server.docs = sidecars(**{name: doc})
         before = b.server.fetches[name]
@@ -174,10 +175,13 @@ def check_readings(browser):
         b.page.evaluate('pollSidecars()')
         b.wait_text(cid, good)
     # A file that answers, but with a reading already past its limit, is
-    # dashes at once; one a few watts below zero is 0.0, never -0.0.
+    # dashes at once -- the reading's age is the gateway's poll, however
+    # freshly the file was written -- and one a few watts below zero is
+    # 0.0, never -0.0.
     old = int(time.time()) - 200
-    for what, doc, want in (('a file older than its max age', {'total_watts': 2583, 'total_timestamp': old}, '-_-'),
-                            ('inverter noise below zero', {'total_watts': -3, 'total_timestamp': time.time()}, '0.0')):
+    for what, doc, want in (('a file older than its max age',
+                             {'solar_watts': 2583, 'timestamp': old, 'written': time.time()}, '-_-'),
+                            ('inverter noise below zero', {'solar_watts': -3, 'timestamp': int(time.time())}, '0.0')):
         b.server.docs = sidecars(solar=doc)
         b.page.evaluate('pollSidecars()')
         try:
@@ -236,7 +240,7 @@ def check_fit(browser):
     wide = sidecars(inTemp={'ts': int(time.time()), 'inTemp': -12.3},
                     inCO2={'ts': int(time.time()), 'inCO2': 4800, 'inColor': 'rgb(143,63,151)'},
                     inAQI={'ts': int(time.time()), 'inAQI': 458, 'inColor': 'rgb(126,0,35)'},
-                    solar={'total_watts': 12345, 'total_timestamp': time.time()})
+                    solar={'solar_watts': 12345, 'timestamp': int(time.time())})
     b = Board(browser, size=bc.SIZES[0], docs=wide)
     b.server.set(e=bc.WIDE)
     b.wait("document.querySelector('#ro-co2 .ro-v') && document.querySelector('#ro-co2 .ro-v').textContent.trim() === '4800'")
