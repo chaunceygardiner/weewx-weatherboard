@@ -6,6 +6,12 @@
   size.  A tablet turned on its side refits at once, as before.
 - A board whose font is missing from the web server no longer leaves an
   error in the browser's console; it still draws in the fallback face.
+- Each board has its own icon, for the browser tab and a tablet's home
+  screen, in place of the one icon both shared.  The icons are in the
+  skin's new icons directory; favicon.ico and
+  apple-touch-icon-180x180.png are no longer used, and can be deleted
+  from the skin and web directories.  A board already added to a home
+  screen keeps its old icon until it is added again.
 
 ## 5.2 09/24/2026
 - Action required: restart WeeWX after upgrading.  The date under the

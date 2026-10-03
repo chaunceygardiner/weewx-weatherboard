@@ -192,9 +192,7 @@ class WeatherBoardInstaller(ExtensionInstaller):
             config = installer_config(),
             files = [('skins/WeatherBoard', [
                 'skins/WeatherBoard/analytics.inc',
-                'skins/WeatherBoard/apple-touch-icon-180x180.png',
                 'skins/WeatherBoard/board.inc',
-                'skins/WeatherBoard/favicon.ico',
                 'skins/WeatherBoard/index.html.tmpl',
                 'skins/WeatherBoard/index_painter.inc',
                 'skins/WeatherBoard/inout.css',
@@ -207,6 +205,12 @@ class WeatherBoardInstaller(ExtensionInstaller):
                 'skins/WeatherBoard/splitflap.inc',
                 'skins/WeatherBoard/title.inc',
                 'skins/WeatherBoard/weatherboard.css',
+            ]), ('skins/WeatherBoard/icons', [
+                'skins/WeatherBoard/icons/credits.txt',
+                'skins/WeatherBoard/icons/readout.ico',
+                'skins/WeatherBoard/icons/readout.png',
+                'skins/WeatherBoard/icons/splitflap.ico',
+                'skins/WeatherBoard/icons/splitflap.png',
             ]), ('skins/WeatherBoard/fonts/jost', [
                 'skins/WeatherBoard/fonts/jost/jost.woff2',
                 'skins/WeatherBoard/fonts/jost/license.txt',

@@ -14,6 +14,7 @@ optional reading present and once with none, and validates the output:
     encoding = html_entities, which turns any other character into an
     entity -- inside a script, a broken string
   - no inline style= attributes (all CSS belongs in weatherboard.css)
+  - one favicon and one touch icon, each a file skin.conf copies
   - every <script> parses as valid JavaScript (needs the pure-Python
     'esprima' package; the ordinary renders skip this with a warning if it
     is absent, but the hostile-Extras render FAILS without it -- parsing is
@@ -55,6 +56,7 @@ import importlib.util
 import io
 import json
 import os
+import pathlib
 import re
 import sys
 import types
@@ -221,6 +223,22 @@ PAINTED = re.compile(r"""(?:getElementById|roSet|roWind|roBarometer|roAqi|flapSh
                      r"""\(\s*(?:"([^"]+)"|'([^']+)')""")
 
 
+def copied_files():
+    """The files the CopyGenerator puts in the report's directory, relative
+    to it: each copy_once and copy_always pattern globbed from the skin
+    directory, as WeeWX does."""
+    conf = configobj.ConfigObj(SKIN_CONF, encoding='utf-8', interpolation=False,
+                               file_error=True)
+    copied = set()
+    for key in ('copy_once', 'copy_always'):
+        patterns = conf.get('CopyGenerator', {}).get(key, [])
+        for pattern in [patterns] if isinstance(patterns, str) else patterns:
+            if pattern:
+                copied |= set(p.relative_to(SKIN).as_posix() for p in pathlib.Path(SKIN).glob(pattern)
+                              if p.is_file())
+    return copied
+
+
 def check(html, tmpl, missing=ALL_PRESENT):
     failures = []
     scripts = re.findall(r'<script>(.*?)</script>', html, re.S)
@@ -266,6 +284,18 @@ def check(html, tmpl, missing=ALL_PRESENT):
             failures.append('the stylesheet link %s does not carry ?v=%s, the release install.py'
                             ' names: a browser may draw the page with a cached old stylesheet'
                             % (href, RELEASE))
+    # Each board links one favicon and one touch icon, and each must be a
+    # file the CopyGenerator puts beside the page: a link to anything else
+    # is a missing icon on every station, and the page renders the same.
+    copied = copied_files()
+    for rel in ('icon', 'apple-touch-icon'):
+        hrefs = re.findall(r'<link rel="%s"[^>]*href="([^"]*)"' % rel, html)
+        if len(hrefs) != 1:
+            failures.append('%d <link rel="%s"> tags, expected one' % (len(hrefs), rel))
+        for href in hrefs:
+            if href not in copied:
+                failures.append('the %s link %s names no file skin.conf copies to the web root'
+                                % (rel, href))
     inline = re.findall(r'style="[^"]*"', html)
     if inline:
         failures.append('inline styles (move to weatherboard.css): %s' % inline[:5])
