@@ -1,5 +1,15 @@
 # weewx-weatherboard change history
 
+## 5.2.2 10/03/2026
+- Action required: restart WeeWX, or run the report by hand, after
+  upgrading.  The stylesheet is copied to the web server only on the
+  first report after weewxd starts or on a report run by hand.
+- On a phone or tablet held upright, the readout board no longer
+  stretches its rows down the screen, which left the readings small in
+  the middle of tall, empty panels.  It stops at the height of a 4:3
+  screen and sits in the middle, as the split-flap board does.  A tablet
+  on its side is unchanged.
+
 ## 5.2.1 10/02/2026
 - Action required: restart WeeWX after upgrading.  Each board's new icon
   is copied to the web server only on the first report after weewxd

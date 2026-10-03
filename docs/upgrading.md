@@ -30,6 +30,16 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Texts]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 5.2.2
+
+**Restart WeeWX after upgrading.**  On a phone or tablet held upright,
+the readout board now keeps its shape and sits in the middle of the
+screen.  The new stylesheet is copied to the web server only on the first
+report after weewxd starts (or by a report run by hand), so until then
+the board stretches down the screen as before.
+
+Nothing in `weewx.conf` needs changing.
+
 ## Upgrading to 5.2.1
 
 **Restart WeeWX after upgrading.**  Each board now has its own icon, for
