@@ -27,8 +27,23 @@ matters.  Read the entries newer than the version you are coming from.
 {: .note }
 `weectl extension install` overwrites `skins/WeatherBoard/` on every
 upgrade.  Customizations belong in the report's stanza in `weewx.conf`
-(`[[[Extras]]]`, `[[[Labels]]]` and `[[[Units]]]` entries survive
+(`[[[Extras]]]`, `[[[Texts]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
+
+## Upgrading to 5.2.1
+
+**Restart WeeWX after upgrading.**  Each board now has its own icon, for
+the browser tab and a tablet's home screen, in the skin's new `icons`
+folder.  The icons are copied to the web server only on the first report
+after weewxd starts (or by a report run by hand), so until then the
+boards show no icon of their own.
+
+Nothing in `weewx.conf` needs changing.  An upgrade leaves behind the one
+icon both boards shared, `favicon.ico` and `apple-touch-icon-180x180.png`,
+in `skins/WeatherBoard/` and in the board's web directory.  Delete them
+whenever it suits you, or leave them; nothing reads them.  A board
+already added to a tablet's home screen keeps the old icon until it is
+removed and added again.
 
 ## Upgrading to 5.2
 

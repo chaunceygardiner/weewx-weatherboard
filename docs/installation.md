@@ -173,10 +173,11 @@ in `loop-data.txt`, and a board page that is somehow already there reads
 ## 5. Point the tablet at it, and keep it awake
 
 Open the board you prefer full screen on the tablet, in landscape.  Both
-fill the screen of any tablet, whatever its shape.  As shipped, a board
-stops polling after four hours and reads `EXPIRED TAP`; a tap starts it
-again.  That guard exists so a browser tab forgotten on a laptop does not
-poll your server forever.
+fill the screen of any tablet, whatever its shape, and each has its own
+icon, so both can sit on a tablet's home screen and be told apart.  As
+shipped, a board stops polling after four hours and reads `EXPIRED TAP`;
+a tap starts it again.  That guard exists so a browser tab forgotten on a
+laptop does not poll your server forever.
 
 A tablet on the wall is exactly the case where you do not want it.  Choose
 your own `page_update_pwd` in `weewx.conf` and open the board with it on
