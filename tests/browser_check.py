@@ -39,8 +39,11 @@ What it holds the boards to:
     the air quality level, and stay dark otherwise
   - both boards fit the screen -- every readout panel holds its cells, the
     split-flap board and its footer sit inside the window -- at 1280x800,
-    1024x768, 1180x820 and 1366x1024, with metric readings and the widest
-    language
+    1024x768, 1180x820 and 1366x1024, on a phone and a tablet held upright
+    and a phone on its side, with metric readings and the widest language;
+    the readout board fills the screen's height up to a 4:3 screen's, and
+    on a taller one stops there, in the middle, everyday readings still
+    at full size
 
 Run with a Python that has Playwright, Cheetah and configobj, and
 Chromium in Playwright's browser cache -- tools/pwenv, which is not
@@ -66,6 +69,9 @@ from playwright.sync_api import sync_playwright           # noqa: E402
 SKIN = ct.SKIN
 NOW = int(time.time())
 SIZES = [(1280, 800), (1024, 768), (1180, 820), (1366, 1024)]
+# A phone and a tablet held upright, and the phone on its side.
+UPRIGHT = [(390, 844), (820, 1180)]
+PHONE_SIDEWAYS = (844, 390)
 TYPES = {'css': 'text/css', 'ttf': 'font/ttf', 'woff2': 'font/woff2', 'ico': 'image/x-icon',
          'png': 'image/png'}
 
@@ -244,6 +250,10 @@ RO_BASELINES = """(() => { const rows = document.querySelectorAll('.ro-row'), ou
     probe.remove();
   }
   return out; })()"""
+
+# The readout board's top, its height, the window's height and the rem.
+RO_PLACE = """(() => { const r = document.body.getBoundingClientRect();
+  return [r.top, r.height, innerHeight, parseFloat(getComputedStyle(document.documentElement).fontSize)]; })()"""
 
 # Each row's --fit, top to bottom.
 FITS = "[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')"
@@ -964,26 +974,35 @@ def check_fit(browser):
         ro.wait("document.querySelector('#ro-t .ro-v') && document.querySelector('#ro-t .ro-v').textContent.indexOf('12.3') >= 0")
         flap = Board(browser, 'splitflap.html.tmpl', size=SIZES[0], lang=lang)
         flap.wait("document.querySelector('#flap-temp .flap')")
-        for size in SIZES:
+        for size in SIZES + UPRIGHT + [PHONE_SIDEWAYS]:
             for b in (ro, flap):
                 resize(b.page, size)
             for p in ro.page.evaluate(RO_FIT):
                 failures.append('readout %s %dx%d: %s overflows' % (lang, size[0], size[1], p))
+            # As tall as the screen, up to a 4:3 screen's 120rem; then that
+            # tall and in the middle.
+            top, height, inner, rem = ro.page.evaluate(RO_PLACE)
+            want = min(inner, 120 * rem)
+            if abs(height - want) > 1 or abs(top - (inner - want) / 2) > 1:
+                failures.append('readout %s %dx%d: the board is %.0f px tall at %.0f px, not %.0f'
+                                ' at %.0f' % (lang, size[0], size[1], height, top, want, (inner - want) / 2))
             for p in flap.page.evaluate(FLAP_FIT):
                 failures.append('split-flap %s %dx%d: %s' % (lang, size[0], size[1], p))
         # The fit counts the cells and nothing else: a panel with room to
         # spare is not shrunk by its hidden heading.  At 1024x768, where the
         # title's line leaves height to spare, everyday readings keep every
-        # row at its full size.  (At 16:10 the title's line comes out of
-        # the temperature row: that is its cost.)
+        # row at its full size, and so they do held upright, where the
+        # board is a 4:3 screen's height.  (At 16:10 the title's line comes
+        # out of the temperature row: that is its cost.)
         ro.server.set()
-        resize(ro.page, (1024, 768))
         ro.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('78.4') >= 0")
-        next_frame(ro.page)
-        if lang == 'en':
-            fits = ro.page.evaluate("[...document.querySelectorAll('.ro-row')].map(r => r.style.getPropertyValue('--fit') || '1')")
-            if any(f != '1' for f in fits):
-                failures.append('everyday English readings shrank a row at 1024x768: %s' % fits)
+        for size in UPRIGHT + [(1024, 768)]:
+            resize(ro.page, size)
+            if lang == 'en':
+                fits = ro.page.evaluate(FITS)
+                if any(f != '1' for f in fits):
+                    failures.append('everyday English readings shrank a row at %dx%d: %s'
+                                    % (size[0], size[1], fits))
         # The case that needs the fit: at 1024x768 every panel still holds.
         ro.server.set(e=EXTREME)
         ro.wait("document.querySelector('#ro-t .ro-v').textContent.indexOf('112.34') >= 0")

@@ -15,7 +15,8 @@
  * SIZES.  Everything is in rem, and a rem is the smaller of 1% of the
  * screen's height and 1/160 of its width: 1% of the height on a 16:10
  * tablet, less on a narrower one, so the board fills the screen without
- * scrolling on either.  Each readout row then scales by its own --fit,
+ * scrolling on either (an upright screen, see body.readout, leaves some
+ * of its height dark).  Each readout row then scales by its own --fit,
  * which readout.inc sets to the largest factor (never above 1) at which
  * every panel in the row still holds its cells -- metric units and other
  * languages run wider.
@@ -51,12 +52,21 @@ body {
 
 /* ========================== THE READOUT BOARD ========================== */
 
+/* A screen taller than 16:10 sizes the board by its width, and the rows
+ * share out whatever height the screen has.  Upright, on a tablet or a
+ * phone, that is far more than they need, and the readings would sit small
+ * in the middle of tall, empty panels.  So the board is no taller than a
+ * 4:3 screen's, 120rem, and sits in the middle of the screen, as the
+ * split-flap board does.  A 4:3 tablet on its side is filled as before. */
 body.readout {
     color: #ff2d1f;
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
     padding: 1.2rem 1.2rem .6rem;
+    max-height: 120rem;
+    position: relative;
+    top: max(0px, calc(50% - 60rem));
 }
 /* Four rows, each panel as wide as its content, so a reading the station
  * does not have simply is not there and its row closes up. */
