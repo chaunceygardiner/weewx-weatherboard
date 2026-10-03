@@ -181,6 +181,15 @@ letter draws it in whatever typeface the tablet falls back to.  See
 on the first report cycle after a WeeWX restart.  Restart WeeWX, or copy
 the file into place yourself.
 
+## The tab or the home screen shows the old icon
+
+Each board has its own icon, in the skin's `icons` folder, copied under
+`copy_once` like the stylesheet: it reaches `HTML_ROOT` on the first
+report cycle after a WeeWX restart.  Once it is there, reload the page:
+the icons have new names, so the reload fetches them rather than the
+one a browser cached.  A board added to a tablet's home screen keeps the
+icon it was added with; remove it and add it again.
+
 ## Cross-origin trouble
 
 If `loop_data_file` points at another host, that server must send

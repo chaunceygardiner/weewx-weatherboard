@@ -1,17 +1,20 @@
 # weewx-weatherboard change history
 
-## 5.2.1 (in progress)
-- Dragging the window's edge no longer refits the board at every step:
-  it refits as the drag begins and once more when the window holds its
-  size.  A tablet turned on its side refits at once, as before.
-- A board whose font is missing from the web server no longer leaves an
-  error in the browser's console; it still draws in the fallback face.
+## 5.2.1 10/02/2026
+- Action required: restart WeeWX after upgrading.  Each board's new icon
+  is copied to the web server only on the first report after weewxd
+  starts; until then the boards show no icon of their own.
 - Each board has its own icon, for the browser tab and a tablet's home
   screen, in place of the one icon both shared.  The icons are in the
   skin's new icons directory; favicon.ico and
   apple-touch-icon-180x180.png are no longer used, and can be deleted
   from the skin and web directories.  A board already added to a home
   screen keeps its old icon until it is added again.
+- Dragging the window's edge no longer refits the board at every step:
+  it refits as the drag begins and once more when the window holds its
+  size.  A tablet turned on its side refits at once, as before.
+- A board whose font is missing from the web server no longer leaves an
+  error in the browser's console; it still draws in the fallback face.
 
 ## 5.2 09/24/2026
 - Action required: restart WeeWX after upgrading.  The date under the
