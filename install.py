@@ -136,13 +136,14 @@ CONFIG = """
             # Uncomment one and change it to override it.
             #
             # How old each sidecar reading may be, in seconds, before it
-            # turns to dashes.  The AirGradient trio is written by a ~30 s
-            # cron; the FranklinWH file carries a gateway polled once a
-            # minute, hence its larger limit.
+            # turns to dashes.  The indoor temperature and the AirGradient
+            # CO2 and AQI are written about every 30 s.  The FranklinWH file
+            # is rewritten every 10 s, but its solar reading is aged by the
+            # gateway's own reading time, not by when the file was written.
             #in_temp_max_age = 120
             #in_co2_max_age = 120
             #in_aqi_max_age = 120
-            #franklinwh_max_age = 150
+            #franklinwh_max_age = 120
             # How old the loop record may be, in seconds, before the
             # readings it feeds turn to dashes and the clock gives way to
             # the data's age.  The default suits a station emitting loop

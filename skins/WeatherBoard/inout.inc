@@ -12,13 +12,16 @@
 ##   in_aqi_file       {"ts": ..., "inAQI": 29, "inColor": "rgb(0,228,0)"}
 ##   franklinwh_file   {"solar_watts": 2583, "timestamp": 1790221500, ...}
 ## The indoor temperature is in the station's own temperature unit.  The
-## files are written more slowly than the loop data -- the AirGradient trio
-## on a ~30 s cron, the FranklinWH file every 10 s from a battery gateway
-## that takes a new reading every 30 s -- so each has its own max age.  The
-## trio is polled every eighth refresh (about 16 seconds); the solar file
-## at every refresh, as the loop data is, so a new reading shows within a
-## refresh of reaching the file rather than up to 16 s later.  Its timeout
-## is board.inc's 1800 ms, under the refresh, so one request is answered or
+## files are written more slowly than the loop data -- the indoor
+## temperature every 30 s from a WeatherLink Live, the AirGradient CO2 and
+## AQI on a ~30 s cron, the FranklinWH file every 10 s from a battery
+## gateway that takes a new reading every 30 s -- so each has its own max
+## age.  All four are polled at every refresh, as the loop data is, so a
+## new reading shows within a refresh of reaching its file, and a page
+## whose timers the browser stopped while it was out of sight (Safari does,
+## for a background tab) brings them back with the loop data, not dashes
+## until a later refresh.  The timeout is board.inc's 1800 ms, under the
+## default 2 s refresh, so at that rate one request is answered or
 ## abandoned before the next is sent.  The solar reading is aged by the
 ## gateway's poll (timestamp), not by when the file was written.  URL
 ## parameters inTempFile, inCO2File, inAQIFile and franklinwhFile override
@@ -36,23 +39,22 @@
 #errorCatcher Echo
 <script>
   // Settings, as the report was generated.
-  // every: polled at every nth refresh; timeout: the request's, in ms.
-  function sidecar(param, file, maxAge, dfltMaxAge, key, tsKey, colored, every, timeout) {
+  function sidecar(param, file, maxAge, dfltMaxAge, key, tsKey, colored) {
     var f = getUrlParam(param);
     return { url: f !== '' ? f : file, maxAge: numExtra(maxAge, dfltMaxAge), key: key,
-             tsKey: tsKey, colored: colored, every: every, timeout: timeout,
-             value: null, color: '', age: 0, at: 0, lastTs: undefined, lastChangeAt: 0 };
+             tsKey: tsKey, colored: colored, value: null, color: '', age: 0, at: 0,
+             lastTs: undefined, lastChangeAt: 0 };
   }
   var SIDECARS = {
     inTemp: sidecar('inTempFile', $jsstr($Extras.get('in_temp_file', '') or 'inTemp.txt'),
-                    $jsstr($Extras.get('in_temp_max_age', '')), 120, 'inTemp', 'ts', false, 8, 5000),
+                    $jsstr($Extras.get('in_temp_max_age', '')), 120, 'inTemp', 'ts', false),
     inCO2: sidecar('inCO2File', $jsstr($Extras.get('in_co2_file', '') or 'inCO2.txt'),
-                   $jsstr($Extras.get('in_co2_max_age', '')), 120, 'inCO2', 'ts', true, 8, 5000),
+                   $jsstr($Extras.get('in_co2_max_age', '')), 120, 'inCO2', 'ts', true),
     inAQI: sidecar('inAQIFile', $jsstr($Extras.get('in_aqi_file', '') or 'inAQI.txt'),
-                   $jsstr($Extras.get('in_aqi_max_age', '')), 120, 'inAQI', 'ts', true, 8, 5000),
+                   $jsstr($Extras.get('in_aqi_max_age', '')), 120, 'inAQI', 'ts', true),
     solar: sidecar('franklinwhFile', $jsstr($Extras.get('franklinwh_file', '') or 'franklinwh.json'),
-                   $jsstr($Extras.get('franklinwh_max_age', '')), 150,
-                   'solar_watts', 'timestamp', false, 1, 1800)
+                   $jsstr($Extras.get('franklinwh_max_age', '')), 120,
+                   'solar_watts', 'timestamp', false)
   };
 
   // Leaves the last good reading to age out; see the header.
@@ -65,7 +67,7 @@
   // than holding one of the few connections the browser allows the host.
   function fetchSidecar(s) {
     var xhttp = new XMLHttpRequest();
-    xhttp.timeout = s.timeout;
+    xhttp.timeout = 1800;
     xhttp.onload = function() {
       if (this.status < 200 || this.status >= 300) {
         sidecarFailed();
@@ -128,14 +130,12 @@
       sidecarFailed();
     }
   }
-  // Every file, or with a refresh count, the files due at that refresh.
-  function pollSidecars(tick) {
+  function pollSidecars() {
     if (pageTimedOut) {
       return;
     }
     for (var k in SIDECARS) {
-      if (SIDECARS.hasOwnProperty(k)
-          && (tick === undefined || tick % SIDECARS[k].every === 0)) {
+      if (SIDECARS.hasOwnProperty(k)) {
         fetchSidecar(SIDECARS[k]);
       }
     }
@@ -150,7 +150,7 @@
 
   // The tap that restarts an expired page (board.inc's listener, which
   // runs first) fetches the sidecars at once too, rather than leaving them
-  // dashes until each one's next scheduled poll.
+  // dashes until the next refresh.
   var inoutLastKind = null;
   document.addEventListener('click', function () {
     if (inoutLastKind === 'expired') {
@@ -158,12 +158,8 @@
     }
   });
   function startSidecars() {
-    var tick = 0;
     pollSidecars();
-    setInterval(function () {
-      tick += 1;
-      pollSidecars(tick);
-    }, clampDelay(Math.max(refresh_rate, 1) * 1000));
+    setInterval(pollSidecars, clampDelay(Math.max(refresh_rate, 1) * 1000));
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startSidecars);

@@ -16,9 +16,9 @@ What it holds the page to:
     older than its own max age, then dashes, CO2 and indoor AQI in white;
     a file whose reading is already too old is dashes at once; and the
     rest of the board carries on
-  - a sidecar reading's age keeps counting between polls: it goes to
-    dashes on its own, with no new fetch
-  - the solar file is read at every refresh, the other three every eighth
+  - a sidecar reading's age keeps counting from its last good read: with
+    every read of its file failing, it goes to dashes on its own
+  - every sidecar file is read at every refresh
   - an expired page fetches no sidecar file, and the tap that restarts it
     fetches them at once
   - the top row's three temperatures are at the size for three, and the
@@ -126,6 +126,17 @@ def check_readings(browser):
                       ('ro-aqi', 'rgb(0, 228, 0)'), ('ro-in', 'rgb(255, 45, 31)')):
         if b.color(cid) != want:
             failures.append('%s is %s, expected %s' % (cid, b.color(cid), want))
+    # Every file is read at every refresh: at a one-second refresh, each
+    # is fetched twice more within four seconds.
+    before = dict(b.server.fetches)
+    deadline = time.time() + 4
+    while (time.time() < deadline
+           and any(b.server.fetches[k] < before[k] + 2 for k in before)):
+        b.page.wait_for_timeout(100)
+    for name, n in sorted(b.server.fetches.items()):
+        if n < before[name] + 2:
+            failures.append('%s was fetched %d times in four seconds of one-second refreshes'
+                            % (name, n - before[name]))
     # The same layout rules as index.html: three temperatures at the size
     # for three, and the bottom row one line of figures, the clock the size
     # of the figures beside it and on their baseline, over the date.
@@ -160,10 +171,9 @@ def check_readings(browser):
         before = b.server.fetches[name]
         b.page.evaluate('pollSidecars()')
         b.page.wait_for_timeout(300)
-        # The solar file's own poll, at every refresh, may land in the
-        # wait as well.
+        # The poll at every refresh may land in the wait as well.
         n = b.server.fetches[name] - before
-        if n < 1 or (name != 'solar' and n != 1):
+        if n < 1:
             failures.append('%s: the forced poll fetched %s %d times' % (what, name, n))
         if b.text(cid) != good:
             failures.append('%s: %s reads %r at once, expected the last good %r'
@@ -201,20 +211,18 @@ def check_readings(browser):
 
 def check_age_between_polls(browser):
     """A reading one second old with a three-second limit goes to dashes
-    about two seconds later, with no fetch in between.  In the same two
-    seconds, at a one-second refresh, the solar file is read again: it is
-    polled at every refresh, the indoor files every eighth."""
+    about two seconds later while every read of its file fails: its age
+    counts on from the last good read, and the loop data's repaints show
+    it."""
     failures = []
     b = Board(browser, overrides={'in_temp_max_age': '3'},
               docs=sidecars(inTemp={'ts': int(time.time()) - 1, 'inTemp': 73.8}))
     b.wait("document.querySelector('#ro-in .ro-v') && document.querySelector('#ro-in .ro-v').textContent.trim() === '73.8'")
+    b.server.docs = sidecars(inTemp=None)
     fetched = b.server.fetches['inTemp']
-    solar = b.server.fetches['solar']
     b.wait("(%s)('ro-in') === '--_-'" % bc.RO_TEXT, timeout=5000)
-    if b.server.fetches['inTemp'] != fetched:
-        failures.append('the reading went stale only after another fetch')
-    if b.server.fetches['solar'] == solar:
-        failures.append('the solar file was not read at a refresh: still %d fetches' % solar)
+    if b.server.fetches['inTemp'] == fetched:
+        failures.append('the file was not read again while the reading aged')
     if b.text('ro-t') != '78.4':
         failures.append('the outdoor temperature went with it: %r' % b.text('ro-t'))
     b.close()
@@ -223,11 +231,11 @@ def check_age_between_polls(browser):
 
 def check_expiry(browser):
     """An expired page polls no sidecar file, and the tap that restarts it
-    polls all four at once (the solar file perhaps twice: its poll at every
-    refresh may land in the same moment).  (expiration_time is in hours: 0.0006 is about
-    two seconds.)"""
+    polls all four at once, each exactly once: at a 30 s refresh no
+    scheduled poll lands in the wait.  (expiration_time is in hours:
+    0.0006 is about two seconds.)"""
     failures = []
-    b = Board(browser, overrides={'expiration_time': '0.0006'}, query='')
+    b = Board(browser, overrides={'expiration_time': '0.0006', 'refresh_rate': '30'}, query='')
     b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-expired') >= 0", timeout=8000)
     before = dict(b.server.fetches)
     b.page.evaluate('pollSidecars()')
@@ -238,7 +246,7 @@ def check_expiry(browser):
     b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-expired') < 0")
     b.page.wait_for_timeout(300)
     for name, n in sorted(b.server.fetches.items()):
-        if n < before[name] + 1 or (name != 'solar' and n != before[name] + 1):
+        if n != before[name] + 1:
             failures.append('the tap fetched %s %d times, expected once' % (name, n - before[name]))
     b.close()
     return failures
@@ -268,9 +276,9 @@ def main():
     ok = True
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        for name, fn in (('inout.html: readings, colors, and each way a file fails', check_readings),
-                         ('inout.html: a sidecar reading ages between polls; solar polled every refresh',
-                          check_age_between_polls),
+        for name, fn in (('inout.html: readings, colors, every file at every refresh, and each way a file fails',
+                          check_readings),
+                         ('inout.html: a sidecar reading ages while its reads fail', check_age_between_polls),
                          ('inout.html: no sidecar polls while expired; the tap polls at once', check_expiry),
                          ('inout.html fits every screen size', check_fit)):
             t0 = time.time()
