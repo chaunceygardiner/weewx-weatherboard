@@ -21,6 +21,8 @@ What it holds the boards to:
     language, the same on a tablet eleven hours behind UTC; the widest,
     Spanish, fits the narrowest screen; no date, or one that is not a
     date, leaves a blank that keeps the label's height
+  - the data's age is read from current.dateTime.unix_epoch.raw, the one
+    stamp the skin declares; an entry without it reads NO CLOCK
   - the status line: the data's age once it is max_age old (amber for the
     first minute, then red), the failure when a fetch fails (HTTP 404, BAD
     DATA, NO ENTRY, NO CONNECT), and EXPIRED TAP once the page expires --
@@ -80,7 +82,7 @@ def entry(**over):
     """One report's entry in loop-data.txt, US units."""
     # The date is a Wednesday in September, the widest a date runs in
     # English and in Spanish, the widest language.
-    e = {'current.dateTime.raw': NOW, 'current.dateTime.format("%H:%M:%S")': '16:07:17',
+    e = {'current.dateTime.unix_epoch.raw': NOW, 'current.dateTime.format("%H:%M:%S")': '16:07:17',
          'current.dateTime.format("%Y-%m-%d")': '2026-09-23',
          'current.outTemp.formatted': '78.4', 'current.dewpoint.formatted': '61.2',
          'current.appTemp.formatted': '79.9', 'current.outHumidity.formatted': '56',
@@ -124,6 +126,9 @@ EXTREME = entry(**{'current.outTemp.formatted': '-112.34', 'current.dewpoint.for
                    'current.UV.formatted': '111.8', 'current.radiation.formatted': '10124'})
 
 
+STAMP = 'current.dateTime.unix_epoch.raw'      # the entry's epoch stamp, in seconds
+
+
 class Server:
     """What the page's fetches get.  Mutated between checks; the page picks
     the change up on its next poll."""
@@ -152,10 +157,11 @@ class Server:
             # never moves is one the board rightly calls stale after
             # max_age, however young the Date header says it is.
             e = dict(self.entry)
-            if isinstance(e.get('current.dateTime.raw'), (int, float)) and not self.frozen:
-                e['current.dateTime.raw'] = int(time.time())
+            stamped = isinstance(e.get(STAMP), (int, float))
+            if stamped and not self.frozen:
+                e[STAMP] = int(time.time())
             body = {'OtherReport': {}} if self.mode == 'noentry' else {ct.REPORT_NAME: e}
-            now = e['current.dateTime.raw'] if self.frozen else int(time.time())
+            now = e[STAMP] if self.frozen and stamped else int(time.time())
             date = email.utils.formatdate(now + self.age, usegmt=True)
             return route.fulfill(body=json.dumps(body), headers={'Date': date,
                                                                  'Content-Type': 'application/json'})
@@ -570,11 +576,34 @@ def check_frozen_file(browser):
     has sat unchanged, and that alone passes max_age (3 s here)."""
     failures = []
     b = Board(browser, 'index.html.tmpl', overrides={'max_age': '3'})
-    b.server.set(e=entry(**{'current.dateTime.raw': int(time.time())}), frozen=True)
+    b.server.set(e=entry(**{'current.dateTime.unix_epoch.raw': int(time.time())}), frozen=True)
     b.wait("document.getElementById('ro-clock').className === 'ro-panel ro-status-live'")
     b.wait("document.getElementById('ro-clock').className.indexOf('ro-status-aging') >= 0", timeout=8000)
     if b.page.evaluate(RO_TEXT, 'ro-t') != '--_-':
         failures.append('a frozen file left the temperature up: %r' % b.page.evaluate(RO_TEXT, 'ro-t'))
+    b.close()
+    return failures
+
+
+LIVE = "document.getElementById('ro-clock').className === 'ro-panel ro-status-live'"
+NO_CLOCK = "document.querySelector('#ro-clk .ro-v') && document.querySelector('#ro-clk .ro-v').textContent.indexOf('NO CLOCK') >= 0"
+
+
+def check_clock_pin(browser):
+    """The data's age comes from current.dateTime.unix_epoch.raw, the one
+    stamp the skin declares, which its unit segment pins to seconds
+    whatever the report's group_time.  An entry without it, such as the
+    one LoopData writes from a declaration that predates 5.3 until weewxd
+    restarts, reads NO CLOCK; the bare current.dateTime.raw is not read."""
+    failures = []
+    b = Board(browser, 'index.html.tmpl')
+    b.wait(LIVE)                                    # the pinned key: entry()'s default
+    old = entry()
+    old['current.dateTime.raw'] = old.pop(STAMP)    # a 5.2 declaration's entry
+    b.server.set(e=old)
+    b.wait(NO_CLOCK)
+    if b.page.evaluate(RO_TEXT, 'ro-t') != '--_-':
+        failures.append('without the stamp the temperature stayed up: %r' % b.page.evaluate(RO_TEXT, 'ro-t'))
     b.close()
     return failures
 
@@ -1247,6 +1276,7 @@ def main():
         for name, fn in (('the readout board: readings, status line, missing data in pixels', check_readout),
                          ('the readout board: expiry, the tap, and the keep-alive password', check_readout_expiry),
                          ('a file that stops changing goes stale', check_frozen_file),
+                         ('the age is read from the pinned clock key alone', check_clock_pin),
                          ('the split-flap board: rows, lamps, missing data, failures', check_flap),
                          ('the clock and status line in other languages', check_languages),
                          ('the date is the station\'s, in the page\'s language, and fits', check_readout_date),

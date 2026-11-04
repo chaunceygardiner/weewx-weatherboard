@@ -47,6 +47,9 @@ else goes on updating.
 Age is the difference between two absolute times: the timestamp inside the
 loop record, written by the WeeWX station, and the `Date` header on the
 HTTP response that carried it, stamped by whatever web server answered.
+The timestamp is `current.dateTime.unix_epoch.raw`, which its unit segment
+pins to epoch seconds whatever `group_time` the report's units set, so
+the subtraction is seconds against seconds on every station.
 The browser's own clock is deliberately not consulted.  A wall-mounted
 tablet's clock can be badly wrong, and since this one number gates every
 reading, a skewed clock would blank the entire board.

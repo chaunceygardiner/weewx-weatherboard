@@ -121,7 +121,7 @@ named groups — LoopData's
 render them:
 
 ```
-current.dateTime.raw, current.dateTime.format("%H:%M:%S"),
+current.dateTime.unix_epoch.raw, current.dateTime.format("%H:%M:%S"),
 current.dateTime.format("%Y-%m-%d"),
 current.outTemp.formatted, current.dewpoint.formatted,
 current.appTemp.formatted, current.outHumidity.formatted,

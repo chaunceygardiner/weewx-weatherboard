@@ -103,13 +103,16 @@ data they hold passes `max_age`.
 
 ## The clock reads `NO CLOCK`
 
-The report's entry has no usable `current.dateTime.raw`, so the board
-cannot tell how old the data is, and will not vouch for data it cannot
-age.  The clock's fields ship in the skin's declaration, so one is missing
-only if the declaration was overridden — a `[[[LoopData]]] [[[[fields]]]]`
-group named `clock` under the report's stanza in `weewx.conf` replaces the
-skin's — or the shipped `skin.conf` was edited.  Put the field back and
-restart WeeWX.
+The report's entry has no usable `current.dateTime.unix_epoch.raw`, so the
+board cannot tell how old the data is, and will not vouch for data it
+cannot age.  Right after an upgrade to 5.3, restart WeeWX: LoopData reads
+a report's fields only when weewxd starts, and until then the entry
+carries the field 5.2 declared, `current.dateTime.raw`, which the board
+no longer reads.  Otherwise the declaration was overridden — a
+`[[[LoopData]]] [[[[fields]]]]` group named `clock` under the report's
+stanza in `weewx.conf` replaces the skin's, and one copied from an
+earlier release still names `current.dateTime.raw` — or the shipped
+`skin.conf` was edited.  Put the field in and restart WeeWX.
 
 ## The date under the clock is blank
 

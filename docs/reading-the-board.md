@@ -144,7 +144,7 @@ Neither board has a separate LIVE label.  The clock is the status line:
 | `NO ENTRY` | red, blinking | LoopData's json, but with no entry for this report — WeeWX has not been restarted since the board was installed |
 | `BAD URL` | red, blinking | `loop_data_file` is not a usable URL, so the fetch never left the browser |
 | `NO CONNECT` | red, blinking | The request failed or timed out: the server gone, the network down |
-| `NO CLOCK` | red, blinking | The report's entry carries no usable `current.dateTime.raw`, so its age cannot be known |
+| `NO CLOCK` | red, blinking | The report's entry carries no usable `current.dateTime.unix_epoch.raw`, so its age cannot be known |
 | `EXPIRED TAP` | blue | The page stopped polling after [`expiration_time`](configuration.html#expiration_time) hours; tap anywhere to start it again |
 | `WAITING` | amber | The page has loaded and no data has arrived yet |
 

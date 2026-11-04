@@ -30,6 +30,24 @@ upgrade.  Customizations belong in the report's stanza in `weewx.conf`
 (`[[[Extras]]]`, `[[[Texts]]]` and `[[[Units]]]` entries survive
 upgrades); edits made directly to the shipped skin files do not.
 
+## Upgrading to 5.3
+
+**Restart WeeWX after upgrading.**  The timestamp the boards age the data
+by is now pinned to seconds: it is declared with a unit segment,
+`current.dateTime.unix_epoch.raw`, and LoopData reads a report's fields
+only when weewxd starts.  Until the restart the boards read `NO CLOCK`
+and show every reading as missing.
+
+The declaration it replaces, `current.dateTime.raw`, was bare.  A bare
+`.raw` on a time field follows the report's `group_time`, so a report whose
+`[[[Units]]] [[[[Groups]]]]` set `group_time` to `unix_epoch_ms` or
+`unix_epoch_ns` handed the boards a count a thousand or a billion times
+too large.  The age by the server's clock was lost with it: a file that
+kept changing read as fresh however old the server said it was, and only
+a file that stopped changing went to its age.
+
+Nothing in `weewx.conf` needs changing.
+
 ## Upgrading to 5.2.2
 
 **Restart WeeWX after upgrading.**  On a phone or tablet held upright,
