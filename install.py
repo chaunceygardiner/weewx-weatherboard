@@ -185,7 +185,7 @@ def installer_config():
 class WeatherBoardInstaller(ExtensionInstaller):
     def __init__(self):
         super(WeatherBoardInstaller, self).__init__(
-            version = "5.2.2",
+            version = "5.3",
             name = 'weatherboard',
             description = 'WeatherBoard skin.',
             author = "John A Kline",

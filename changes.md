@@ -1,5 +1,22 @@
 # weewx-weatherboard change history
 
+## 5.3 11/04/2026
+- Action required: restart WeeWX after upgrading.  The timestamp the
+  boards age the data by is declared pinned to seconds, as
+  current.dateTime.unix_epoch.raw, and LoopData reads a report's fields
+  only when weewxd starts; until the restart the boards read NO CLOCK and
+  show every reading as missing.
+- The timestamp the boards age the data by is pinned to seconds: it is
+  declared with a unit segment, current.dateTime.unix_epoch.raw, where it
+  was declared bare, current.dateTime.raw.  A bare .raw on a time field
+  follows the report's group_time, so a
+  report whose [[[Units]]] [[[[Groups]]]] set group_time to milliseconds
+  or nanoseconds handed the boards a count a thousand or a billion times
+  too large, and the age by the server's clock was lost: a file that kept
+  changing read as fresh however old the server said it was, and only a
+  file that stopped changing went to its age.  The pinned field is seconds
+  whatever the report's units.
+
 ## 5.2.2 10/03/2026
 - Action required: restart WeeWX, or run the report by hand, after
   upgrading.  The stylesheet is copied to the web server only on the

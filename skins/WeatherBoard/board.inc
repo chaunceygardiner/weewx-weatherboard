@@ -110,7 +110,7 @@
   var lastResult = null;      // the last good entry from loop-data.txt
   var lastGoodAge = 0;        // its age when it arrived, by the server's clock
   var lastSuccessAt = performance.now();
-  var lastDateTime;           // its current.dateTime.raw, to notice a file that stopped changing
+  var lastDateTime;           // its epoch stamp, to notice a file that stopped changing
   var lastChangeAt = performance.now();
   var cacheBuster = Date.now();
   var expiryTimer = null;
@@ -371,7 +371,10 @@
         return;
       }
       errorCode = null;
-      var dateTime = result["current.dateTime.raw"];
+      // The stamp is declared pinned to seconds (current.dateTime.unix_epoch.raw):
+      // a bare .raw on a time field follows the report's group_time, and
+      // the age math below must not move with it.
+      var dateTime = result["current.dateTime.unix_epoch.raw"];
       if (dateTime !== lastDateTime) {
         lastDateTime = dateTime;
         lastChangeAt = performance.now();
